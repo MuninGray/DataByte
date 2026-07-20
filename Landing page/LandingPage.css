@@ -1,0 +1,44 @@
+body, html {
+    font-family: Arial, sans-serif;
+    height: 100%width 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.contenedor {
+    text-align: center;
+    padding: 20px;
+    margin-top: 150px;
+    background-color: #ffad42;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.boton_login {
+    background-color: #FD5E4B;
+    color: white;
+    padding: 10px 20px;
+    display: inline-block;
+    margin-top: 20px;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+.boton_register {
+    background-color: #FD5E4B;
+    color: white;
+    padding: 10px 20px;
+    display: inline-block;
+    margin-top: 20px;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+.boton_login:hover {
+    background-color: #ff4f3b;
+}
+
+.boton_register:hover {
+    background-color: #ff4f3b;
+}
