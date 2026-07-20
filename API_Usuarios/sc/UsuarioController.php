@@ -17,10 +17,10 @@ class UsuarioController{
     public function create(){
         $data = json_decode(file_get_contents("php://input"));
         
-        if (!empty($data->correo) && !empty($data->CI) && !empty($data->contraseña)) {
+        if (!empty($data->correo) && !empty($data->CI) && !empty($data->contrasena)) {
             $this->usuario->correo = $data->correo;
             $this->usuario->ci = $data->CI;
-            $this->usuario->contrasena = $data->contraseña;
+            $this->usuario->contrasena = $data->contrasena;
             
             if ($this->usuario->create()) {
                 http_response_code(201);
@@ -45,7 +45,6 @@ class UsuarioController{
 
             while ($row = $result->fetch_assoc()) {
                 $user_item = [
-                    "id" => $row['id'],
                     "correo" => $row['correo'],
                     "CI" => $row['ci']
                 ];
@@ -63,11 +62,10 @@ class UsuarioController{
     public function update(){
         $data = json_decode(file_get_contents("php://input"));
         
-        if (!empty($data->correo) && !empty($data->CI) && !empty($data->contraseña) && !empty($data->id)) {
+        if (!empty($data->correo) && !empty($data->CI) && !empty($data->contrasena)) {
             $this->usuario->correo = $data->correo;
             $this->usuario->ci = $data->CI;
-            $this->usuario->contrasena = $data->contraseña;
-            $this->usuario->id = $data->id;
+            $this->usuario->contrasena = $data->contrasena;
             
             if ($this->usuario->update()) {
                 http_response_code(201);

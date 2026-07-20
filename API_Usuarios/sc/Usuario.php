@@ -5,7 +5,6 @@ class Usuario {
     private $conn;
     private $table_name = "usuarios";
 
-    public $id;
     public $correo;
     public $ci;
     public $contrasena;
@@ -15,7 +14,7 @@ class Usuario {
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (correo, ci, contrasena, creado_en) VALUES (?, ?, ?";
+        $query = "INSERT INTO `" . $this->table_name . "` (correo, ci, contrasena) VALUES (?, ?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
@@ -40,27 +39,26 @@ class Usuario {
     }
 
     public function read() {
-        $query = "SELECT id, correo, ci FROM `" . $this->table_name . "`";
+        $query = "SELECT correo, ci FROM `" . $this->table_name . "`";
         $result = $this->conn->query($query);
         return $result;
     }
 
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET correo = ?, ci = ?, contrasena = ? WHERE id = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET correo = ?, ci = ?, contrasena = ? WHERE ci = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
         $this->correo = htmlspecialchars(strip_tags($this->correo));
         $this->ci = htmlspecialchars(strip_tags($this->ci));
         $this->contrasena = htmlspecialchars(strip_tags($this->contrasena));
-        $this->id = htmlspecialchars(strip_tags($this->id));
 
         $stmt->bind_param(
-            "sssi",
+            "ssss",
             $this->correo,
             $this->ci,
             $this->contrasena,
-            $this->id
+            $this->ci
         );
 
         if ($stmt->execute()) {
