@@ -1,23 +1,29 @@
 body, html {
     font-family: Arial, sans-serif;
-    height: 100%width 100px;
+    height: 100%;
+    width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #1a5f2e 0%, #2d8659 25%, #3fa875 50%, #2d8659 75%, #1a5f2e 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    overflow: hidden;
 }
 
 .contenedor {
     text-align: center;
     padding: 20px;
-    margin-top: 150px;
-    background-color: #ffad42;
+    background-color: #8ab190;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .boton_login {
-    background-color: #FD5E4B;
-    color: white;
+    background-color: #527958;
+    color: black;
     padding: 10px 20px;
     display: inline-block;
     margin-top: 20px;
@@ -26,8 +32,8 @@ body, html {
 }
 
 .boton_register {
-    background-color: #FD5E4B;
-    color: white;
+    background-color: #527958;
+    color: black;
     padding: 10px 20px;
     display: inline-block;
     margin-top: 20px;
@@ -36,9 +42,9 @@ body, html {
 }
 
 .boton_login:hover {
-    background-color: #ff4f3b;
+    background-color: #6e9c75;
 }
 
 .boton_register:hover {
-    background-color: #ff4f3b;
+    background-color: #6e9c75;
 }
