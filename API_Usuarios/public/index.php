@@ -1,35 +1,31 @@
 <?php
+require_once "../sc/UsuarioController.php";
 
-$data = json_decode(file_get_contents("php://input"));
+$method = $_SERVER["REQUEST_METHOD"] ?? "GET";
+$controller = new UsuarioController();
 
-$correo = isset($data->correo) ? $data->correo : '';
-$ci = isset($data->ci) ? $data->ci : '';
-$contrasena = isset($data->contrasena) ? $data->contrasena : '';
-$conf_contrasena = isset($data->conf_contrasena) ? $data->conf_contrasena : '';
+switch ($method) {
+    case "GET":
+        $controller->read();
+        break;
+    case "POST":
+    $accion = $_GET["accion"] ?? "";
 
-$conn = new mysqli('localhost', 'root', '', 'proyectito');
-if ($conn->connect_error) {
-	die('Connection failed: ' . $conn->connect_error);
+    if ($accion == "login") {
+        $controller->login();
+    } else {
+        $controller->create();
+    }
+
+    break;
+    case "PUT":
+        $controller->update();
+        break;
+    case "DELETE":
+        $controller->delete();
+        break;
+    default:
+        http_response_code(405);
+        echo json_encode(["message" => "Método no permitido"]);
+        break;
 }
-
-// Validar campos y confirmacion de contrasena
-if (empty($correo) || empty($ci) || empty($contrasena)) {
-	http_response_code(400);
-	echo json_encode(["message" => "Datos incompletos"]);
-	exit;
-}
-
-if ($contrasena !== $conf_contrasena) {
-	http_response_code(400);
-	echo json_encode(["message" => "Las contrasenas no coinciden"]);
-	exit;
-}
-
-$stmt = $conn->prepare("INSERT INTO usuarios (correo, ci, contrasena) VALUES (?, ?, ?)");
-if ($stmt) {
-	$stmt->bind_param('sss', $correo, $ci, $contrasena);
-	$stmt->execute();
-	$stmt->close();
-}
-
-$conn->close();
