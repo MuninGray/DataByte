@@ -1,9 +1,11 @@
 <?php
 
-$correo = isset($_POST['correo']) ? $_POST['correo'] : '';
-$ci = isset($_POST['CI']) ? $_POST['CI'] : '';
-$contrasena = isset($_POST['contrasena']) ? $_POST['contrasena'] : '';
-$conf_contrasena = isset($_POST['conf_contrasena']) ? $_POST['conf_contrasena'] : '';
+$data = json_decode(file_get_contents("php://input"));
+
+$correo = isset($data->correo) ? $data->correo : '';
+$ci = isset($data->ci) ? $data->ci : '';
+$contrasena = isset($data->contrasena) ? $data->contrasena : '';
+$conf_contrasena = isset($data->conf_contrasena) ? $data->conf_contrasena : '';
 
 $conn = new mysqli('localhost', 'root', '', 'proyectito');
 if ($conn->connect_error) {
