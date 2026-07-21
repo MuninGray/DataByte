@@ -19,16 +19,11 @@ class Usuario {
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->correo = htmlspecialchars(strip_tags($this->correo));
-        $this->ci = htmlspecialchars(strip_tags($this->ci));
-        $this->contrasena = htmlspecialchars(strip_tags($this->contrasena));
+        $this->correo = htmlspecialchars(strip_tags(trim($this->correo)));
+        $this->ci = htmlspecialchars(strip_tags(trim($this->ci)));
+        $this->contrasena = htmlspecialchars(strip_tags(trim($this->contrasena)));
 
-        $stmt->bind_param(
-            "sss",
-            $this->correo,
-            $this->ci,
-            $this->contrasena
-        );
+        $stmt->bind_param("sss", $this->correo, $this->ci, $this->contrasena);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -49,17 +44,11 @@ class Usuario {
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->correo = htmlspecialchars(strip_tags($this->correo));
-        $this->ci = htmlspecialchars(strip_tags($this->ci));
-        $this->contrasena = htmlspecialchars(strip_tags($this->contrasena));
+        $this->correo = htmlspecialchars(strip_tags(trim($this->correo)));
+        $this->ci = htmlspecialchars(strip_tags(trim($this->ci)));
+        $this->contrasena = htmlspecialchars(strip_tags(trim($this->contrasena)));
 
-        $stmt->bind_param(
-            "ssss",
-            $this->correo,
-            $this->ci,
-            $this->contrasena,
-            $this->ci
-        );
+        $stmt->bind_param("ssss", $this->correo, $this->ci, $this->contrasena, $this->ci);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -68,4 +57,37 @@ class Usuario {
 
         return false;
     }
+
+    public function delete() {
+        $query = "DELETE FROM `" . $this->table_name . "` WHERE ci = ?";
+        $stmt = $this->conn->prepare($query);
+        if (!$stmt) return false;
+
+        $this->ci = htmlspecialchars(strip_tags(trim($this->ci)));
+        $stmt->bind_param("s", $this->ci);
+
+        if ($stmt->execute()) {
+            $stmt->close();
+            return true;
+        }
+
+        return false;
+    }
+
+    public function login(){
+
+    $query = "SELECT correo, ci, contrasena 
+              FROM `" . $this->table_name . "` 
+              WHERE correo = ?";
+
+    $stmt = $this->conn->prepare($query);
+
+    if (!$stmt) return false;
+
+    $stmt->bind_param("s", $this->correo);
+
+    $stmt->execute();
+
+    return $stmt->get_result();
+}
 }
