@@ -41,30 +41,48 @@ class UsuarioController{
     }
 
     // Crear usuario
-    public function create(){
-        $data = $this->getPayload();
-        $correo = $this->getInputValue($data, ["correo"]);
-        $ci = $this->getInputValue($data, ["CI", "ci"]);
-        $contrasena = $this->getInputValue($data, ["contrasena"]);
-        
-        if (!empty($correo) && !empty($ci) && !empty($contrasena)) {
-            $this->usuario->correo = $correo;
-            $this->usuario->ci = $ci;
-            $this->usuario->contrasena = $contrasena;
-            
-            if ($this->usuario->create()) {
-                http_response_code(201);
-                echo json_encode(["message"=> "Usuario creado exitosamente"]);
-            } else {
-                http_response_code(503);
-                echo json_encode(["message"=> "Usuario no creado"]);
-            }
-            
-        } else {
+   public function create(){
+    $data = json_decode(file_get_contents("php://input"));
+
+    if (!empty($data->correo) && 
+        !empty($data->CI) && 
+        !empty($data->contrasena) &&
+        !empty($data->conf_contrasena)) {
+
+
+        if ($data->contrasena !== $data->conf_contrasena) {
             http_response_code(400);
-            echo json_encode(["message"=> "Datos incompletos"]);
+            echo json_encode([
+                "message" => "Las contraseñas no coinciden"
+            ]);
+            return;
         }
+
+
+        $this->usuario->correo = $data->correo;
+        $this->usuario->ci = $data->CI;
+        $this->usuario->contrasena = $data->contrasena;
+
+
+        if ($this->usuario->create()) {
+            http_response_code(201);
+            echo json_encode([
+                "message"=> "Usuario creado exitosamente"
+            ]);
+        } else {
+            http_response_code(503);
+            echo json_encode([
+                "message"=> "Usuario no creado"
+            ]);
+        }
+
+    } else {
+        http_response_code(400);
+        echo json_encode([
+            "message"=> "Datos incompletos"
+        ]);
     }
+}
 
     public function read(){
         $result = $this->usuario->read();

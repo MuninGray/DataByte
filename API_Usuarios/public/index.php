@@ -1,4 +1,6 @@
 <?php
+header("Content-Type: application/json; charset=UTF-8");
+
 require_once "../sc/UsuarioController.php";
 
 $method = $_SERVER["REQUEST_METHOD"] ?? "GET";
@@ -16,7 +18,6 @@ switch ($method) {
     } else {
         $controller->create();
     }
-
     break;
     case "PUT":
         $controller->update();
