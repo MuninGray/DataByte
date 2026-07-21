@@ -25,7 +25,7 @@ class Vehiculo {
         $this->en_uso = htmlspecialchars(strip_tags(trim($this->en_uso)));
         $this->estado_optivo = htmlspecialchars(strip_tags(trim($this->estado_optivo)));
 
-        $stmt->bind_param("ssss", $this->modelo, $this->matricula, $this->en_uso, $this->estado_optimo);
+        $stmt->bind_param("ssss", $this->modelo, $this->matricula, $this->en_uso, $this->estado_optivo);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -36,7 +36,7 @@ class Vehiculo {
     }
 
     public function read() {
-        $query = "SELECT modelo, matricula, en_uso, estado_optimo FROM `" . $this->table_name . "`";
+        $query = "SELECT modelo, matricula, en_uso, estado_optivo FROM `" . $this->table_name . "`";
         $result = $this->conn->query($query);
         return $result;
     }
