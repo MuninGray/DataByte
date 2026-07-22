@@ -40,51 +40,50 @@ class UsuarioController{
         return "";
     }
 
-    // Crear usuario
-   public function create(){
-    $data = json_decode(file_get_contents("php://input"));
+    public function create() {
+        $data = $this->getPayload();
+        $correo = $this->getInputValue($data, ["correo"]);
+        $ci = $this->getInputValue($data, ["CI", "ci"]);
+        $contrasena = $this->getInputValue($data, ["contrasena"]);
+        $confContrasena = $this->getInputValue($data, ["conf_contrasena"]);
+        $prNom = $this->getInputValue($data, ["PrNom", "prNom"]);
+        $prApel = $this->getInputValue($data, ["PrApel", "prApel"]);
 
-    if (!empty($data->correo) && 
-        !empty($data->CI) && 
-        !empty($data->contrasena) &&
-        !empty($data->conf_contrasena)) {
+        if (!empty($correo) && !empty($ci) && !empty($contrasena) && !empty($confContrasena)) {
+            if ($contrasena !== $confContrasena) {
+                http_response_code(400);
+                echo json_encode([
+                    "message" => "Las contraseñas no coinciden"
+                ]);
+                return;
+            }
 
+            $this->usuario->correo = $correo;
+            $this->usuario->ci = $ci;
+            $this->usuario->contrasena = $contrasena;
+            $this->usuario->PrNom = $prNom;
+            $this->usuario->PrApel = $prApel;
 
-        if ($data->contrasena !== $data->conf_contrasena) {
+            if ($this->usuario->create()) {
+                http_response_code(201);
+                echo json_encode([
+                    "message" => "Usuario creado exitosamente"
+                ]);
+            } else {
+                http_response_code(503);
+                echo json_encode([
+                    "message" => "Usuario no creado"
+                ]);
+            }
+        } else {
             http_response_code(400);
             echo json_encode([
-                "message" => "Las contraseñas no coinciden"
-            ]);
-            return;
-        }
-
-
-        $this->usuario->correo = $data->correo;
-        $this->usuario->ci = $data->CI;
-        $this->usuario->contrasena = $data->contrasena;
-
-
-        if ($this->usuario->create()) {
-            http_response_code(201);
-            echo json_encode([
-                "message"=> "Usuario creado exitosamente"
-            ]);
-        } else {
-            http_response_code(503);
-            echo json_encode([
-                "message"=> "Usuario no creado"
+                "message" => "Datos incompletos"
             ]);
         }
-
-    } else {
-        http_response_code(400);
-        echo json_encode([
-            "message"=> "Datos incompletos"
-        ]);
     }
-}
 
-    public function read(){
+    public function read() {
         $result = $this->usuario->read();
 
         if ($result && $result->num_rows > 0) {
@@ -94,7 +93,11 @@ class UsuarioController{
             while ($row = $result->fetch_assoc()) {
                 $user_item = [
                     "correo" => $row['correo'],
-                    "CI" => $row['ci']
+                    "CI" => $row['ci'],
+                    "PrNom" => $row['PrNom'],
+                    "PrApel" => $row['PrApel'],
+                    "rol" => $row['rol'],
+                    "estado" => $row['estado']
                 ];
                 array_push($users_arr["registros"], $user_item);
             }
@@ -107,32 +110,35 @@ class UsuarioController{
         }
     }
 
-    public function update(){
+    public function update() {
         $data = $this->getPayload();
         $correo = $this->getInputValue($data, ["correo"]);
         $ci = $this->getInputValue($data, ["CI", "ci"]);
         $contrasena = $this->getInputValue($data, ["contrasena"]);
-        
+        $prNom = $this->getInputValue($data, ["PrNom", "prNom"]);
+        $prApel = $this->getInputValue($data, ["PrApel", "prApel"]);
+
         if (!empty($correo) && !empty($ci) && !empty($contrasena)) {
             $this->usuario->correo = $correo;
             $this->usuario->ci = $ci;
             $this->usuario->contrasena = $contrasena;
-            
+            $this->usuario->PrNom = $prNom;
+            $this->usuario->PrApel = $prApel;
+
             if ($this->usuario->update()) {
                 http_response_code(201);
-                echo json_encode(["message"=> "Usuario actualizado exitosamente"]);
+                echo json_encode(["message" => "Usuario actualizado exitosamente"]);
             } else {
                 http_response_code(503);
-                echo json_encode(["message"=> "Usuario no actualizado"]);
+                echo json_encode(["message" => "Usuario no actualizado"]);
             }
-            
         } else {
             http_response_code(400);
-            echo json_encode(["message"=> "Datos incompletos"]);
+            echo json_encode(["message" => "Datos incompletos"]);
         }
     }
 
-    public function delete(){
+    public function delete() {
         $data = $this->getPayload();
         $ci = $this->getInputValue($data, ["CI", "ci"]);
 
@@ -152,44 +158,78 @@ class UsuarioController{
         }
     }
 
-    public function login(){
-    $data = json_decode(file_get_contents("php://input"));
+    public function login() {
+        $data = $this->getPayload();
+        $correo = $this->getInputValue($data, ["correo"]);
+        $contrasena = $this->getInputValue($data, ["contrasena"]);
 
-    if (!empty($data->correo) && !empty($data->contrasena)) {
+        if (!empty($correo) && !empty($contrasena)) {
+            $this->usuario->correo = $correo;
+            $this->usuario->contrasena = $contrasena;
 
-        $this->usuario->correo = $data->correo;
+            $resultado = $this->usuario->login();
 
-        $resultado = $this->usuario->login();
-
-        if ($resultado && $resultado->num_rows > 0) {
-
-            $usuario = $resultado->fetch_assoc();
-
-            if ($usuario["contrasena"] == $data->contrasena) {
+            if ($resultado["success"] === true) {
                 http_response_code(200);
                 echo json_encode([
-                    "message" => "Login correcto"
+                    "message" => $resultado["message"],
+                    "usuario" => $resultado["usuario"]
                 ]);
             } else {
-                http_response_code(401);
+                $statusCode = ($resultado["message"] === "Contraseña incorrecta") ? 401 : 403;
+                http_response_code($statusCode);
                 echo json_encode([
-                    "message" => "Contraseña incorrecta"
+                    "message" => $resultado["message"]
                 ]);
             }
-
         } else {
-            http_response_code(404);
+            http_response_code(400);
             echo json_encode([
-                "message" => "Usuario no encontrado"
+                "message" => "Datos incompletos"
             ]);
         }
-
-    } else {
-        http_response_code(400);
-        echo json_encode([
-            "message" => "Datos incompletos"
-        ]);
     }
-}
+
+    public function asignarRol() {
+        $data = $this->getPayload();
+        $ci = $this->getInputValue($data, ["CI", "ci"]);
+        $rol = $this->getInputValue($data, ["rol"]);
+
+        if (!empty($ci) && !empty($rol)) {
+            $this->usuario->ci = $ci;
+            $this->usuario->rol = $rol;
+
+            if ($this->usuario->asignarRol()) {
+                http_response_code(200);
+                echo json_encode(["message" => "Rol asignado correctamente"]);
+            } else {
+                http_response_code(503);
+                echo json_encode(["message" => "No se pudo asignar el rol"]);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(["message" => "Datos incompletos"]);
+        }
+    }
+
+    public function rechazarUsuario() {
+        $data = $this->getPayload();
+        $ci = $this->getInputValue($data, ["CI", "ci"]);
+
+        if (!empty($ci)) {
+            $this->usuario->ci = $ci;
+
+            if ($this->usuario->rechazarUsuario()) {
+                http_response_code(200);
+                echo json_encode(["message" => "Usuario rechazado correctamente"]);
+            } else {
+                http_response_code(503);
+                echo json_encode(["message" => "No se pudo rechazar el usuario"]);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(["message" => "Datos incompletos"]);
+        }
+    }
 }
 
