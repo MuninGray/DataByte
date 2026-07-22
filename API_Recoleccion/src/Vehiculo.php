@@ -3,10 +3,10 @@
 class Vehiculo {
 
     private $conn;
-    private $table_name = "vehiculos";
+    private $table_name = "Vehiculo";
 
-    public $modelo;
     public $matricula;
+    public $modelo;
     public $en_uso;
     public $estado_optivo;
 
@@ -15,17 +15,17 @@ class Vehiculo {
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (modelo, matricula, en_uso, estado_optivo) VALUES (?, ?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (matricula, modelo, en_uso, estado_optivo) VALUES (?, ?, ?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->modelo = htmlspecialchars(strip_tags(trim($this->modelo)));
         $this->matricula = htmlspecialchars(strip_tags(trim($this->matricula)));
+        $this->modelo = htmlspecialchars(strip_tags(trim($this->modelo)));
         $this->en_uso = htmlspecialchars(strip_tags(trim($this->en_uso)));
         $this->estado_optivo = htmlspecialchars(strip_tags(trim($this->estado_optivo)));
 
-        $stmt->bind_param("ssss", $this->modelo, $this->matricula, $this->en_uso, $this->estado_optivo);
+        $stmt->bind_param("ssss", $this->matricula, $this->modelo, $this->en_uso, $this->estado_optivo);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -36,9 +36,19 @@ class Vehiculo {
     }
 
     public function read() {
-        $query = "SELECT modelo, matricula, en_uso, estado_optivo FROM `" . $this->table_name . "`";
-        $result = $this->conn->query($query);
-        return $result;
+        $query = "SELECT matricula, modelo, en_uso, estado_optivo FROM `" . $this->table_name . "`";
+        $stmt = $this->conn->prepare($query);
+
+        if (!$stmt) return false;
+
+        if ($stmt->execute()) {
+            $result = $stmt->get_result();
+            $stmt->close();
+            return $result;
+        }
+
+        $stmt->close();
+        return false;
     }
 
     public function update() {
@@ -46,8 +56,8 @@ class Vehiculo {
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->modelo = htmlspecialchars(strip_tags(trim($this->modelo)));
         $this->matricula = htmlspecialchars(strip_tags(trim($this->matricula)));
+        $this->modelo = htmlspecialchars(strip_tags(trim($this->modelo)));
         $this->en_uso = htmlspecialchars(strip_tags(trim($this->en_uso)));
         $this->estado_optivo = htmlspecialchars(strip_tags(trim($this->estado_optivo)));
 
