@@ -11,14 +11,18 @@ switch ($method) {
         $controller->read();
         break;
     case "POST":
-    $accion = $_GET["accion"] ?? "";
+        $accion = $_GET["accion"] ?? "";
 
-    if ($accion == "login") {
-        $controller->login();
-    } else {
-        $controller->create();
-    }
-    break;
+        if ($accion == "login") {
+            $controller->login();
+        } elseif ($accion == "asignarRol") {
+            $controller->asignarRol();
+        } elseif ($accion == "rechazarUsuario") {
+            $controller->rechazarUsuario();
+        } else {
+            $controller->create();
+        }
+        break;
     case "PUT":
         $controller->update();
         break;
