@@ -3,7 +3,7 @@
 class Ruta {
 
     private $conn;
-    private $table_name = "rutas";
+    private $table_name = "Ruta";
 
     public $id_ruta;
     public $nom;
@@ -18,10 +18,10 @@ class Ruta {
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->id_ruta = htmlspecialchars(strip_tags(trim($this->id_ruta)));
+        $this->id_ruta = (int) $this->id_ruta;
         $this->nom = htmlspecialchars(strip_tags(trim($this->nom)));
 
-        $stmt->bind_param("ss", $this->id_ruta, $this->nom);
+        $stmt->bind_param("is", $this->id_ruta, $this->nom);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -33,8 +33,18 @@ class Ruta {
 
     public function read() {
         $query = "SELECT id_ruta, nom FROM `" . $this->table_name . "`";
-        $result = $this->conn->query($query);
-        return $result;
+        $stmt = $this->conn->prepare($query);
+
+        if (!$stmt) return false;
+
+        if ($stmt->execute()) {
+            $result = $stmt->get_result();
+            $stmt->close();
+            return $result;
+        }
+
+        $stmt->close();
+        return false;
     }
 
     public function update() {
@@ -42,10 +52,10 @@ class Ruta {
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->id_ruta = htmlspecialchars(strip_tags(trim($this->id_ruta)));
+        $this->id_ruta = (int) $this->id_ruta;
         $this->nom = htmlspecialchars(strip_tags(trim($this->nom)));
 
-        $stmt->bind_param("ss", $this->nom, $this->id_ruta);
+        $stmt->bind_param("si", $this->nom, $this->id_ruta);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -60,8 +70,8 @@ class Ruta {
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->id_ruta = htmlspecialchars(strip_tags(trim($this->id_ruta)));
-        $stmt->bind_param("s", $this->id_ruta);
+        $this->id_ruta = (int) $this->id_ruta;
+        $stmt->bind_param("i", $this->id_ruta);
 
         if ($stmt->execute()) {
             $stmt->close();
