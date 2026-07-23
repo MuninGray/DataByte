@@ -6,34 +6,88 @@
     <title>Sign up page | proyecto</title>
     <link rel="stylesheet" href="LandingPageRegister.css">
 </head>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('formRegistro');
+        const mensaje = document.getElementById('mensajeRegistro');
+
+        if (!form || !mensaje) return;
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const correo = document.getElementById('correo').value.trim();
+            const ci = document.getElementById('CI').value.trim();
+            const contrasena = document.getElementById('contrasena').value.trim();
+            const confContrasena = document.getElementById('conf_contrasena').value.trim();
+
+            if (!correo || !ci || !contrasena || !confContrasena) {
+                mensaje.textContent = 'Completa todos los campos.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            if (contrasena !== confContrasena) {
+                mensaje.textContent = 'Las contraseñas no coinciden.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost/tareas/Proyecto/DataByte/API_Usuarios/public/index.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correo, CI: ci, contrasena, conf_contrasena: confContrasena })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    mensaje.textContent = data.message || 'Usuario creado correctamente.';
+                    mensaje.style.color = 'green';
+                } else {
+                    mensaje.textContent = data.message || 'No se pudo registrar el usuario.';
+                    mensaje.style.color = 'red';
+                }
+            } catch (error) {
+                mensaje.textContent = 'Error de conexión con la API.';
+                mensaje.style.color = 'red';
+            }
+        });
+    });
+</script>
+
 <body>
     <!-- Contenedor para register -->
     <div class="contenedor_register">
 
         <h1>Registrar</h1>
-        <form action="">
+        <form id="formRegistro">
             <!-- Etiqueta de correo para el registrar -->
             <label for="correo">Correo:</label>
-            <input type="text" name="correo" id="correo"><br><br>
+            <input type="email" name="correo" id="correo" required><br><br>
 
             <!-- Etiqueta de Cedula de identidad para el registrar -->
             <label for="CI">CI:</label>
-            <input type="text" name="CI" id="CI"><br><br>
+            <input type="text" name="CI" id="CI" required><br><br>
 
             <!-- Etiqueta de contraseña para el registrar -->
-            <label for="contraseña">Contraseña:</label>
-            <input type="text" name="contraseña" id="contraseña"><br><br>
+            <label for="contrasena">Contraseña:</label>
+            <input type="password" name="contrasena" id="contrasena" required><br><br>
 
             <!-- Etiqueta de confirmar contraseña para el registrar -->
-            <label for="conf_contraseña">Confiramr contraseña:</label>
-            <input type="text" name="conf_contraseña" id="conf_contraseña"><br><br>
+            <label for="conf_contrasena">Confirmar contraseña:</label>
+            <input type="password" name="conf_contrasena" id="conf_contrasena" required><br><br>
+
+            <button type="submit" id="btnRegistrar">Registrar</button>
         </form>
 
-        <!-- Biton para confirmar el registro de usuario -->
-        <a href="LandingPage.html">Registrar</a>
+        <div id="mensajeRegistro" style="margin-top: 10px;"></div>
         <!-- Boton que te redirige a la landing page -->
         <a href="LandingPage.html">Cancelar</a>
 
     </div>
+
 </body>
 </html>

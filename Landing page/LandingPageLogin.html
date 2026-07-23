@@ -6,29 +6,71 @@
     <title>Login page | proyecto</title>
     <link rel="stylesheet" href="LandingPageLogin.css">
 </head>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('formLogin');
+        const mensaje = document.getElementById('mensajeLogin');
+
+        if (!form || !mensaje) return;
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const ci = document.getElementById('CI').value.trim();
+            const contrasena = document.getElementById('contrasena').value.trim();
+
+            if (!ci || !contrasena) {
+                mensaje.textContent = 'Completa CI y contraseña.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost/tareas/Proyecto/DataByte/API_Usuarios/public/index.php?accion=login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ CI: ci, contrasena: contrasena })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    mensaje.textContent = data.message || 'Login correcto.';
+                    mensaje.style.color = 'green';
+                } else {
+                    mensaje.textContent = data.message || 'No se pudo iniciar sesión.';
+                    mensaje.style.color = 'red';
+                }
+            } catch (error) {
+                mensaje.textContent = 'Error de conexión con la API.';
+                mensaje.style.color = 'red';
+            }
+        });
+    });
+</script>
+
 <body>
     <!-- Contenedor para login -->
     <div class="contenedor_login">
 
         <h1>Login</h1>
-        <form action="">
-            <!-- etiqueta de correo para logear -->
-             <label for="correo">Correo:</label>
-            <input type="text" name="correo" id="correo"><br><br>
-
+        <form id="formLogin">
             <!-- Etiqueta de Cedula de identidad para el logear -->
             <label for="CI">CI:</label>
-            <input type="text" name="CI" id="CI"><br><br>
+            <input type="text" name="CI" id="CI" required><br><br>
 
             <!-- Etiqueta de contraseña para el logear -->
-            <label for="contraseña">Contraseña:</label>
-            <input type="text" name="contraseña" id="contraseña"><br><br>
+            <label for="contrasena">Contraseña:</label>
+            <input type="password" name="contrasena" id="contrasena" required><br><br>
+
+            <button type="submit" id="btnLogin">Login</button>
         </form>
 
-        <!-- Biton para confirmar el logeo del usuario -->
-        <a href="LandingPage.html">log-in</log-in></a>
+        <div id="mensajeLogin" style="margin-top: 10px;"></div>
         <!-- Boton que te redirige a la landing page -->
         <a href="LandingPage.html">Cancelar</a>
     </div>
+
 </body>
 </html>

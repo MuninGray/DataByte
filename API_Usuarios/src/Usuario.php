@@ -93,15 +93,15 @@ class Usuario {
     }
 
     public function login() {
-        $query = "SELECT correo, ci, contrasena, PrNom, PrApel, rol, estado FROM `" . $this->table_name . "` WHERE correo = ?";
+        $query = "SELECT correo, ci, contrasena, PrNom, PrApel, rol, estado FROM `" . $this->table_name . "` WHERE ci = ?";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
 
-        $this->correo = htmlspecialchars(strip_tags(trim($this->correo)));
+        $this->ci = htmlspecialchars(strip_tags(trim($this->ci)));
         $this->contrasena = htmlspecialchars(strip_tags(trim($this->contrasena)));
 
-        $stmt->bind_param("s", $this->correo);
+        $stmt->bind_param("s", $this->ci);
         $stmt->execute();
         $result = $stmt->get_result();
         $stmt->close();
