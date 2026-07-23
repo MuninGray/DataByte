@@ -5,7 +5,7 @@ class Database{
 private $host = "localhost";
 private $db_name = "DataByte";
 private $username ="root";
-private $password = "LuciaCarvallo!123";
+private $password = "";
 public $conn;
 
 public function getConnection(){
