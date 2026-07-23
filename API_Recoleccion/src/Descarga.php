@@ -3,33 +3,29 @@
 class Descarga {
 
     private $conn;
-    private $table_name = "Descarga";
+    private $table_name = "descarga";
 
-    public $id_ruta;
     public $matricula;
     public $id_establcmto;
     public $hora;
     public $peso;
-    public $cedula;
 
     public function __construct($db) {
         $this->conn = $db;
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (id_ruta, matricula, id_establcmto, hora, peso, cedula) VALUES (?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (matricula, id_establcmto, hora, peso) VALUES (?, ?, ?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->id_ruta = (int) $this->id_ruta;
         $this->matricula = htmlspecialchars(strip_tags(trim($this->matricula)));
         $this->id_establcmto = (int) $this->id_establcmto;
         $this->hora = htmlspecialchars(strip_tags(trim($this->hora)));
         $this->peso = htmlspecialchars(strip_tags(trim($this->peso)));
-        $this->cedula = htmlspecialchars(strip_tags(trim($this->cedula)));
 
-        $stmt->bind_param("isssss", $this->id_ruta, $this->matricula, $this->id_establcmto, $this->hora, $this->peso, $this->cedula);
+        $stmt->bind_param("siss", $this->matricula, $this->id_establcmto, $this->hora, $this->peso);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -40,7 +36,7 @@ class Descarga {
     }
 
     public function read() {
-        $query = "SELECT id_ruta, matricula, id_establcmto, hora, peso, cedula FROM `" . $this->table_name . "`";
+        $query = "SELECT matricula, id_establcmto, hora, peso FROM `" . $this->table_name . "`";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -56,18 +52,16 @@ class Descarga {
     }
 
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET matricula = ?, id_establcmto = ?, hora = ?, peso = ?, cedula = ? WHERE id_ruta = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET peso = ? WHERE matricula = ? AND id_establcmto = ? AND hora = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->id_ruta = (int) $this->id_ruta;
         $this->matricula = htmlspecialchars(strip_tags(trim($this->matricula)));
         $this->id_establcmto = (int) $this->id_establcmto;
         $this->hora = htmlspecialchars(strip_tags(trim($this->hora)));
         $this->peso = htmlspecialchars(strip_tags(trim($this->peso)));
-        $this->cedula = htmlspecialchars(strip_tags(trim($this->cedula)));
 
-        $stmt->bind_param("sisssi", $this->matricula, $this->id_establcmto, $this->hora, $this->peso, $this->cedula, $this->id_ruta);
+        $stmt->bind_param("ssis", $this->peso, $this->matricula, $this->id_establcmto, $this->hora);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -78,12 +72,15 @@ class Descarga {
     }
 
     public function delete() {
-        $query = "DELETE FROM `" . $this->table_name . "` WHERE id_ruta = ?";
+        $query = "DELETE FROM `" . $this->table_name . "` WHERE matricula = ? AND id_establcmto = ? AND hora = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->id_ruta = (int) $this->id_ruta;
-        $stmt->bind_param("i", $this->id_ruta);
+        $this->matricula = htmlspecialchars(strip_tags(trim($this->matricula)));
+        $this->id_establcmto = (int) $this->id_establcmto;
+        $this->hora = htmlspecialchars(strip_tags(trim($this->hora)));
+
+        $stmt->bind_param("sis", $this->matricula, $this->id_establcmto, $this->hora);
 
         if ($stmt->execute()) {
             $stmt->close();

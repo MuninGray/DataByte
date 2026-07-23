@@ -3,33 +3,41 @@
 class Usuario {
 
     private $conn;
-    private $table_name = "usuarios";
+    private $table_name = "usuario";
 
-    public $correo;
-    public $ci;
-    public $contrasena;
+    public $cedula;
+    public $email;
+    public $pass;
+    public $estado_habil;
     public $PrNom;
     public $PrApel;
     public $rol;
-    public $estado;
+    public $cedula_admin;
+    public $codigo;
+    public $nom_cuadrilla;
+    public $id_establcmto;
 
     public function __construct($db) {
         $this->conn = $db;
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (correo, ci, contrasena, PrNom, PrApel, rol, estado) VALUES (?, ?, ?, ?, ?, NULL, 'PENDIENTE')";
+        $query = "INSERT INTO `" . $this->table_name . "` (cedula, email, pass, estado_habil, PrNom, PrApel, rol, cedula_admin) VALUES (?, ?, ?, 'pendiente', ?, ?, ?, NULL)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->correo = htmlspecialchars(strip_tags(trim($this->correo)));
-        $this->ci = htmlspecialchars(strip_tags(trim($this->ci)));
-        $this->contrasena = htmlspecialchars(strip_tags(trim($this->contrasena)));
+        $this->cedula = (int) $this->cedula;
+        $this->email = htmlspecialchars(strip_tags(trim($this->email)));
+        $this->pass = htmlspecialchars(strip_tags(trim($this->pass)));
         $this->PrNom = htmlspecialchars(strip_tags(trim($this->PrNom ?? "")));
         $this->PrApel = htmlspecialchars(strip_tags(trim($this->PrApel ?? "")));
+        $this->rol = htmlspecialchars(strip_tags(trim($this->rol ?? "usuario")));
+        if ($this->rol === "") {
+            $this->rol = "usuario";
+        }
 
-        $stmt->bind_param("sssss", $this->correo, $this->ci, $this->contrasena, $this->PrNom, $this->PrApel);
+        $stmt->bind_param("isssss", $this->cedula, $this->email, $this->pass, $this->PrNom, $this->PrApel, $this->rol);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -40,7 +48,7 @@ class Usuario {
     }
 
     public function read() {
-        $query = "SELECT correo, ci, PrNom, PrApel, rol, estado FROM `" . $this->table_name . "`";
+        $query = "SELECT cedula, email, PrNom, PrApel, rol, estado_habil, cedula_admin FROM `" . $this->table_name . "`";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -56,17 +64,18 @@ class Usuario {
     }
 
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET correo = ?, ci = ?, contrasena = ?, PrNom = ?, PrApel = ? WHERE ci = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET email = ?, pass = ?, PrNom = ?, PrApel = ?, rol = ? WHERE cedula = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->correo = htmlspecialchars(strip_tags(trim($this->correo)));
-        $this->ci = htmlspecialchars(strip_tags(trim($this->ci)));
-        $this->contrasena = htmlspecialchars(strip_tags(trim($this->contrasena)));
+        $this->email = htmlspecialchars(strip_tags(trim($this->email)));
+        $this->pass = htmlspecialchars(strip_tags(trim($this->pass)));
         $this->PrNom = htmlspecialchars(strip_tags(trim($this->PrNom ?? "")));
         $this->PrApel = htmlspecialchars(strip_tags(trim($this->PrApel ?? "")));
+        $this->rol = htmlspecialchars(strip_tags(trim($this->rol ?? "usuario")));
+        $this->cedula = (int) $this->cedula;
 
-        $stmt->bind_param("ssssss", $this->correo, $this->ci, $this->contrasena, $this->PrNom, $this->PrApel, $this->ci);
+        $stmt->bind_param("sssssi", $this->email, $this->pass, $this->PrNom, $this->PrApel, $this->rol, $this->cedula);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -77,12 +86,12 @@ class Usuario {
     }
 
     public function delete() {
-        $query = "DELETE FROM `" . $this->table_name . "` WHERE ci = ?";
+        $query = "DELETE FROM `" . $this->table_name . "` WHERE cedula = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->ci = htmlspecialchars(strip_tags(trim($this->ci)));
-        $stmt->bind_param("s", $this->ci);
+        $this->cedula = (int) $this->cedula;
+        $stmt->bind_param("i", $this->cedula);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -93,15 +102,15 @@ class Usuario {
     }
 
     public function login() {
-        $query = "SELECT correo, ci, contrasena, PrNom, PrApel, rol, estado FROM `" . $this->table_name . "` WHERE ci = ?";
+        $query = "SELECT cedula, email, pass, PrNom, PrApel, rol, estado_habil FROM `" . $this->table_name . "` WHERE cedula = ?";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
 
-        $this->ci = htmlspecialchars(strip_tags(trim($this->ci)));
-        $this->contrasena = htmlspecialchars(strip_tags(trim($this->contrasena)));
+        $this->cedula = (int) $this->cedula;
+        $this->pass = htmlspecialchars(strip_tags(trim($this->pass)));
 
-        $stmt->bind_param("s", $this->ci);
+        $stmt->bind_param("i", $this->cedula);
         $stmt->execute();
         $result = $stmt->get_result();
         $stmt->close();
@@ -116,7 +125,7 @@ class Usuario {
 
         $usuario = $result->fetch_assoc();
 
-        if ($usuario["contrasena"] !== $this->contrasena) {
+        if ($usuario["pass"] !== $this->pass) {
             return [
                 "success" => false,
                 "message" => "Contraseña incorrecta",
@@ -124,7 +133,7 @@ class Usuario {
             ];
         }
 
-        if ($usuario["estado"] === "PENDIENTE") {
+        if ($usuario["estado_habil"] === "pendiente") {
             return [
                 "success" => false,
                 "message" => "La cuenta aún no fue aprobada por un administrador.",
@@ -132,7 +141,7 @@ class Usuario {
             ];
         }
 
-        if ($usuario["estado"] === "RECHAZADO") {
+        if ($usuario["estado_habil"] === "rechazado") {
             return [
                 "success" => false,
                 "message" => "La solicitud fue rechazada por el administrador.",
@@ -144,30 +153,33 @@ class Usuario {
             "success" => true,
             "message" => "Login correcto",
             "usuario" => [
-                "correo" => $usuario["correo"],
-                "ci" => $usuario["ci"],
+                "cedula" => $usuario["cedula"],
+                "email" => $usuario["email"],
                 "PrNom" => $usuario["PrNom"],
                 "PrApel" => $usuario["PrApel"],
                 "rol" => $usuario["rol"],
-                "estado" => $usuario["estado"]
+                "estado_habil" => $usuario["estado_habil"]
             ]
         ];
     }
 
     public function asignarRol() {
-        $this->ci = htmlspecialchars(strip_tags(trim($this->ci)));
-        $this->rol = htmlspecialchars(strip_tags(trim($this->rol)));
+        $this->cedula = (int) $this->cedula;
+        $this->rol = strtoupper(htmlspecialchars(strip_tags(trim($this->rol ?? ""))));
+        $this->codigo = htmlspecialchars(strip_tags(trim($this->codigo ?? "")));
+        $this->nom_cuadrilla = htmlspecialchars(strip_tags(trim($this->nom_cuadrilla ?? "")));
+        $this->id_establcmto = (int) ($this->id_establcmto ?? 0);
 
         $this->conn->begin_transaction();
 
-        $query = "UPDATE `" . $this->table_name . "` SET rol = ?, estado = 'ACTIVO' WHERE ci = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET rol = ?, estado_habil = 'aprobado' WHERE cedula = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) {
             $this->conn->rollback();
             return false;
         }
 
-        $stmt->bind_param("ss", $this->rol, $this->ci);
+        $stmt->bind_param("si", $this->rol, $this->cedula);
 
         if (!$stmt->execute()) {
             $stmt->close();
@@ -177,36 +189,57 @@ class Usuario {
 
         $stmt->close();
 
-        $tabla = null;
+        $insertQuery = null;
+        $insertParams = [];
+        $insertTypes = "";
+
         if ($this->rol === "INSPECTOR") {
-            $tabla = "Inspector_Municipal";
+            if ($this->codigo === "") {
+                $this->conn->rollback();
+                return false;
+            }
+            $insertQuery = "INSERT INTO `inspector_municipal` (cedula, codigo) VALUES (?, ?)";
+            $insertTypes = "is";
+            $insertParams = [$this->cedula, $this->codigo];
         } elseif ($this->rol === "OPERARIO_CUADRILLA") {
-            $tabla = "Operario_Cuadrilla";
+            if ($this->nom_cuadrilla === "") {
+                $this->conn->rollback();
+                return false;
+            }
+            $insertQuery = "INSERT INTO `operario_cuadrilla` (cedula, nom_cuadrilla) VALUES (?, ?)";
+            $insertTypes = "is";
+            $insertParams = [$this->cedula, $this->nom_cuadrilla];
         } elseif ($this->rol === "OPERARIO_ESTABLECIMIENTO") {
-            $tabla = "Operario_Establcmto";
+            if ($this->id_establcmto <= 0) {
+                $this->conn->rollback();
+                return false;
+            }
+            $insertQuery = "INSERT INTO `operario_establcmto` (cedula, id_establcmto) VALUES (?, ?)";
+            $insertTypes = "ii";
+            $insertParams = [$this->cedula, $this->id_establcmto];
         }
 
-        if ($tabla === null) {
-            $this->conn->rollback();
-            return false;
-        }
+        if ($insertQuery !== null) {
+            $insertStmt = $this->conn->prepare($insertQuery);
+            if (!$insertStmt) {
+                $this->conn->rollback();
+                return false;
+            }
 
-        $insertQuery = "INSERT INTO `" . $tabla . "` (ci) VALUES (?)";
-        $insertStmt = $this->conn->prepare($insertQuery);
-        if (!$insertStmt) {
-            $this->conn->rollback();
-            return false;
-        }
+            if ($insertTypes === "is") {
+                $insertStmt->bind_param($insertTypes, $insertParams[0], $insertParams[1]);
+            } else {
+                $insertStmt->bind_param($insertTypes, $insertParams[0], $insertParams[1]);
+            }
 
-        $insertStmt->bind_param("s", $this->ci);
+            if (!$insertStmt->execute()) {
+                $insertStmt->close();
+                $this->conn->rollback();
+                return false;
+            }
 
-        if (!$insertStmt->execute()) {
             $insertStmt->close();
-            $this->conn->rollback();
-            return false;
         }
-
-        $insertStmt->close();
 
         if (!$this->conn->commit()) {
             $this->conn->rollback();
@@ -217,12 +250,12 @@ class Usuario {
     }
 
     public function rechazarUsuario() {
-        $query = "UPDATE `" . $this->table_name . "` SET estado = 'RECHAZADO' WHERE ci = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET estado_habil = 'rechazado' WHERE cedula = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->ci = htmlspecialchars(strip_tags(trim($this->ci)));
-        $stmt->bind_param("s", $this->ci);
+        $this->cedula = (int) $this->cedula;
+        $stmt->bind_param("i", $this->cedula);
 
         if ($stmt->execute()) {
             $stmt->close();

@@ -36,14 +36,10 @@ class VehiculoController {
     public function create() {
         $data = $this->getPayload();
         $matricula = $this->getInputValue($data, ["matricula"]);
-        $modelo = $this->getInputValue($data, ["modelo"]);
-        $en_uso = $this->getInputValue($data, ["en_uso"]);
         $estado_optivo = $this->getInputValue($data, ["estado_optivo"]);
 
-        if (!empty($matricula) && !empty($modelo) && !empty($en_uso) && !empty($estado_optivo)) {
+        if (!empty($matricula) && !empty($estado_optivo)) {
             $this->vehiculo->matricula = $matricula;
-            $this->vehiculo->modelo = $modelo;
-            $this->vehiculo->en_uso = $en_uso;
             $this->vehiculo->estado_optivo = $estado_optivo;
 
             if ($this->vehiculo->create()) {
@@ -69,8 +65,6 @@ class VehiculoController {
             while ($row = $result->fetch_assoc()) {
                 $vehiculo_item = [
                     "matricula" => $row["matricula"],
-                    "modelo" => $row["modelo"],
-                    "en_uso" => $row["en_uso"],
                     "estado_optivo" => $row["estado_optivo"]
                 ];
                 array_push($vehiculos_arr["registros"], $vehiculo_item);
@@ -87,14 +81,10 @@ class VehiculoController {
     public function update() {
         $data = $this->getPayload();
         $matricula = $this->getInputValue($data, ["matricula"]);
-        $modelo = $this->getInputValue($data, ["modelo"]);
-        $en_uso = $this->getInputValue($data, ["en_uso"]);
         $estado_optivo = $this->getInputValue($data, ["estado_optivo"]);
 
-        if (!empty($matricula) && !empty($modelo) && !empty($en_uso) && !empty($estado_optivo)) {
+        if (!empty($matricula) && !empty($estado_optivo)) {
             $this->vehiculo->matricula = $matricula;
-            $this->vehiculo->modelo = $modelo;
-            $this->vehiculo->en_uso = $en_uso;
             $this->vehiculo->estado_optivo = $estado_optivo;
 
             if ($this->vehiculo->update()) {

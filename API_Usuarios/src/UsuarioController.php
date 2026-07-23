@@ -3,11 +3,11 @@
 require_once "../config/database.php";
 require_once "Usuario.php";
 
-class UsuarioController{
+class UsuarioController {
     private $db;
     private $usuario;
 
-    public function __construct(){
+    public function __construct() {
         $database = new Database();
         $this->db = $database->getConnection();
         $this->usuario = new Usuario($this->db);
@@ -42,15 +42,16 @@ class UsuarioController{
 
     public function create() {
         $data = $this->getPayload();
-        $correo = $this->getInputValue($data, ["correo"]);
-        $ci = $this->getInputValue($data, ["CI", "ci"]);
-        $contrasena = $this->getInputValue($data, ["contrasena"]);
-        $confContrasena = $this->getInputValue($data, ["conf_contrasena"]);
+        $email = $this->getInputValue($data, ["correo", "email"]);
+        $cedula = $this->getInputValue($data, ["CI", "ci", "cedula"]);
+        $pass = $this->getInputValue($data, ["contrasena", "pass"]);
+        $confPass = $this->getInputValue($data, ["conf_contrasena", "confirmar_contrasena"]);
         $prNom = $this->getInputValue($data, ["PrNom", "prNom"]);
         $prApel = $this->getInputValue($data, ["PrApel", "prApel"]);
+        $rol = $this->getInputValue($data, ["rol"]);
 
-        if (!empty($correo) && !empty($ci) && !empty($contrasena) && !empty($confContrasena)) {
-            if ($contrasena !== $confContrasena) {
+        if (!empty($email) && !empty($cedula) && !empty($pass) && !empty($confPass)) {
+            if ($pass !== $confPass) {
                 http_response_code(400);
                 echo json_encode([
                     "message" => "Las contraseñas no coinciden"
@@ -58,11 +59,12 @@ class UsuarioController{
                 return;
             }
 
-            $this->usuario->correo = $correo;
-            $this->usuario->ci = $ci;
-            $this->usuario->contrasena = $contrasena;
+            $this->usuario->email = $email;
+            $this->usuario->cedula = (int) $cedula;
+            $this->usuario->pass = $pass;
             $this->usuario->PrNom = $prNom;
             $this->usuario->PrApel = $prApel;
+            $this->usuario->rol = !empty($rol) ? $rol : "usuario";
 
             if ($this->usuario->create()) {
                 http_response_code(201);
@@ -92,12 +94,12 @@ class UsuarioController{
 
             while ($row = $result->fetch_assoc()) {
                 $user_item = [
-                    "correo" => $row['correo'],
-                    "CI" => $row['ci'],
+                    "email" => $row['email'],
+                    "cedula" => $row['cedula'],
                     "PrNom" => $row['PrNom'],
                     "PrApel" => $row['PrApel'],
                     "rol" => $row['rol'],
-                    "estado" => $row['estado']
+                    "estado_habil" => $row['estado_habil']
                 ];
                 array_push($users_arr["registros"], $user_item);
             }
@@ -112,18 +114,20 @@ class UsuarioController{
 
     public function update() {
         $data = $this->getPayload();
-        $correo = $this->getInputValue($data, ["correo"]);
-        $ci = $this->getInputValue($data, ["CI", "ci"]);
-        $contrasena = $this->getInputValue($data, ["contrasena"]);
+        $email = $this->getInputValue($data, ["correo", "email"]);
+        $cedula = $this->getInputValue($data, ["CI", "ci", "cedula"]);
+        $pass = $this->getInputValue($data, ["contrasena", "pass"]);
         $prNom = $this->getInputValue($data, ["PrNom", "prNom"]);
         $prApel = $this->getInputValue($data, ["PrApel", "prApel"]);
+        $rol = $this->getInputValue($data, ["rol"]);
 
-        if (!empty($correo) && !empty($ci) && !empty($contrasena)) {
-            $this->usuario->correo = $correo;
-            $this->usuario->ci = $ci;
-            $this->usuario->contrasena = $contrasena;
+        if (!empty($email) && !empty($cedula) && !empty($pass)) {
+            $this->usuario->email = $email;
+            $this->usuario->cedula = (int) $cedula;
+            $this->usuario->pass = $pass;
             $this->usuario->PrNom = $prNom;
             $this->usuario->PrApel = $prApel;
+            $this->usuario->rol = !empty($rol) ? $rol : "usuario";
 
             if ($this->usuario->update()) {
                 http_response_code(201);
@@ -140,10 +144,10 @@ class UsuarioController{
 
     public function delete() {
         $data = $this->getPayload();
-        $ci = $this->getInputValue($data, ["CI", "ci"]);
+        $cedula = $this->getInputValue($data, ["CI", "ci", "cedula"]);
 
-        if (!empty($ci)) {
-            $this->usuario->ci = $ci;
+        if (!empty($cedula)) {
+            $this->usuario->cedula = (int) $cedula;
 
             if ($this->usuario->delete()) {
                 http_response_code(200);
@@ -160,12 +164,12 @@ class UsuarioController{
 
     public function login() {
         $data = $this->getPayload();
-        $ci = $this->getInputValue($data, ["CI", "ci"]);
-        $contrasena = $this->getInputValue($data, ["contrasena"]);
+        $cedula = $this->getInputValue($data, ["CI", "ci", "cedula"]);
+        $pass = $this->getInputValue($data, ["contrasena", "pass"]);
 
-        if (!empty($ci) && !empty($contrasena)) {
-            $this->usuario->ci = $ci;
-            $this->usuario->contrasena = $contrasena;
+        if (!empty($cedula) && !empty($pass)) {
+            $this->usuario->cedula = (int) $cedula;
+            $this->usuario->pass = $pass;
 
             $resultado = $this->usuario->login();
 
@@ -192,12 +196,18 @@ class UsuarioController{
 
     public function asignarRol() {
         $data = $this->getPayload();
-        $ci = $this->getInputValue($data, ["CI", "ci"]);
+        $cedula = $this->getInputValue($data, ["CI", "ci", "cedula"]);
         $rol = $this->getInputValue($data, ["rol"]);
+        $codigo = $this->getInputValue($data, ["codigo"]);
+        $nom_cuadrilla = $this->getInputValue($data, ["nom_cuadrilla"]);
+        $id_establcmto = $this->getInputValue($data, ["id_establcmto"]);
 
-        if (!empty($ci) && !empty($rol)) {
-            $this->usuario->ci = $ci;
+        if (!empty($cedula) && !empty($rol)) {
+            $this->usuario->cedula = (int) $cedula;
             $this->usuario->rol = $rol;
+            $this->usuario->codigo = $codigo;
+            $this->usuario->nom_cuadrilla = $nom_cuadrilla;
+            $this->usuario->id_establcmto = (int) $id_establcmto;
 
             if ($this->usuario->asignarRol()) {
                 http_response_code(200);
@@ -214,10 +224,10 @@ class UsuarioController{
 
     public function rechazarUsuario() {
         $data = $this->getPayload();
-        $ci = $this->getInputValue($data, ["CI", "ci"]);
+        $cedula = $this->getInputValue($data, ["CI", "ci", "cedula"]);
 
-        if (!empty($ci)) {
-            $this->usuario->ci = $ci;
+        if (!empty($cedula)) {
+            $this->usuario->cedula = (int) $cedula;
 
             if ($this->usuario->rechazarUsuario()) {
                 http_response_code(200);

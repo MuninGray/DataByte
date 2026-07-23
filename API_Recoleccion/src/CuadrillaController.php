@@ -37,12 +37,10 @@ class CuadrillaController {
         $data = $this->getPayload();
         $nom_cuadrilla = $this->getInputValue($data, ["nom_cuadrilla"]);
         $cedula_inspector = $this->getInputValue($data, ["cedula_inspector"]);
-        $estado = $this->getInputValue($data, ["estado"]);
 
-        if (!empty($nom_cuadrilla) && !empty($cedula_inspector) && !empty($estado)) {
+        if (!empty($nom_cuadrilla) && !empty($cedula_inspector)) {
             $this->cuadrilla->nom_cuadrilla = $nom_cuadrilla;
-            $this->cuadrilla->cedula_inspector = $cedula_inspector;
-            $this->cuadrilla->estado = $estado;
+            $this->cuadrilla->cedula_inspector = (int) $cedula_inspector;
 
             if ($this->cuadrilla->create()) {
                 http_response_code(201);
@@ -67,8 +65,7 @@ class CuadrillaController {
             while ($row = $result->fetch_assoc()) {
                 $cuadrilla_item = [
                     "nom_cuadrilla" => $row["nom_cuadrilla"],
-                    "cedula_inspector" => $row["cedula_inspector"],
-                    "estado" => $row["estado"]
+                    "cedula_inspector" => $row["cedula_inspector"]
                 ];
                 array_push($cuadrillas_arr["registros"], $cuadrilla_item);
             }
@@ -85,12 +82,10 @@ class CuadrillaController {
         $data = $this->getPayload();
         $nom_cuadrilla = $this->getInputValue($data, ["nom_cuadrilla"]);
         $cedula_inspector = $this->getInputValue($data, ["cedula_inspector"]);
-        $estado = $this->getInputValue($data, ["estado"]);
 
-        if (!empty($nom_cuadrilla) && !empty($cedula_inspector) && !empty($estado)) {
+        if (!empty($nom_cuadrilla) && !empty($cedula_inspector)) {
             $this->cuadrilla->nom_cuadrilla = $nom_cuadrilla;
-            $this->cuadrilla->cedula_inspector = $cedula_inspector;
-            $this->cuadrilla->estado = $estado;
+            $this->cuadrilla->cedula_inspector = (int) $cedula_inspector;
 
             if ($this->cuadrilla->update()) {
                 http_response_code(200);

@@ -3,7 +3,7 @@
 class Maquinaria {
 
     private $conn;
-    private $table_name = "Maquinaria";
+    private $table_name = "maquinaria";
 
     public $id_maquinaria;
     public $nombre;
@@ -23,10 +23,10 @@ class Maquinaria {
 
         $this->id_maquinaria = (int) $this->id_maquinaria;
         $this->nombre = htmlspecialchars(strip_tags(trim($this->nombre)));
-        $this->en_uso = htmlspecialchars(strip_tags(trim($this->en_uso)));
+        $this->en_uso = (int) $this->en_uso;
         $this->id_establcmto = (int) $this->id_establcmto;
 
-        $stmt->bind_param("issi", $this->id_maquinaria, $this->nombre, $this->en_uso, $this->id_establcmto);
+        $stmt->bind_param("isii", $this->id_maquinaria, $this->nombre, $this->en_uso, $this->id_establcmto);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -81,10 +81,10 @@ class Maquinaria {
 
         $this->id_maquinaria = (int) $this->id_maquinaria;
         $this->nombre = htmlspecialchars(strip_tags(trim($this->nombre)));
-        $this->en_uso = htmlspecialchars(strip_tags(trim($this->en_uso)));
+        $this->en_uso = (int) $this->en_uso;
         $this->id_establcmto = (int) $this->id_establcmto;
 
-        $stmt->bind_param("ssii", $this->nombre, $this->en_uso, $this->id_establcmto, $this->id_maquinaria);
+        $stmt->bind_param("siii", $this->nombre, $this->en_uso, $this->id_establcmto, $this->id_maquinaria);
 
         if ($stmt->execute()) {
             $stmt->close();

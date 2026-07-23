@@ -41,20 +41,16 @@ class IncidenciaController {
         $estado = $this->getInputValue($data, ["estado"]);
         $fch_apert = $this->getInputValue($data, ["fch_apert"]);
         $fch_resol = $this->getInputValue($data, ["fch_resol"]);
-        $tmp_resol = $this->getInputValue($data, ["tmp_resol"]);
         $nom_cuadrilla = $this->getInputValue($data, ["nom_cuadrilla"]);
-        $cedula = $this->getInputValue($data, ["cedula"]);
 
-        if (!empty($id_incidencia) && !empty($id_contdor) && !empty($tipo) && !empty($estado) && !empty($fch_apert) && !empty($nom_cuadrilla) && !empty($cedula)) {
+        if (!empty($id_incidencia) && !empty($id_contdor) && !empty($tipo) && !empty($estado) && !empty($fch_apert)) {
             $this->incidencia->id_incidencia = (int) $id_incidencia;
-            $this->incidencia->id_contdor = $id_contdor;
+            $this->incidencia->id_contdor = (int) $id_contdor;
             $this->incidencia->tipo = $tipo;
             $this->incidencia->estado = $estado;
             $this->incidencia->fch_apert = $fch_apert;
-            $this->incidencia->fch_resol = $fch_resol;
-            $this->incidencia->tmp_resol = $tmp_resol;
-            $this->incidencia->nom_cuadrilla = $nom_cuadrilla;
-            $this->incidencia->cedula = $cedula;
+            $this->incidencia->fch_resol = $fch_resol !== "" ? $fch_resol : null;
+            $this->incidencia->nom_cuadrilla = $nom_cuadrilla !== "" ? $nom_cuadrilla : null;
 
             if ($this->incidencia->create()) {
                 http_response_code(201);
@@ -84,9 +80,7 @@ class IncidenciaController {
                     "estado" => $row["estado"],
                     "fch_apert" => $row["fch_apert"],
                     "fch_resol" => $row["fch_resol"],
-                    "tmp_resol" => $row["tmp_resol"],
-                    "nom_cuadrilla" => $row["nom_cuadrilla"],
-                    "cedula" => $row["cedula"]
+                    "nom_cuadrilla" => $row["nom_cuadrilla"]
                 ];
                 array_push($incidencias_arr["registros"], $incidencia_item);
             }
@@ -107,20 +101,16 @@ class IncidenciaController {
         $estado = $this->getInputValue($data, ["estado"]);
         $fch_apert = $this->getInputValue($data, ["fch_apert"]);
         $fch_resol = $this->getInputValue($data, ["fch_resol"]);
-        $tmp_resol = $this->getInputValue($data, ["tmp_resol"]);
         $nom_cuadrilla = $this->getInputValue($data, ["nom_cuadrilla"]);
-        $cedula = $this->getInputValue($data, ["cedula"]);
 
-        if (!empty($id_incidencia) && !empty($id_contdor) && !empty($tipo) && !empty($estado) && !empty($fch_apert) && !empty($nom_cuadrilla) && !empty($cedula)) {
+        if (!empty($id_incidencia) && !empty($id_contdor) && !empty($tipo) && !empty($estado) && !empty($fch_apert)) {
             $this->incidencia->id_incidencia = (int) $id_incidencia;
-            $this->incidencia->id_contdor = $id_contdor;
+            $this->incidencia->id_contdor = (int) $id_contdor;
             $this->incidencia->tipo = $tipo;
             $this->incidencia->estado = $estado;
             $this->incidencia->fch_apert = $fch_apert;
-            $this->incidencia->fch_resol = $fch_resol;
-            $this->incidencia->tmp_resol = $tmp_resol;
-            $this->incidencia->nom_cuadrilla = $nom_cuadrilla;
-            $this->incidencia->cedula = $cedula;
+            $this->incidencia->fch_resol = $fch_resol !== "" ? $fch_resol : null;
+            $this->incidencia->nom_cuadrilla = $nom_cuadrilla !== "" ? $nom_cuadrilla : null;
 
             if ($this->incidencia->update()) {
                 http_response_code(200);
@@ -138,9 +128,11 @@ class IncidenciaController {
     public function delete() {
         $data = $this->getPayload();
         $id_incidencia = $this->getInputValue($data, ["id_incidencia"]);
+        $id_contdor = $this->getInputValue($data, ["id_contdor"]);
 
-        if (!empty($id_incidencia)) {
+        if (!empty($id_incidencia) && !empty($id_contdor)) {
             $this->incidencia->id_incidencia = (int) $id_incidencia;
+            $this->incidencia->id_contdor = (int) $id_contdor;
 
             if ($this->incidencia->delete()) {
                 http_response_code(200);
@@ -151,7 +143,7 @@ class IncidenciaController {
             }
         } else {
             http_response_code(400);
-            echo json_encode(["message" => "ID de incidencia requerido"]);
+            echo json_encode(["message" => "ID de incidencia y código de contenedor requeridos"]);
         }
     }
 }

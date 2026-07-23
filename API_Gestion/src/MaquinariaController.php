@@ -48,7 +48,7 @@ class MaquinariaController {
         $id_establcmto = $this->getInputValue($data, ["id_establcmto"]);
 
         if (!empty($id_maquinaria) && !empty($nombre) && !empty($en_uso) && !empty($id_establcmto)) {
-            $check = $this->db->prepare("SELECT id_establcmto FROM Establecimiento WHERE id_establcmto = ?");
+            $check = $this->db->prepare("SELECT id_establcmto FROM establecimiento WHERE id_establcmto = ?");
             $check->bind_param("i", $id_establcmto);
             $check->execute();
             $result = $check->get_result();
@@ -135,7 +135,7 @@ class MaquinariaController {
         $id_establcmto = $this->getInputValue($data, ["id_establcmto"]);
 
         if (!empty($id_maquinaria) && !empty($nombre) && !empty($en_uso) && !empty($id_establcmto)) {
-            $checkEst = $this->db->prepare("SELECT id_establcmto FROM Establecimiento WHERE id_establcmto = ?");
+            $checkEst = $this->db->prepare("SELECT id_establcmto FROM establecimiento WHERE id_establcmto = ?");
             $checkEst->bind_param("i", $id_establcmto);
             $checkEst->execute();
             $resultEst = $checkEst->get_result();

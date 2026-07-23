@@ -3,7 +3,7 @@
 class Incidencia {
 
     private $conn;
-    private $table_name = "Incidencia";
+    private $table_name = "incidencia";
 
     public $id_incidencia;
     public $id_contdor;
@@ -11,31 +11,34 @@ class Incidencia {
     public $estado;
     public $fch_apert;
     public $fch_resol;
-    public $tmp_resol;
     public $nom_cuadrilla;
-    public $cedula;
 
     public function __construct($db) {
         $this->conn = $db;
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (id_incidencia, id_contdor, tipo, estado, fch_apert, fch_resol, tmp_resol, nom_cuadrilla, cedula) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (id_incidencia, id_contdor, tipo, estado, fch_apert, fch_resol, nom_cuadrilla) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
         $this->id_incidencia = (int) $this->id_incidencia;
-        $this->id_contdor = htmlspecialchars(strip_tags(trim($this->id_contdor)));
+        $this->id_contdor = (int) $this->id_contdor;
         $this->tipo = htmlspecialchars(strip_tags(trim($this->tipo)));
         $this->estado = htmlspecialchars(strip_tags(trim($this->estado)));
         $this->fch_apert = htmlspecialchars(strip_tags(trim($this->fch_apert)));
-        $this->fch_resol = htmlspecialchars(strip_tags(trim($this->fch_resol)));
-        $this->tmp_resol = htmlspecialchars(strip_tags(trim($this->tmp_resol)));
-        $this->nom_cuadrilla = htmlspecialchars(strip_tags(trim($this->nom_cuadrilla)));
-        $this->cedula = htmlspecialchars(strip_tags(trim($this->cedula)));
+        $this->fch_resol = $this->fch_resol !== null ? htmlspecialchars(strip_tags(trim($this->fch_resol))) : null;
+        $this->nom_cuadrilla = $this->nom_cuadrilla !== null ? htmlspecialchars(strip_tags(trim($this->nom_cuadrilla))) : null;
 
-        $stmt->bind_param("issssssss", $this->id_incidencia, $this->id_contdor, $this->tipo, $this->estado, $this->fch_apert, $this->fch_resol, $this->tmp_resol, $this->nom_cuadrilla, $this->cedula);
+        if ($this->fch_resol === "") {
+            $this->fch_resol = null;
+        }
+        if ($this->nom_cuadrilla === "") {
+            $this->nom_cuadrilla = null;
+        }
+
+        $stmt->bind_param("iisssss", $this->id_incidencia, $this->id_contdor, $this->tipo, $this->estado, $this->fch_apert, $this->fch_resol, $this->nom_cuadrilla);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -46,7 +49,7 @@ class Incidencia {
     }
 
     public function read() {
-        $query = "SELECT id_incidencia, id_contdor, tipo, estado, fch_apert, fch_resol, tmp_resol, nom_cuadrilla, cedula FROM `" . $this->table_name . "`";
+        $query = "SELECT id_incidencia, id_contdor, tipo, estado, fch_apert, fch_resol, nom_cuadrilla FROM `" . $this->table_name . "`";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -62,21 +65,26 @@ class Incidencia {
     }
 
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET id_contdor = ?, tipo = ?, estado = ?, fch_apert = ?, fch_resol = ?, tmp_resol = ?, nom_cuadrilla = ?, cedula = ? WHERE id_incidencia = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET id_contdor = ?, tipo = ?, estado = ?, fch_apert = ?, fch_resol = ?, nom_cuadrilla = ? WHERE id_incidencia = ? AND id_contdor = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
         $this->id_incidencia = (int) $this->id_incidencia;
-        $this->id_contdor = htmlspecialchars(strip_tags(trim($this->id_contdor)));
+        $this->id_contdor = (int) $this->id_contdor;
         $this->tipo = htmlspecialchars(strip_tags(trim($this->tipo)));
         $this->estado = htmlspecialchars(strip_tags(trim($this->estado)));
         $this->fch_apert = htmlspecialchars(strip_tags(trim($this->fch_apert)));
-        $this->fch_resol = htmlspecialchars(strip_tags(trim($this->fch_resol)));
-        $this->tmp_resol = htmlspecialchars(strip_tags(trim($this->tmp_resol)));
-        $this->nom_cuadrilla = htmlspecialchars(strip_tags(trim($this->nom_cuadrilla)));
-        $this->cedula = htmlspecialchars(strip_tags(trim($this->cedula)));
+        $this->fch_resol = $this->fch_resol !== null ? htmlspecialchars(strip_tags(trim($this->fch_resol))) : null;
+        $this->nom_cuadrilla = $this->nom_cuadrilla !== null ? htmlspecialchars(strip_tags(trim($this->nom_cuadrilla))) : null;
 
-        $stmt->bind_param("ssssssssi", $this->id_contdor, $this->tipo, $this->estado, $this->fch_apert, $this->fch_resol, $this->tmp_resol, $this->nom_cuadrilla, $this->cedula, $this->id_incidencia);
+        if ($this->fch_resol === "") {
+            $this->fch_resol = null;
+        }
+        if ($this->nom_cuadrilla === "") {
+            $this->nom_cuadrilla = null;
+        }
+
+        $stmt->bind_param("issssssi", $this->id_contdor, $this->tipo, $this->estado, $this->fch_apert, $this->fch_resol, $this->nom_cuadrilla, $this->id_incidencia, $this->id_contdor);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -87,12 +95,13 @@ class Incidencia {
     }
 
     public function delete() {
-        $query = "DELETE FROM `" . $this->table_name . "` WHERE id_incidencia = ?";
+        $query = "DELETE FROM `" . $this->table_name . "` WHERE id_incidencia = ? AND id_contdor = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
         $this->id_incidencia = (int) $this->id_incidencia;
-        $stmt->bind_param("i", $this->id_incidencia);
+        $this->id_contdor = (int) $this->id_contdor;
+        $stmt->bind_param("ii", $this->id_incidencia, $this->id_contdor);
 
         if ($stmt->execute()) {
             $stmt->close();

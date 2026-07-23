@@ -3,27 +3,25 @@
 class Cuadrilla {
 
     private $conn;
-    private $table_name = "Cuadrilla";
+    private $table_name = "cuadrilla";
 
     public $nom_cuadrilla;
     public $cedula_inspector;
-    public $estado;
 
     public function __construct($db) {
         $this->conn = $db;
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (nom_cuadrilla, cedula_inspector, estado) VALUES (?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (nom_cuadrilla, cedula_inspector) VALUES (?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
         $this->nom_cuadrilla = htmlspecialchars(strip_tags(trim($this->nom_cuadrilla)));
-        $this->cedula_inspector = htmlspecialchars(strip_tags(trim($this->cedula_inspector)));
-        $this->estado = htmlspecialchars(strip_tags(trim($this->estado)));
+        $this->cedula_inspector = (int) $this->cedula_inspector;
 
-        $stmt->bind_param("sss", $this->nom_cuadrilla, $this->cedula_inspector, $this->estado);
+        $stmt->bind_param("si", $this->nom_cuadrilla, $this->cedula_inspector);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -34,7 +32,7 @@ class Cuadrilla {
     }
 
     public function read() {
-        $query = "SELECT nom_cuadrilla, cedula_inspector, estado FROM `" . $this->table_name . "`";
+        $query = "SELECT nom_cuadrilla, cedula_inspector FROM `" . $this->table_name . "`";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -50,15 +48,14 @@ class Cuadrilla {
     }
 
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET cedula_inspector = ?, estado = ? WHERE nom_cuadrilla = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET cedula_inspector = ? WHERE nom_cuadrilla = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
         $this->nom_cuadrilla = htmlspecialchars(strip_tags(trim($this->nom_cuadrilla)));
-        $this->cedula_inspector = htmlspecialchars(strip_tags(trim($this->cedula_inspector)));
-        $this->estado = htmlspecialchars(strip_tags(trim($this->estado)));
+        $this->cedula_inspector = (int) $this->cedula_inspector;
 
-        $stmt->bind_param("sss", $this->cedula_inspector, $this->estado, $this->nom_cuadrilla);
+        $stmt->bind_param("is", $this->cedula_inspector, $this->nom_cuadrilla);
 
         if ($stmt->execute()) {
             $stmt->close();

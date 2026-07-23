@@ -35,20 +35,16 @@ class DescargaController {
 
     public function create() {
         $data = $this->getPayload();
-        $id_ruta = $this->getInputValue($data, ["id_ruta"]);
         $matricula = $this->getInputValue($data, ["matricula"]);
         $id_establcmto = $this->getInputValue($data, ["id_establcmto"]);
         $hora = $this->getInputValue($data, ["hora"]);
         $peso = $this->getInputValue($data, ["peso"]);
-        $cedula = $this->getInputValue($data, ["cedula"]);
 
-        if (!empty($id_ruta) && !empty($matricula) && !empty($id_establcmto) && !empty($hora) && !empty($peso) && !empty($cedula)) {
-            $this->descarga->id_ruta = (int) $id_ruta;
+        if (!empty($matricula) && !empty($id_establcmto) && !empty($hora) && !empty($peso)) {
             $this->descarga->matricula = $matricula;
             $this->descarga->id_establcmto = (int) $id_establcmto;
             $this->descarga->hora = $hora;
             $this->descarga->peso = $peso;
-            $this->descarga->cedula = $cedula;
 
             if ($this->descarga->create()) {
                 http_response_code(201);
@@ -72,12 +68,10 @@ class DescargaController {
 
             while ($row = $result->fetch_assoc()) {
                 $descarga_item = [
-                    "id_ruta" => $row["id_ruta"],
                     "matricula" => $row["matricula"],
                     "id_establcmto" => $row["id_establcmto"],
                     "hora" => $row["hora"],
-                    "peso" => $row["peso"],
-                    "cedula" => $row["cedula"]
+                    "peso" => $row["peso"]
                 ];
                 array_push($descargas_arr["registros"], $descarga_item);
             }
@@ -92,20 +86,16 @@ class DescargaController {
 
     public function update() {
         $data = $this->getPayload();
-        $id_ruta = $this->getInputValue($data, ["id_ruta"]);
         $matricula = $this->getInputValue($data, ["matricula"]);
         $id_establcmto = $this->getInputValue($data, ["id_establcmto"]);
         $hora = $this->getInputValue($data, ["hora"]);
         $peso = $this->getInputValue($data, ["peso"]);
-        $cedula = $this->getInputValue($data, ["cedula"]);
 
-        if (!empty($id_ruta) && !empty($matricula) && !empty($id_establcmto) && !empty($hora) && !empty($peso) && !empty($cedula)) {
-            $this->descarga->id_ruta = (int) $id_ruta;
+        if (!empty($matricula) && !empty($id_establcmto) && !empty($hora) && !empty($peso)) {
             $this->descarga->matricula = $matricula;
             $this->descarga->id_establcmto = (int) $id_establcmto;
             $this->descarga->hora = $hora;
             $this->descarga->peso = $peso;
-            $this->descarga->cedula = $cedula;
 
             if ($this->descarga->update()) {
                 http_response_code(200);
@@ -122,10 +112,14 @@ class DescargaController {
 
     public function delete() {
         $data = $this->getPayload();
-        $id_ruta = $this->getInputValue($data, ["id_ruta"]);
+        $matricula = $this->getInputValue($data, ["matricula"]);
+        $id_establcmto = $this->getInputValue($data, ["id_establcmto"]);
+        $hora = $this->getInputValue($data, ["hora"]);
 
-        if (!empty($id_ruta)) {
-            $this->descarga->id_ruta = (int) $id_ruta;
+        if (!empty($matricula) && !empty($id_establcmto) && !empty($hora)) {
+            $this->descarga->matricula = $matricula;
+            $this->descarga->id_establcmto = (int) $id_establcmto;
+            $this->descarga->hora = $hora;
 
             if ($this->descarga->delete()) {
                 http_response_code(200);
@@ -136,7 +130,7 @@ class DescargaController {
             }
         } else {
             http_response_code(400);
-            echo json_encode(["message" => "ID de ruta requerido"]);
+            echo json_encode(["message" => "Datos incompletos"]);
         }
     }
 }

@@ -2,20 +2,17 @@
 require_once "../config/database.php";
 require_once "Ruta.php";
 require_once "Vehiculo.php";
-require_once "Cuadrilla.php";
 
 class RutaController {
     private $db;
     private $ruta;
     private $vehiculo;
-    private $cuadrilla;
 
     public function __construct() {
         $database = new Database();
         $this->db = $database->getConnection();
         $this->ruta = new Ruta($this->db);
         $this->vehiculo = new Vehiculo($this->db);
-        $this->cuadrilla = new Cuadrilla($this->db);
     }
 
     private function getPayload() {
@@ -130,13 +127,12 @@ class RutaController {
         $data = $this->getPayload();
         $id_ruta = $this->getInputValue($data, ["id_ruta"]);
         $matricula = $this->getInputValue($data, ["matricula"]);
-        $nom_cuadrilla = $this->getInputValue($data, ["nom_cuadrilla"]);
-        $fecha = $this->getInputValue($data, ["fecha"]);
+        $fech = $this->getInputValue($data, ["fech", "fecha"]);
 
-        if (!empty($id_ruta) && !empty($matricula) && !empty($nom_cuadrilla) && !empty($fecha)) {
+        if (!empty($id_ruta) && !empty($matricula) && !empty($fech)) {
             $id_ruta_int = (int) $id_ruta;
 
-            $queryRuta = "SELECT id_ruta FROM `Ruta` WHERE id_ruta = ?";
+            $queryRuta = "SELECT id_ruta FROM `ruta` WHERE id_ruta = ?";
             $stmtRuta = $this->db->prepare($queryRuta);
             $stmtRuta->bind_param("i", $id_ruta_int);
             $stmtRuta->execute();
@@ -149,7 +145,7 @@ class RutaController {
                 return;
             }
 
-            $queryVehiculo = "SELECT matricula FROM `Vehiculo` WHERE matricula = ?";
+            $queryVehiculo = "SELECT matricula FROM `vehiculo` WHERE matricula = ?";
             $stmtVehiculo = $this->db->prepare($queryVehiculo);
             $stmtVehiculo->bind_param("s", $matricula);
             $stmtVehiculo->execute();
@@ -162,22 +158,9 @@ class RutaController {
                 return;
             }
 
-            $queryCuadrilla = "SELECT nom_cuadrilla FROM `Cuadrilla` WHERE nom_cuadrilla = ?";
-            $stmtCuadrilla = $this->db->prepare($queryCuadrilla);
-            $stmtCuadrilla->bind_param("s", $nom_cuadrilla);
-            $stmtCuadrilla->execute();
-            $resultCuadrilla = $stmtCuadrilla->get_result();
-            $stmtCuadrilla->close();
-
-            if ($resultCuadrilla->num_rows === 0) {
-                http_response_code(404);
-                echo json_encode(["message" => "La cuadrilla no existe"]);
-                return;
-            }
-
-            $queryInsert = "INSERT INTO `Recorre` (id_ruta, matricula, nom_cuadrilla, fecha) VALUES (?, ?, ?, ?)";
+            $queryInsert = "INSERT INTO `asigna` (id_ruta, matricula, fech) VALUES (?, ?, ?)";
             $stmtInsert = $this->db->prepare($queryInsert);
-            $stmtInsert->bind_param("isss", $id_ruta_int, $matricula, $nom_cuadrilla, $fecha);
+            $stmtInsert->bind_param("iss", $id_ruta_int, $matricula, $fech);
 
             if ($stmtInsert->execute()) {
                 $stmtInsert->close();
@@ -195,7 +178,7 @@ class RutaController {
     }
 
     public function obtenerAsignaciones() {
-        $query = "SELECT id_ruta, matricula, nom_cuadrilla, fecha FROM `Recorre`";
+        $query = "SELECT id_ruta, matricula, fech FROM `asigna`";
         $stmt = $this->db->prepare($query);
 
         if (!$stmt) {
@@ -216,8 +199,7 @@ class RutaController {
                     $asignacion_item = [
                         "id_ruta" => $row["id_ruta"],
                         "matricula" => $row["matricula"],
-                        "nom_cuadrilla" => $row["nom_cuadrilla"],
-                        "fecha" => $row["fecha"]
+                        "fech" => $row["fech"]
                     ];
                     array_push($asignaciones_arr["registros"], $asignacion_item);
                 }

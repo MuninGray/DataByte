@@ -44,6 +44,7 @@ class ContenedorController {
         $data = $this->getPayload();
         $id_contdor = $this->getInputValue($data, ["id_contdor"]);
         $estado_optivo = $this->getInputValue($data, ["estado_optivo"]);
+        $en_uso = $this->getInputValue($data, ["en_uso"]);
         $tipo = $this->getInputValue($data, ["tipo"]);
         $calle = $this->getInputValue($data, ["calle"]);
         $nmro = $this->getInputValue($data, ["nmro"]);
@@ -51,8 +52,8 @@ class ContenedorController {
         $codigo = $this->getInputValue($data, ["codigo"]);
         $matricula = $this->getInputValue($data, ["matricula"]);
 
-        if (!empty($id_contdor) && !empty($estado_optivo) && !empty($tipo) && !empty($calle) && !empty($nmro) && !empty($esq) && !empty($codigo) && !empty($matricula)) {
-            $check = $this->db->prepare("SELECT codigo FROM Municipio WHERE codigo = ?");
+        if (!empty($id_contdor) && !empty($estado_optivo) && !empty($tipo) && !empty($calle) && !empty($nmro) && !empty($codigo)) {
+            $check = $this->db->prepare("SELECT codigo FROM municipio WHERE codigo = ?");
             $check->bind_param("s", $codigo);
             $check->execute();
             $result = $check->get_result();
@@ -66,12 +67,13 @@ class ContenedorController {
 
             $this->contenedor->id_contdor = (int) $id_contdor;
             $this->contenedor->estado_optivo = $estado_optivo;
+            $this->contenedor->en_uso = $en_uso !== "" ? $en_uso : null;
             $this->contenedor->tipo = $tipo;
             $this->contenedor->calle = $calle;
             $this->contenedor->nmro = $nmro;
-            $this->contenedor->esq = $esq;
+            $this->contenedor->esq = $esq !== "" ? $esq : null;
             $this->contenedor->codigo = $codigo;
-            $this->contenedor->matricula = $matricula;
+            $this->contenedor->matricula = $matricula !== "" ? $matricula : null;
 
             if ($this->contenedor->create()) {
                 http_response_code(201);
@@ -100,6 +102,7 @@ class ContenedorController {
                 echo json_encode([
                     "id_contdor" => $row["id_contdor"],
                     "estado_optivo" => $row["estado_optivo"],
+                    "en_uso" => $row["en_uso"],
                     "tipo" => $row["tipo"],
                     "calle" => $row["calle"],
                     "nmro" => $row["nmro"],
@@ -124,6 +127,7 @@ class ContenedorController {
                 $contenedor_item = [
                     "id_contdor" => $row["id_contdor"],
                     "estado_optivo" => $row["estado_optivo"],
+                    "en_uso" => $row["en_uso"],
                     "tipo" => $row["tipo"],
                     "calle" => $row["calle"],
                     "nmro" => $row["nmro"],
@@ -147,6 +151,7 @@ class ContenedorController {
         $data = $this->getPayload();
         $id_contdor = $this->getInputValue($data, ["id_contdor"]);
         $estado_optivo = $this->getInputValue($data, ["estado_optivo"]);
+        $en_uso = $this->getInputValue($data, ["en_uso"]);
         $tipo = $this->getInputValue($data, ["tipo"]);
         $calle = $this->getInputValue($data, ["calle"]);
         $nmro = $this->getInputValue($data, ["nmro"]);
@@ -154,8 +159,8 @@ class ContenedorController {
         $codigo = $this->getInputValue($data, ["codigo"]);
         $matricula = $this->getInputValue($data, ["matricula"]);
 
-        if (!empty($id_contdor) && !empty($estado_optivo) && !empty($tipo) && !empty($calle) && !empty($nmro) && !empty($esq) && !empty($codigo) && !empty($matricula)) {
-            $check = $this->db->prepare("SELECT codigo FROM Municipio WHERE codigo = ?");
+        if (!empty($id_contdor) && !empty($estado_optivo) && !empty($tipo) && !empty($calle) && !empty($nmro) && !empty($codigo)) {
+            $check = $this->db->prepare("SELECT codigo FROM municipio WHERE codigo = ?");
             $check->bind_param("s", $codigo);
             $check->execute();
             $result = $check->get_result();
@@ -169,12 +174,13 @@ class ContenedorController {
 
             $this->contenedor->id_contdor = (int) $id_contdor;
             $this->contenedor->estado_optivo = $estado_optivo;
+            $this->contenedor->en_uso = $en_uso !== "" ? $en_uso : null;
             $this->contenedor->tipo = $tipo;
             $this->contenedor->calle = $calle;
             $this->contenedor->nmro = $nmro;
-            $this->contenedor->esq = $esq;
+            $this->contenedor->esq = $esq !== "" ? $esq : null;
             $this->contenedor->codigo = $codigo;
-            $this->contenedor->matricula = $matricula;
+            $this->contenedor->matricula = $matricula !== "" ? $matricula : null;
 
             $resultExist = $this->contenedor->readOne();
             if ($resultExist && $resultExist->num_rows === 0) {

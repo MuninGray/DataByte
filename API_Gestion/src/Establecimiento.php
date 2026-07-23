@@ -3,7 +3,7 @@
 class Establecimiento {
 
     private $conn;
-    private $table_name = "Establecimiento";
+    private $table_name = "establecimiento";
 
     public $id_establcmto;
     public $nombre;

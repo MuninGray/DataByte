@@ -3,9 +3,9 @@
 
 class Database{
 private $host = "localhost";
-private $db_name = "proyectito";
+private $db_name = "DataByte";
 private $username ="root";
-private $password = "";
+private $password = "LuciaCarvallo!123";
 public $conn;
 
 public function getConnection(){

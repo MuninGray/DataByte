@@ -3,7 +3,7 @@
 class Municipio {
 
     private $conn;
-    private $table_name = "Municipio";
+    private $table_name = "municipio";
 
     public $codigo;
 
