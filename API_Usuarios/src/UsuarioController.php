@@ -160,11 +160,11 @@ class UsuarioController{
 
     public function login() {
         $data = $this->getPayload();
-        $correo = $this->getInputValue($data, ["correo"]);
+        $ci = $this->getInputValue($data, ["CI", "ci"]);
         $contrasena = $this->getInputValue($data, ["contrasena"]);
 
-        if (!empty($correo) && !empty($contrasena)) {
-            $this->usuario->correo = $correo;
+        if (!empty($ci) && !empty($contrasena)) {
+            $this->usuario->ci = $ci;
             $this->usuario->contrasena = $contrasena;
 
             $resultado = $this->usuario->login();
