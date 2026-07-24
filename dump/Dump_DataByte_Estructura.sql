@@ -4,7 +4,6 @@
 -- ------------------------------------------------------
 -- Server version	8.0.43
 
-
 DROP TABLE IF EXISTS `admin_tecnico`;
 
 CREATE TABLE `admin_tecnico` (
@@ -193,5 +192,3 @@ CREATE TABLE `vehiculo` (
   `estado_optivo` enum('en servicio','en stock','en mantenimiento') NOT NULL,
   PRIMARY KEY (`matricula`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Dump completed on 2026-07-23  3:03:28

@@ -18,11 +18,13 @@
             event.preventDefault();
 
             const correo = document.getElementById('correo').value.trim();
+            const primerNombre = document.getElementById('primerNombre').value.trim();
+            const primerApellido = document.getElementById('primerApellido').value.trim();
             const ci = document.getElementById('CI').value.trim();
             const contrasena = document.getElementById('contrasena').value.trim();
             const confContrasena = document.getElementById('conf_contrasena').value.trim();
 
-            if (!correo || !ci || !contrasena || !confContrasena) {
+            if (!correo || !primerNombre || !primerApellido || !ci || !contrasena || !confContrasena) {
                 mensaje.textContent = 'Completa todos los campos.';
                 mensaje.style.color = 'red';
                 return;
@@ -38,7 +40,14 @@
                 const response = await fetch('http://localhost/tareas/Proyecto/DataByte/API_Usuarios/public/index.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo, CI: ci, contrasena, conf_contrasena: confContrasena })
+                    body: JSON.stringify({ 
+                        correo, 
+                        PrNom: primerNombre, 
+                        PrApel: primerApellido, 
+                        CI: ci, 
+                        contrasena, 
+                        conf_contrasena: confContrasena 
+                    })
                 });
 
                 const data = await response.json();
@@ -46,6 +55,12 @@
                 if (response.ok) {
                     mensaje.textContent = data.message || 'Usuario creado correctamente.';
                     mensaje.style.color = 'green';
+                    
+                    // Redirigir a la landing page después de 2 segundos
+                    setTimeout(() => {
+                        window.location.href = 'LandingPage.html';
+                    }, 2000);
+                    
                 } else {
                     mensaje.textContent = data.message || 'No se pudo registrar el usuario.';
                     mensaje.style.color = 'red';
@@ -67,6 +82,14 @@
             <!-- Etiqueta de correo para el registrar -->
             <label for="correo">Correo:</label>
             <input type="email" name="correo" id="correo" required><br><br>
+
+            <!-- Etiqueta de primer nombre para el registrar -->
+            <label for="primerNombre">Primer Nombre:</label>
+            <input type="text" name="primerNombre" id="primerNombre" required><br><br>
+
+            <!-- Etiqueta de primer apellido para el registrar -->
+            <label for="primerApellido">Primer Apellido:</label>
+            <input type="text" name="primerApellido" id="primerApellido" required><br><br>
 
             <!-- Etiqueta de Cedula de identidad para el registrar -->
             <label for="CI">CI:</label>
