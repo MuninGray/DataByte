@@ -68,12 +68,8 @@ class Usuario {
     }
 
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET email = ?, pass = ?, PrNom = ?, PrApel = ?, rol = ?, estado_habil = ? WHERE cedula = ?";
-        $stmt = $this->conn->prepare($query);
-        if (!$stmt) return false;
-
         $this->email = htmlspecialchars(strip_tags(trim($this->email)));
-        $this->pass = htmlspecialchars(strip_tags(trim($this->pass)));
+        $this->pass = htmlspecialchars(strip_tags(trim($this->pass ?? "")));
         $this->PrNom = htmlspecialchars(strip_tags(trim($this->PrNom ?? "")));
         $this->PrApel = htmlspecialchars(strip_tags(trim($this->PrApel ?? "")));
         $this->rol = htmlspecialchars(strip_tags(trim($this->rol ?? "usuario")));
@@ -87,7 +83,19 @@ class Usuario {
             $this->estado_habil = "pendiente";
         }
 
-        $stmt->bind_param("ssssssi", $this->email, $this->pass, $this->PrNom, $this->PrApel, $this->rol, $this->estado_habil, $this->cedula);
+        if ($this->pass !== "") {
+            // Se envió una contraseña nueva: se actualiza también
+            $query = "UPDATE `" . $this->table_name . "` SET email = ?, pass = ?, PrNom = ?, PrApel = ?, rol = ?, estado_habil = ? WHERE cedula = ?";
+            $stmt = $this->conn->prepare($query);
+            if (!$stmt) return false;
+            $stmt->bind_param("ssssssi", $this->email, $this->pass, $this->PrNom, $this->PrApel, $this->rol, $this->estado_habil, $this->cedula);
+        } else {
+            // No se envió contraseña: se conserva la que ya tenía el usuario
+            $query = "UPDATE `" . $this->table_name . "` SET email = ?, PrNom = ?, PrApel = ?, rol = ?, estado_habil = ? WHERE cedula = ?";
+            $stmt = $this->conn->prepare($query);
+            if (!$stmt) return false;
+            $stmt->bind_param("sssssi", $this->email, $this->PrNom, $this->PrApel, $this->rol, $this->estado_habil, $this->cedula);
+        }
 
         if ($stmt->execute()) {
             $stmt->close();

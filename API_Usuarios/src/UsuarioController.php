@@ -124,7 +124,7 @@ class UsuarioController {
         $rol = $this->getInputValue($data, ["rol"]);
         $estadoHabil = $this->getInputValue($data, ["estado_habil"]);
 
-        if (!empty($email) && !empty($cedula) && !empty($pass)) {
+        if (!empty($email) && !empty($cedula)) {
             $this->usuario->email = $email;
             $this->usuario->cedula = (int) $cedula;
             $this->usuario->pass = $pass;

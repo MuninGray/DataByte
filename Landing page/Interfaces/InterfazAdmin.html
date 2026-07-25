@@ -7,38 +7,180 @@
 </head>
 <body>
     <div class="container">
-        <h1>Gestión de usuarios</h1>
-        <p>Desde aquí el administrador puede consultar, modificar el rol y estado, y eliminar usuarios directamente desde la tabla.</p>
+        <h1>Panel de administración</h1>
+        <p>Desde aquí el administrador gestiona usuarios, cuadrillas, vehículos, rutas, incidencias, municipios, establecimientos, maquinaria y contenedores.</p>
 
-        <div class="toolbar">
-            <h2>Usuarios registrados</h2>
-            <button type="button" id="btnConsultar">Recargar usuarios</button>
+        <div class="tabs">
+            <button type="button" class="tab-btn" data-tab="tab-usuarios">Usuarios</button>
+            <button type="button" class="tab-btn" data-tab="tab-cuadrillas">Cuadrillas</button>
+            <button type="button" class="tab-btn" data-tab="tab-vehiculos">Vehículos</button>
+            <button type="button" class="tab-btn" data-tab="tab-rutas">Rutas</button>
+            <button type="button" class="tab-btn" data-tab="tab-incidencias">Incidencias</button>
+            <button type="button" class="tab-btn" data-tab="tab-municipios">Municipios</button>
+            <button type="button" class="tab-btn" data-tab="tab-establecimientos">Establecimientos</button>
+            <button type="button" class="tab-btn" data-tab="tab-maquinaria">Maquinaria</button>
+            <button type="button" class="tab-btn" data-tab="tab-contenedores">Contenedores</button>
         </div>
 
-        <div id="mensaje" class="mensaje"></div>
+        <!-- ===================== USUARIOS ===================== -->
+        <div id="tab-usuarios" class="tab-content">
+            <div class="toolbar">
+                <h2>Usuarios registrados</h2>
+                <button type="button" id="btnConsultar">Recargar usuarios</button>
+            </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>CI</th>
-                    <th>Email</th>
-                    <th>Nombre</th>
-                    <th>Rol</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tablaUsuarios"></tbody>
-        </table>
+            <div id="mensaje" class="mensaje"></div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>CI</th>
+                        <th>Email</th>
+                        <th>Nombre</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaUsuarios"></tbody>
+            </table>
+        </div>
+
+        <!-- ===================== CUADRILLAS ===================== -->
+        <div id="tab-cuadrillas" class="tab-content" hidden>
+            <h2>Cuadrillas</h2>
+            <p>Alta, baja, modificación y consulta de cuadrillas de recolección.</p>
+            <div id="crud-cuadrillas"></div>
+        </div>
+
+        <!-- ===================== VEHICULOS ===================== -->
+        <div id="tab-vehiculos" class="tab-content" hidden>
+            <h2>Vehículos</h2>
+            <p>Alta, baja, modificación y consulta de vehículos.</p>
+            <div id="crud-vehiculos"></div>
+        </div>
+
+        <!-- ===================== RUTAS ===================== -->
+        <div id="tab-rutas" class="tab-content" hidden>
+            <h2>Rutas</h2>
+            <p>Alta, baja, modificación y consulta de rutas.</p>
+            <div id="crud-rutas"></div>
+
+            <h2>Asignar ruta a vehículo</h2>
+            <div id="mensajeAsignacion" class="mensaje"></div>
+            <div class="form-crud">
+                <div class="campo">
+                    <label for="asigId_ruta">ID Ruta</label>
+                    <input type="number" id="asigId_ruta" required>
+                </div>
+                <div class="campo">
+                    <label for="asigMatricula">Matrícula</label>
+                    <input type="text" id="asigMatricula" required>
+                </div>
+                <div class="campo">
+                    <label for="asigFecha">Fecha</label>
+                    <input type="date" id="asigFecha" required>
+                </div>
+                <button type="button" id="btnAsignarRuta">Asignar</button>
+            </div>
+
+            <div class="toolbar">
+                <h2>Asignaciones existentes</h2>
+                <button type="button" id="btnConsultarAsignaciones">Recargar asignaciones</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Ruta</th>
+                        <th>Matrícula</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaAsignaciones"></tbody>
+            </table>
+        </div>
+
+        <!-- ===================== INCIDENCIAS ===================== -->
+        <div id="tab-incidencias" class="tab-content" hidden>
+            <h2>Incidencias</h2>
+            <p>Alta, baja, modificación y consulta de incidencias reportadas sobre contenedores.</p>
+            <div id="crud-incidencias"></div>
+        </div>
+
+        <!-- ===================== MUNICIPIOS ===================== -->
+        <div id="tab-municipios" class="tab-content" hidden>
+            <h2>Municipios</h2>
+            <p>Alta, baja y consulta de municipios (el código es la clave del municipio).</p>
+            <div id="crud-municipios"></div>
+        </div>
+
+        <!-- ===================== ESTABLECIMIENTOS ===================== -->
+        <div id="tab-establecimientos" class="tab-content" hidden>
+            <h2>Establecimientos</h2>
+            <p>Alta, baja, modificación y consulta de establecimientos.</p>
+            <div id="crud-establecimientos"></div>
+        </div>
+
+        <!-- ===================== MAQUINARIA ===================== -->
+        <div id="tab-maquinaria" class="tab-content" hidden>
+            <h2>Maquinaria</h2>
+            <p>Alta, baja, modificación y consulta de maquinaria asociada a un establecimiento.</p>
+            <div id="crud-maquinaria"></div>
+        </div>
+
+        <!-- ===================== CONTENEDORES ===================== -->
+        <div id="tab-contenedores" class="tab-content" hidden>
+            <h2>Contenedores</h2>
+            <p>Alta, baja, modificación y consulta de contenedores.</p>
+            <div id="crud-contenedores"></div>
+        </div>
     </div>
 
     <script>
+        // ============================================================
+        // Navegación por pestañas
+        // ============================================================
+        const botonesTab = document.querySelectorAll('.tab-btn');
+        const contenidosTab = document.querySelectorAll('.tab-content');
+
+        function activarTab(idTab) {
+            contenidosTab.forEach(div => div.hidden = (div.id !== idTab));
+            botonesTab.forEach(btn => btn.classList.toggle('activo', btn.dataset.tab === idTab));
+        }
+
+        botonesTab.forEach(btn => {
+            btn.addEventListener('click', () => activarTab(btn.dataset.tab));
+        });
+
+        activarTab('tab-usuarios');
+        botonesTab[0].classList.add('activo');
+
+        // ============================================================
+        // USUARIOS (API_Usuarios) - sin cambios respecto a la versión anterior
+        // ============================================================
         const API_URL = 'http://localhost/tareas/Proyecto/DataByte/API_Usuarios/public/index.php';
         const tablaUsuarios = document.getElementById('tablaUsuarios');
         const mensaje = document.getElementById('mensaje');
         const btnConsultar = document.getElementById('btnConsultar');
 
         let usuariosCache = [];
+
+        const ROLES = ['INSPECTOR', 'OPERARIO_CUADRILLA', 'OPERARIO_ESTABLECIMIENTO', 'ADMIN'];
+        const ESTADOS = ['aprobado', 'rechazado', 'pendiente'];
+
+        function crearSelectRol(usuario) {
+            const opciones = ROLES.map(rol =>
+                `<option value="${rol}" ${usuario.rol === rol ? 'selected' : ''}>${rol}</option>`
+            ).join('');
+            return `<select class="select-editable" onchange="cambiarRol(${usuario.cedula}, this.value)">${opciones}</select>`;
+        }
+
+        function crearSelectEstado(usuario) {
+            const opciones = ESTADOS.map(estado =>
+                `<option value="${estado}" ${usuario.estado_habil === estado ? 'selected' : ''}>${estado}</option>`
+            ).join('');
+            return `<select class="select-editable" onchange="cambiarEstado(${usuario.cedula}, this.value)">${opciones}</select>`;
+        }
 
         function mostrarMensaje(texto, color = '#1f3c88') {
             mensaje.textContent = texto;
@@ -69,8 +211,8 @@
                         <td>${usuario.cedula || ''}</td>
                         <td>${usuario.email || ''}</td>
                         <td>${(usuario.PrNom || '') + ' ' + (usuario.PrApel || '')}</td>
-                        <td><span class="editable" onclick="cambiarRol(${usuario.cedula})">${usuario.rol || ''}</span></td>
-                        <td><span class="editable" onclick="cambiarEstado(${usuario.cedula})">${usuario.estado_habil || ''}</span></td>
+                        <td>${crearSelectRol(usuario)}</td>
+                        <td>${crearSelectEstado(usuario)}</td>
                         <td>
                             <button type="button" class="danger" onclick="eliminarUsuario(${usuario.cedula})">Eliminar</button>
                         </td>`;
@@ -113,17 +255,13 @@
             return usuariosCache.find(u => String(u.cedula) === String(cedula)) || null;
         }
 
-        window.cambiarRol = function (cedula) {
+        window.cambiarRol = function (cedula, nuevoRol) {
             const usuario = encontrarUsuario(cedula);
             if (!usuario) return;
 
-            const valorActual = usuario.rol || '';
-            const nuevoRol = window.prompt('Ingrese el nuevo rol para este usuario:', valorActual);
-            if (nuevoRol === null) return;
-
-            const rolFinal = nuevoRol.trim();
-            if (!rolFinal) {
-                mostrarMensaje('El rol no puede estar vacío.', 'red');
+            const rolFinal = nuevoRol;
+            if (!ROLES.includes(rolFinal)) {
+                mostrarMensaje('Rol inválido.', 'red');
                 return;
             }
 
@@ -144,17 +282,13 @@
             });
         };
 
-        window.cambiarEstado = function (cedula) {
+        window.cambiarEstado = function (cedula, nuevoEstado) {
             const usuario = encontrarUsuario(cedula);
             if (!usuario) return;
 
-            const valorActual = usuario.estado_habil || '';
-            const nuevoEstado = window.prompt('Ingrese el nuevo estado (pendiente, aprobado, rechazado):', valorActual);
-            if (nuevoEstado === null) return;
-
-            const estadoFinal = nuevoEstado.trim().toLowerCase();
-            if (!['pendiente', 'aprobado', 'rechazado'].includes(estadoFinal)) {
-                mostrarMensaje('Estado inválido. Use: pendiente, aprobado o rechazado.', 'red');
+            const estadoFinal = nuevoEstado;
+            if (!ESTADOS.includes(estadoFinal)) {
+                mostrarMensaje('Estado inválido.', 'red');
                 return;
             }
 
@@ -179,6 +313,366 @@
 
         btnConsultar.addEventListener('click', consultarUsuarios);
         consultarUsuarios();
+
+        // ============================================================
+        // MÓDULO CRUD GENÉRICO (API_Recoleccion / API_Gestion)
+        // ============================================================
+        const API_RECOLECCION = 'http://localhost/tareas/Proyecto/DataByte/API_Recoleccion/public/index.php';
+        const API_GESTION = 'http://localhost/tareas/Proyecto/DataByte/API_Gestion/public/index.php';
+
+        // cfg = {
+        //   contenedorId, apiUrl, accion, campos: [{nombre, etiqueta, tipo, pk, opcional}],
+        //   deleteCampos: [nombre,...]  (por defecto: los campos pk),
+        //   permitirEditar: true/false (municipio no tiene sentido editar, solo tiene el código)
+        // }
+        function crearModuloCRUD(cfg) {
+            const contenedor = document.getElementById(cfg.contenedorId);
+            const deleteCampos = cfg.deleteCampos || cfg.campos.filter(c => c.pk).map(c => c.nombre);
+            const permitirEditar = cfg.permitirEditar !== false;
+            let cache = [];
+
+            const inputsHtml = cfg.campos.map(c => `
+                <div class="campo">
+                    <label for="${cfg.contenedorId}-${c.nombre}">${c.etiqueta}${c.opcional ? ' (opcional)' : ''}</label>
+                    <input type="${c.tipo === 'numero' ? 'number' : (c.tipo === 'fecha' ? 'date' : 'text')}"
+                           id="${cfg.contenedorId}-${c.nombre}" ${c.opcional ? '' : 'required'}>
+                </div>`).join('');
+
+            const columnasHtml = cfg.campos.map(c => `<th>${c.etiqueta}</th>`).join('') + '<th>Acciones</th>';
+
+            contenedor.innerHTML = `
+                <div id="${cfg.contenedorId}-mensaje" class="mensaje"></div>
+                <div class="form-crud">
+                    ${inputsHtml}
+                    <button type="button" id="${cfg.contenedorId}-btnCrear">Crear</button>
+                </div>
+                <div class="toolbar">
+                    <h3 style="margin:0;">Registros</h3>
+                    <button type="button" id="${cfg.contenedorId}-btnRecargar">Recargar</button>
+                </div>
+                <table>
+                    <thead><tr>${columnasHtml}</tr></thead>
+                    <tbody id="${cfg.contenedorId}-tbody"></tbody>
+                </table>
+            `;
+
+            const divMensaje = document.getElementById(`${cfg.contenedorId}-mensaje`);
+            const tbody = document.getElementById(`${cfg.contenedorId}-tbody`);
+
+            function mostrar(texto, color = '#1f3c88') {
+                divMensaje.textContent = texto;
+                divMensaje.style.color = color;
+            }
+
+            function leerInputsAlta() {
+                const datos = {};
+                cfg.campos.forEach(c => {
+                    const val = document.getElementById(`${cfg.contenedorId}-${c.nombre}`).value.trim();
+                    datos[c.nombre] = val;
+                });
+                return datos;
+            }
+
+            async function consultar() {
+                try {
+                    const response = await fetch(`${cfg.apiUrl}?accion=${cfg.accion}`, { method: 'GET' });
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        cache = [];
+                        tbody.innerHTML = `<tr><td colspan="${cfg.campos.length + 1}">${data.message || 'Sin registros.'}</td></tr>`;
+                        return;
+                    }
+
+                    cache = data.registros || [];
+                    renderTabla();
+                } catch (error) {
+                    mostrar('Error de conexión: ' + error.message, 'red');
+                }
+            }
+
+            function renderTabla() {
+                tbody.innerHTML = '';
+                if (cache.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="${cfg.campos.length + 1}">No hay registros.</td></tr>`;
+                    return;
+                }
+                cache.forEach((registro, indice) => {
+                    const fila = document.createElement('tr');
+                    const celdas = cfg.campos.map(c => `<td>${registro[c.nombre] ?? ''}</td>`).join('');
+                    const accionesEditar = permitirEditar
+                        ? `<button type="button" onclick="window.__crud_${cfg.contenedorId}.editar(${indice})">Editar</button>`
+                        : '';
+                    fila.innerHTML = `${celdas}<td>${accionesEditar}
+                        <button type="button" class="danger" onclick="window.__crud_${cfg.contenedorId}.eliminar(${indice})">Eliminar</button>
+                    </td>`;
+                    tbody.appendChild(fila);
+                });
+            }
+
+            function renderFilaEdicion(indice) {
+                const registro = cache[indice];
+                const fila = tbody.children[indice];
+                const celdas = cfg.campos.map(c => {
+                    const tipoInput = c.tipo === 'numero' ? 'number' : (c.tipo === 'fecha' ? 'date' : 'text');
+                    const soloLectura = c.pk ? 'readonly' : '';
+                    return `<td><input class="input-edit" type="${tipoInput}" ${soloLectura}
+                        data-campo="${c.nombre}" value="${registro[c.nombre] ?? ''}"></td>`;
+                }).join('');
+                fila.innerHTML = `${celdas}<td>
+                    <button type="button" onclick="window.__crud_${cfg.contenedorId}.guardar(${indice})">Guardar</button>
+                    <button type="button" class="secundario" onclick="window.__crud_${cfg.contenedorId}.cancelar()">Cancelar</button>
+                </td>`;
+            }
+
+            async function crear() {
+                const datos = leerInputsAlta();
+                try {
+                    const response = await fetch(`${cfg.apiUrl}?accion=${cfg.accion}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(datos)
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || 'No se pudo crear el registro');
+                    mostrar(data.message || 'Registro creado correctamente', 'green');
+                    cfg.campos.forEach(c => { document.getElementById(`${cfg.contenedorId}-${c.nombre}`).value = ''; });
+                    consultar();
+                } catch (error) {
+                    mostrar(error.message, 'red');
+                }
+            }
+
+            async function guardar(indice) {
+                const fila = tbody.children[indice];
+                const inputs = fila.querySelectorAll('input[data-campo]');
+                const datos = {};
+                inputs.forEach(input => { datos[input.dataset.campo] = input.value.trim(); });
+
+                try {
+                    const response = await fetch(`${cfg.apiUrl}?accion=${cfg.accion}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(datos)
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || 'No se pudo actualizar el registro');
+                    mostrar(data.message || 'Registro actualizado correctamente', 'green');
+                    consultar();
+                } catch (error) {
+                    mostrar(error.message, 'red');
+                    renderTabla();
+                }
+            }
+
+            async function eliminar(indice) {
+                if (!confirm('¿Seguro que deseas eliminar este registro?')) return;
+                const registro = cache[indice];
+                const datos = {};
+                deleteCampos.forEach(nombre => { datos[nombre] = registro[nombre]; });
+
+                try {
+                    const response = await fetch(`${cfg.apiUrl}?accion=${cfg.accion}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(datos)
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || 'No se pudo eliminar el registro');
+                    mostrar(data.message || 'Registro eliminado correctamente', 'green');
+                    consultar();
+                } catch (error) {
+                    mostrar(error.message, 'red');
+                }
+            }
+
+            document.getElementById(`${cfg.contenedorId}-btnCrear`).addEventListener('click', crear);
+            document.getElementById(`${cfg.contenedorId}-btnRecargar`).addEventListener('click', consultar);
+
+            window[`__crud_${cfg.contenedorId}`] = {
+                editar: renderFilaEdicion,
+                guardar,
+                eliminar,
+                cancelar: renderTabla
+            };
+
+            consultar();
+        }
+
+        // --- Cuadrillas ---
+        crearModuloCRUD({
+            contenedorId: 'crud-cuadrillas',
+            apiUrl: API_RECOLECCION,
+            accion: 'cuadrillas',
+            campos: [
+                { nombre: 'nom_cuadrilla', etiqueta: 'Nombre de cuadrilla', pk: true },
+                { nombre: 'cedula_inspector', etiqueta: 'Cédula inspector', tipo: 'numero' }
+            ]
+        });
+
+        // --- Vehículos ---
+        crearModuloCRUD({
+            contenedorId: 'crud-vehiculos',
+            apiUrl: API_RECOLECCION,
+            accion: 'vehiculos',
+            campos: [
+                { nombre: 'matricula', etiqueta: 'Matrícula', pk: true },
+                { nombre: 'estado_optivo', etiqueta: 'Estado operativo' }
+            ]
+        });
+
+        // --- Rutas ---
+        crearModuloCRUD({
+            contenedorId: 'crud-rutas',
+            apiUrl: API_RECOLECCION,
+            accion: 'rutas',
+            campos: [
+                { nombre: 'id_ruta', etiqueta: 'ID Ruta', tipo: 'numero', pk: true },
+                { nombre: 'nom', etiqueta: 'Nombre' }
+            ]
+        });
+
+        // --- Incidencias ---
+        crearModuloCRUD({
+            contenedorId: 'crud-incidencias',
+            apiUrl: API_RECOLECCION,
+            accion: 'incidencias',
+            campos: [
+                { nombre: 'id_incidencia', etiqueta: 'ID Incidencia', tipo: 'numero', pk: true },
+                { nombre: 'id_contdor', etiqueta: 'ID Contenedor', tipo: 'numero', pk: true },
+                { nombre: 'tipo', etiqueta: 'Tipo' },
+                { nombre: 'estado', etiqueta: 'Estado' },
+                { nombre: 'fch_apert', etiqueta: 'Fecha apertura', tipo: 'fecha' },
+                { nombre: 'fch_resol', etiqueta: 'Fecha resolución', tipo: 'fecha', opcional: true },
+                { nombre: 'nom_cuadrilla', etiqueta: 'Cuadrilla asignada', opcional: true }
+            ]
+        });
+
+        // --- Municipios (solo tienen el código como campo, no se editan) ---
+        crearModuloCRUD({
+            contenedorId: 'crud-municipios',
+            apiUrl: API_GESTION,
+            accion: 'municipios',
+            permitirEditar: false,
+            campos: [
+                { nombre: 'codigo', etiqueta: 'Código', pk: true }
+            ]
+        });
+
+        // --- Establecimientos ---
+        crearModuloCRUD({
+            contenedorId: 'crud-establecimientos',
+            apiUrl: API_GESTION,
+            accion: 'establecimientos',
+            campos: [
+                { nombre: 'id_establcmto', etiqueta: 'ID Establecimiento', tipo: 'numero', pk: true },
+                { nombre: 'nombre', etiqueta: 'Nombre' },
+                { nombre: 'calle', etiqueta: 'Calle' },
+                { nombre: 'nmro', etiqueta: 'Número' },
+                { nombre: 'esq', etiqueta: 'Esquina' },
+                { nombre: 'tipo', etiqueta: 'Tipo' },
+                { nombre: 'capac_actual', etiqueta: 'Capacidad actual', tipo: 'numero' },
+                { nombre: 'capac_max', etiqueta: 'Capacidad máxima', tipo: 'numero' },
+                { nombre: 'tipo_res', etiqueta: 'Tipo de residuo' }
+            ]
+        });
+
+        // --- Maquinaria ---
+        crearModuloCRUD({
+            contenedorId: 'crud-maquinaria',
+            apiUrl: API_GESTION,
+            accion: 'maquinarias',
+            campos: [
+                { nombre: 'id_maquinaria', etiqueta: 'ID Maquinaria', tipo: 'numero', pk: true },
+                { nombre: 'nombre', etiqueta: 'Nombre' },
+                { nombre: 'en_uso', etiqueta: 'En uso' },
+                { nombre: 'id_establcmto', etiqueta: 'ID Establecimiento', tipo: 'numero' }
+            ]
+        });
+
+        // --- Contenedores ---
+        crearModuloCRUD({
+            contenedorId: 'crud-contenedores',
+            apiUrl: API_GESTION,
+            accion: 'contenedores',
+            campos: [
+                { nombre: 'id_contdor', etiqueta: 'ID Contenedor', tipo: 'numero', pk: true },
+                { nombre: 'estado_optivo', etiqueta: 'Estado operativo' },
+                { nombre: 'en_uso', etiqueta: 'En uso', opcional: true },
+                { nombre: 'tipo', etiqueta: 'Tipo' },
+                { nombre: 'calle', etiqueta: 'Calle' },
+                { nombre: 'nmro', etiqueta: 'Número' },
+                { nombre: 'esq', etiqueta: 'Esquina', opcional: true },
+                { nombre: 'codigo', etiqueta: 'Código municipio' },
+                { nombre: 'matricula', etiqueta: 'Matrícula vehículo', opcional: true }
+            ]
+        });
+
+        // ============================================================
+        // RUTAS: asignación a vehículos + tabla de asignaciones
+        // ============================================================
+        const mensajeAsignacion = document.getElementById('mensajeAsignacion');
+        const tablaAsignaciones = document.getElementById('tablaAsignaciones');
+
+        function mostrarMensajeAsignacion(texto, color = '#1f3c88') {
+            mensajeAsignacion.textContent = texto;
+            mensajeAsignacion.style.color = color;
+        }
+
+        async function consultarAsignaciones() {
+            try {
+                const response = await fetch(`${API_RECOLECCION}?accion=obtenerAsignaciones`, { method: 'GET' });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    tablaAsignaciones.innerHTML = `<tr><td colspan="3">${data.message || 'Sin asignaciones.'}</td></tr>`;
+                    return;
+                }
+
+                const asignaciones = data.registros || [];
+                tablaAsignaciones.innerHTML = '';
+                if (asignaciones.length === 0) {
+                    tablaAsignaciones.innerHTML = '<tr><td colspan="3">No hay asignaciones registradas.</td></tr>';
+                    return;
+                }
+
+                asignaciones.forEach(asig => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `<td>${asig.id_ruta}</td><td>${asig.matricula}</td><td>${asig.fech}</td>`;
+                    tablaAsignaciones.appendChild(fila);
+                });
+            } catch (error) {
+                mostrarMensajeAsignacion('Error de conexión: ' + error.message, 'red');
+            }
+        }
+
+        document.getElementById('btnAsignarRuta').addEventListener('click', async () => {
+            const id_ruta = document.getElementById('asigId_ruta').value.trim();
+            const matricula = document.getElementById('asigMatricula').value.trim();
+            const fech = document.getElementById('asigFecha').value.trim();
+
+            if (!id_ruta || !matricula || !fech) {
+                mostrarMensajeAsignacion('Completá ID Ruta, matrícula y fecha.', 'red');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_RECOLECCION}?accion=asignarRuta`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_ruta, matricula, fech })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'No se pudo asignar la ruta');
+                mostrarMensajeAsignacion(data.message || 'Ruta asignada correctamente', 'green');
+                consultarAsignaciones();
+            } catch (error) {
+                mostrarMensajeAsignacion(error.message, 'red');
+            }
+        });
+
+        document.getElementById('btnConsultarAsignaciones').addEventListener('click', consultarAsignaciones);
+        consultarAsignaciones();
     </script>
 </body>
 <link rel="stylesheet" href="InterfazAdmin.css">
