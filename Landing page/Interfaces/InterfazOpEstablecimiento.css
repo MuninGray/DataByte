@@ -1,0 +1,140 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f4f7fb;
+    color: #23395b;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 24px auto;
+    background: white;
+    padding: 24px;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+h1, h2 {
+    color: #1f3c88;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 10px;
+}
+
+button {
+    padding: 10px 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #1f3c88;
+    color: white;
+}
+
+button.danger {
+    background: #d9534f;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+th, td {
+    border: 1px solid #e2e8f0;
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background: #eef2ff;
+}
+
+.editable {
+    cursor: pointer;
+    color: #1f3c88;
+    font-weight: 600;
+    text-decoration: underline dotted;
+}
+
+.select-editable {
+    padding: 6px 8px;
+    border: 1px solid #c3cfe2;
+    border-radius: 6px;
+    background: #f7f9fc;
+    color: #1f3c88;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.mensaje {
+    margin-top: 12px;
+    font-weight: bold;
+}
+
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #eef2ff;
+    padding-bottom: 12px;
+}
+
+.tab-btn {
+    background: #eef2ff;
+    color: #1f3c88;
+    font-weight: 600;
+}
+
+.tab-btn.activo {
+    background: #1f3c88;
+    color: white;
+}
+
+.tab-content[hidden] {
+    display: none;
+}
+
+.form-crud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 16px;
+}
+
+.form-crud .campo {
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    gap: 4px;
+}
+
+.form-crud input {
+    padding: 8px;
+    border: 1px solid #c3cfe2;
+    border-radius: 6px;
+    min-width: 130px;
+}
+
+.input-edit {
+    padding: 6px;
+    border: 1px solid #c3cfe2;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+button.secundario {
+    background: #6c7a96;
+}

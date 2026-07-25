@@ -1,11 +1,504 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interfaz | Operario cuadrilla</title>
+    <title>Panel | Operario de cuadrilla</title>
 </head>
 <body>
-    
+    <div class="container">
+        <h1>Panel del operario de cuadrilla</h1>
+        <p>Podés consultar la ruta asignada, los contenedores a recorrer y las incidencias de tu cuadrilla, actualizar el estado de una incidencia y registrar el recorrido realizado. No tenés acceso a la creación de usuarios ni a la edición de datos maestros (rutas, vehículos, contenedores, establecimientos, cuadrillas).</p>
+
+        <div class="tabs">
+            <button type="button" class="tab-btn" data-tab="tab-ruta">Ruta asignada</button>
+            <button type="button" class="tab-btn" data-tab="tab-contenedores">Contenedores a recorrer</button>
+            <button type="button" class="tab-btn" data-tab="tab-incidencias">Incidencias de mi cuadrilla</button>
+            <button type="button" class="tab-btn" data-tab="tab-recorrido">Registrar recorrido</button>
+        </div>
+
+        <!-- ===================== RUTA ASIGNADA (solo consulta) ===================== -->
+        <div id="tab-ruta" class="tab-content">
+            <h2>Rutas</h2>
+            <p>Listado de rutas existentes. Podés filtrar por la matrícula del vehículo de tu cuadrilla para ver qué ruta tiene asignada ese vehículo y en qué fecha.</p>
+            <div class="form-crud">
+                <div class="campo">
+                    <label for="filtroMatriculaRuta">Matrícula del vehículo</label>
+                    <input type="text" id="filtroMatriculaRuta" placeholder="Ej: SBC1234">
+                </div>
+                <button type="button" id="btnFiltrarAsignaciones">Filtrar</button>
+                <button type="button" class="secundario" id="btnVerTodasAsignaciones">Ver todas</button>
+            </div>
+            <div id="mensaje-asignaciones" class="mensaje"></div>
+            <table>
+                <thead><tr><th>ID Ruta</th><th>Matrícula</th><th>Fecha</th></tr></thead>
+                <tbody id="tbody-asignaciones"></tbody>
+            </table>
+
+            <div class="toolbar">
+                <h2>Detalle de rutas</h2>
+                <button type="button" id="btnRecargarRutas">Recargar</button>
+            </div>
+            <div id="mensaje-rutas" class="mensaje"></div>
+            <table>
+                <thead><tr><th>ID Ruta</th><th>Nombre</th></tr></thead>
+                <tbody id="tbody-rutas"></tbody>
+            </table>
+        </div>
+
+        <!-- ===================== CONTENEDORES (solo consulta, filtrado por vehículo/municipio) ===================== -->
+        <div id="tab-contenedores" class="tab-content" hidden>
+            <h2>Contenedores a recorrer</h2>
+            <p>No filtra por vehículo, así que se trae toda la lista y se filtra acá por la matrícula del vehículo de tu cuadrilla o por código de municipio.</p>
+            <div class="form-crud">
+                <div class="campo">
+                    <label for="filtroMatriculaContenedor">Matrícula del vehículo</label>
+                    <input type="text" id="filtroMatriculaContenedor" placeholder="Ej: SBC1234">
+                </div>
+                <div class="campo">
+                    <label for="filtroCodigoMunicipio">Código de municipio</label>
+                    <input type="text" id="filtroCodigoMunicipio" placeholder="Ej: A">
+                </div>
+                <button type="button" id="btnFiltrarContenedores">Filtrar</button>
+                <button type="button" class="secundario" id="btnVerTodosContenedores">Ver todos</button>
+            </div>
+            <div id="mensaje-contenedores" class="mensaje"></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Contenedor</th>
+                        <th>Estado operativo</th>
+                        <th>En uso</th>
+                        <th>Tipo</th>
+                        <th>Calle</th>
+                        <th>Número</th>
+                        <th>Esquina</th>
+                        <th>Código municipio</th>
+                        <th>Matrícula</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-contenedores"></tbody>
+            </table>
+        </div>
+
+        <!-- ===================== INCIDENCIAS (consulta filtrada por cuadrilla + cambio de estado) ===================== -->
+        <div id="tab-incidencias" class="tab-content" hidden>
+            <h2>Incidencias de mi cuadrilla</h2>
+            <p>Ingresá el nombre de tu cuadrilla para ver únicamente las incidencias que tiene asignadas. Podés actualizar el estado de cada una, pero no crearlas ni eliminarlas.</p>
+            <div class="form-crud">
+                <div class="campo">
+                    <label for="filtroNomCuadrilla">Nombre de mi cuadrilla</label>
+                    <input type="text" id="filtroNomCuadrilla" placeholder="Ej: Cuadrilla Norte">
+                </div>
+                <button type="button" id="btnFiltrarIncidencias">Filtrar</button>
+                <button type="button" class="secundario" id="btnRecargarIncidencias">Recargar</button>
+            </div>
+            <div id="mensaje-incidencias" class="mensaje"></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Incidencia</th>
+                        <th>ID Contenedor</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        <th>Fecha apertura</th>
+                        <th>Fecha resolución</th>
+                        <th>Cuadrilla</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-incidencias"></tbody>
+            </table>
+        </div>
+
+        <!-- ===================== RECORRIDO (registrar descarga + historial de solo lectura) ===================== -->
+        <div id="tab-recorrido" class="tab-content" hidden>
+            <h2>Registrar recorrido realizado</h2>
+            <p>Registrá la descarga del vehículo al finalizar el recorrido: vehículo, establecimiento de destino, hora y peso recolectado.</p>
+            <div id="mensaje-crear-recorrido" class="mensaje"></div>
+            <div class="form-crud">
+                <div class="campo">
+                    <label for="rec-matricula">Matrícula</label>
+                    <input type="text" id="rec-matricula" required>
+                </div>
+                <div class="campo">
+                    <label for="rec-id_establcmto">ID Establecimiento</label>
+                    <input type="number" id="rec-id_establcmto" required>
+                </div>
+                <div class="campo">
+                    <label for="rec-hora">Hora</label>
+                    <input type="time" id="rec-hora" required>
+                </div>
+                <div class="campo">
+                    <label for="rec-peso">Peso (kg)</label>
+                    <input type="number" step="0.01" id="rec-peso" required>
+                </div>
+                <button type="button" id="btnRegistrarRecorrido">Registrar recorrido</button>
+            </div>
+
+            <div class="toolbar">
+                <h2>Recorridos registrados</h2>
+                <button type="button" id="btnRecargarRecorridos">Recargar</button>
+            </div>
+            <div id="mensaje-recorridos" class="mensaje"></div>
+            <table>
+                <thead><tr><th>Matrícula</th><th>ID Establecimiento</th><th>Hora</th><th>Peso (kg)</th></tr></thead>
+                <tbody id="tbody-recorridos"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // Navegación por pestañas
+        // ============================================================
+        const botonesTab = document.querySelectorAll('.tab-btn');
+        const contenidosTab = document.querySelectorAll('.tab-content');
+
+        function activarTab(idTab) {
+            contenidosTab.forEach(div => div.hidden = (div.id !== idTab));
+            botonesTab.forEach(btn => btn.classList.toggle('activo', btn.dataset.tab === idTab));
+        }
+
+        botonesTab.forEach(btn => btn.addEventListener('click', () => activarTab(btn.dataset.tab)));
+        activarTab('tab-ruta');
+        botonesTab[0].classList.add('activo');
+
+        const API_RECOLECCION = 'http://localhost/tareas/Proyecto/DataByte/API_Recoleccion/public/index.php';
+        const API_GESTION = 'http://localhost/tareas/Proyecto/DataByte/API_Gestion/public/index.php';
+
+        function mostrarEn(idDiv, texto, color = '#1f3c88') {
+            const div = document.getElementById(idDiv);
+            div.textContent = texto;
+            div.style.color = color;
+        }
+
+        // ============================================================
+        // RUTA ASIGNADA: rutas (consulta) + asignaciones ruta-vehículo (filtro por matrícula)
+        // ============================================================
+        const tbodyRutas = document.getElementById('tbody-rutas');
+
+        async function consultarRutas() {
+            try {
+                const response = await fetch(`${API_RECOLECCION}?accion=rutas`, { method: 'GET' });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    tbodyRutas.innerHTML = `<tr><td colspan="2">${data.message || 'Sin rutas.'}</td></tr>`;
+                    return;
+                }
+
+                const registros = data.registros || [];
+                tbodyRutas.innerHTML = '';
+                if (registros.length === 0) {
+                    tbodyRutas.innerHTML = '<tr><td colspan="2">No hay rutas registradas.</td></tr>';
+                    return;
+                }
+                registros.forEach(r => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `<td>${r.id_ruta}</td><td>${r.nom}</td>`;
+                    tbodyRutas.appendChild(fila);
+                });
+                mostrarEn('mensaje-rutas', '');
+            } catch (error) {
+                mostrarEn('mensaje-rutas', 'Error de conexión: ' + error.message, 'red');
+            }
+        }
+
+        document.getElementById('btnRecargarRutas').addEventListener('click', consultarRutas);
+        consultarRutas();
+
+        const tbodyAsignaciones = document.getElementById('tbody-asignaciones');
+        let asignacionesCache = [];
+
+        function renderAsignaciones(lista) {
+            tbodyAsignaciones.innerHTML = '';
+            if (lista.length === 0) {
+                tbodyAsignaciones.innerHTML = '<tr><td colspan="3">No hay asignaciones para mostrar.</td></tr>';
+                return;
+            }
+            lista.forEach(a => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `<td>${a.id_ruta}</td><td>${a.matricula}</td><td>${a.fech}</td>`;
+                tbodyAsignaciones.appendChild(fila);
+            });
+        }
+
+        async function consultarAsignaciones() {
+            try {
+                const response = await fetch(`${API_RECOLECCION}?accion=obtenerAsignaciones`, { method: 'GET' });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    asignacionesCache = [];
+                    tbodyAsignaciones.innerHTML = `<tr><td colspan="3">${data.message || 'Sin asignaciones.'}</td></tr>`;
+                    return;
+                }
+
+                asignacionesCache = data.registros || [];
+                mostrarEn('mensaje-asignaciones', '');
+                aplicarFiltroAsignaciones();
+            } catch (error) {
+                mostrarEn('mensaje-asignaciones', 'Error de conexión: ' + error.message, 'red');
+            }
+        }
+
+        function aplicarFiltroAsignaciones() {
+            const matricula = document.getElementById('filtroMatriculaRuta').value.trim();
+            if (!matricula) {
+                renderAsignaciones(asignacionesCache);
+                return;
+            }
+            const filtrados = asignacionesCache.filter(a => String(a.matricula) === matricula);
+            renderAsignaciones(filtrados);
+            if (filtrados.length === 0) {
+                mostrarEn('mensaje-asignaciones', `No hay rutas asignadas al vehículo "${matricula}".`, 'red');
+            } else {
+                mostrarEn('mensaje-asignaciones', '');
+            }
+        }
+
+        document.getElementById('btnFiltrarAsignaciones').addEventListener('click', aplicarFiltroAsignaciones);
+        document.getElementById('btnVerTodasAsignaciones').addEventListener('click', () => {
+            document.getElementById('filtroMatriculaRuta').value = '';
+            renderAsignaciones(asignacionesCache);
+            mostrarEn('mensaje-asignaciones', '');
+        });
+
+        consultarAsignaciones();
+
+        // ============================================================
+        // CONTENEDORES: consulta general + filtro por matrícula/municipio en cliente
+        // ============================================================
+        const camposContenedor = ['id_contdor', 'estado_optivo', 'en_uso', 'tipo', 'calle', 'nmro', 'esq', 'codigo', 'matricula'];
+        const tbodyContenedores = document.getElementById('tbody-contenedores');
+        let contenedoresCache = [];
+
+        function renderContenedores(lista) {
+            tbodyContenedores.innerHTML = '';
+            if (lista.length === 0) {
+                tbodyContenedores.innerHTML = `<tr><td colspan="${camposContenedor.length}">No hay contenedores para mostrar.</td></tr>`;
+                return;
+            }
+            lista.forEach(registro => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = camposContenedor.map(c => `<td>${registro[c] ?? ''}</td>`).join('');
+                tbodyContenedores.appendChild(fila);
+            });
+        }
+
+        async function consultarContenedores() {
+            try {
+                const response = await fetch(`${API_GESTION}?accion=contenedores`, { method: 'GET' });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    contenedoresCache = [];
+                    tbodyContenedores.innerHTML = `<tr><td colspan="${camposContenedor.length}">${data.message || 'Sin contenedores.'}</td></tr>`;
+                    return;
+                }
+
+                contenedoresCache = data.registros || [];
+                mostrarEn('mensaje-contenedores', '');
+                aplicarFiltroContenedores();
+            } catch (error) {
+                mostrarEn('mensaje-contenedores', 'Error de conexión: ' + error.message, 'red');
+            }
+        }
+
+        function aplicarFiltroContenedores() {
+            const matricula = document.getElementById('filtroMatriculaContenedor').value.trim();
+            const codigo = document.getElementById('filtroCodigoMunicipio').value.trim();
+
+            let filtrados = contenedoresCache;
+            if (matricula) {
+                filtrados = filtrados.filter(c => String(c.matricula) === matricula);
+            }
+            if (codigo) {
+                filtrados = filtrados.filter(c => String(c.codigo) === codigo);
+            }
+
+            renderContenedores(filtrados);
+            if ((matricula || codigo) && filtrados.length === 0) {
+                mostrarEn('mensaje-contenedores', 'No hay contenedores que coincidan con el filtro.', 'red');
+            } else {
+                mostrarEn('mensaje-contenedores', '');
+            }
+        }
+
+        document.getElementById('btnFiltrarContenedores').addEventListener('click', aplicarFiltroContenedores);
+        document.getElementById('btnVerTodosContenedores').addEventListener('click', () => {
+            document.getElementById('filtroMatriculaContenedor').value = '';
+            document.getElementById('filtroCodigoMunicipio').value = '';
+            renderContenedores(contenedoresCache);
+            mostrarEn('mensaje-contenedores', '');
+        });
+
+        consultarContenedores();
+
+        // ============================================================
+        // INCIDENCIAS: consulta filtrada por cuadrilla + cambio de estado (sin crear/eliminar)
+        // ============================================================
+        const ESTADOS_INCIDENCIA = ['abierta', 'en curso', 'resuelta'];
+        let incidenciasCache = [];
+        const tbodyIncidencias = document.getElementById('tbody-incidencias');
+
+        function fechaHoy() {
+            return new Date().toISOString().slice(0, 10);
+        }
+
+        function crearSelectEstadoIncidencia(inc, indice) {
+            const opciones = ESTADOS_INCIDENCIA.map(estado =>
+                `<option value="${estado}" ${inc.estado === estado ? 'selected' : ''}>${estado}</option>`
+            ).join('');
+            return `<select class="select-editable" onchange="cambiarEstadoIncidencia(${indice}, this.value)">${opciones}</select>`;
+        }
+
+        function renderIncidencias(lista) {
+            tbodyIncidencias.innerHTML = '';
+            if (lista.length === 0) {
+                tbodyIncidencias.innerHTML = '<tr><td colspan="7">No hay incidencias para mostrar.</td></tr>';
+                return;
+            }
+            lista.forEach((inc) => {
+                const indiceReal = incidenciasCache.indexOf(inc);
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td>${inc.id_incidencia}</td>
+                    <td>${inc.id_contdor}</td>
+                    <td>${inc.tipo}</td>
+                    <td>${crearSelectEstadoIncidencia(inc, indiceReal)}</td>
+                    <td>${inc.fch_apert ?? ''}</td>
+                    <td>${inc.fch_resol ?? ''}</td>
+                    <td>${inc.nom_cuadrilla ?? ''}</td>`;
+                tbodyIncidencias.appendChild(fila);
+            });
+        }
+
+        function aplicarFiltroIncidencias() {
+            const nomCuadrilla = document.getElementById('filtroNomCuadrilla').value.trim();
+            if (!nomCuadrilla) {
+                tbodyIncidencias.innerHTML = '<tr><td colspan="7">Ingresá el nombre de tu cuadrilla para ver sus incidencias.</td></tr>';
+                mostrarEn('mensaje-incidencias', '');
+                return;
+            }
+            const filtradas = incidenciasCache.filter(i => (i.nom_cuadrilla ?? '') === nomCuadrilla);
+            renderIncidencias(filtradas);
+            if (filtradas.length === 0) {
+                mostrarEn('mensaje-incidencias', `No hay incidencias asignadas a la cuadrilla "${nomCuadrilla}".`, 'red');
+            } else {
+                mostrarEn('mensaje-incidencias', '');
+            }
+        }
+
+        async function consultarIncidencias() {
+            try {
+                const response = await fetch(`${API_RECOLECCION}?accion=incidencias`, { method: 'GET' });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    incidenciasCache = [];
+                    tbodyIncidencias.innerHTML = `<tr><td colspan="7">${data.message || 'Sin incidencias.'}</td></tr>`;
+                    return;
+                }
+
+                incidenciasCache = data.registros || [];
+                aplicarFiltroIncidencias();
+            } catch (error) {
+                mostrarEn('mensaje-incidencias', 'Error de conexión: ' + error.message, 'red');
+            }
+        }
+
+        window.cambiarEstadoIncidencia = async function (indice, nuevoEstado) {
+            const inc = incidenciasCache[indice];
+            const fchResol = nuevoEstado === 'resuelta' ? (inc.fch_resol || fechaHoy()) : (nuevoEstado === 'abierta' ? '' : (inc.fch_resol ?? ''));
+
+            try {
+                const response = await fetch(`${API_RECOLECCION}?accion=incidencias`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_incidencia: inc.id_incidencia,
+                        id_contdor: inc.id_contdor,
+                        tipo: inc.tipo,
+                        estado: nuevoEstado,
+                        fch_apert: inc.fch_apert,
+                        fch_resol: fchResol,
+                        nom_cuadrilla: inc.nom_cuadrilla ?? ''
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'No se pudo actualizar el estado');
+                mostrarEn('mensaje-incidencias', data.message || 'Estado actualizado correctamente', 'green');
+                await consultarIncidencias();
+            } catch (error) {
+                mostrarEn('mensaje-incidencias', error.message, 'red');
+            }
+        };
+
+        document.getElementById('btnFiltrarIncidencias').addEventListener('click', aplicarFiltroIncidencias);
+        document.getElementById('btnRecargarIncidencias').addEventListener('click', consultarIncidencias);
+        consultarIncidencias();
+
+        // ============================================================
+        // RECORRIDO: registrar descarga (crear) + historial (solo consulta)
+        // ============================================================
+        const tbodyRecorridos = document.getElementById('tbody-recorridos');
+
+        async function consultarRecorridos() {
+            try {
+                const response = await fetch(`${API_RECOLECCION}?accion=descargas`, { method: 'GET' });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    tbodyRecorridos.innerHTML = `<tr><td colspan="4">${data.message || 'Sin recorridos registrados.'}</td></tr>`;
+                    return;
+                }
+
+                const registros = data.registros || [];
+                tbodyRecorridos.innerHTML = '';
+                if (registros.length === 0) {
+                    tbodyRecorridos.innerHTML = '<tr><td colspan="4">No hay recorridos registrados.</td></tr>';
+                    return;
+                }
+                registros.forEach(r => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `<td>${r.matricula}</td><td>${r.id_establcmto}</td><td>${r.hora}</td><td>${r.peso}</td>`;
+                    tbodyRecorridos.appendChild(fila);
+                });
+                mostrarEn('mensaje-recorridos', '');
+            } catch (error) {
+                mostrarEn('mensaje-recorridos', 'Error de conexión: ' + error.message, 'red');
+            }
+        }
+
+        document.getElementById('btnRecargarRecorridos').addEventListener('click', consultarRecorridos);
+        consultarRecorridos();
+
+        document.getElementById('btnRegistrarRecorrido').addEventListener('click', async () => {
+            const datos = {
+                matricula: document.getElementById('rec-matricula').value.trim(),
+                id_establcmto: document.getElementById('rec-id_establcmto').value.trim(),
+                hora: document.getElementById('rec-hora').value.trim(),
+                peso: document.getElementById('rec-peso').value.trim()
+            };
+
+            try {
+                const response = await fetch(`${API_RECOLECCION}?accion=descargas`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'No se pudo registrar el recorrido');
+                mostrarEn('mensaje-crear-recorrido', data.message || 'Recorrido registrado correctamente', 'green');
+                ['rec-matricula', 'rec-id_establcmto', 'rec-hora', 'rec-peso']
+                    .forEach(id => { document.getElementById(id).value = ''; });
+                consultarRecorridos();
+            } catch (error) {
+                mostrarEn('mensaje-crear-recorrido', error.message, 'red');
+            }
+        });
+    </script>
 </body>
+<link rel="stylesheet" href="InterfazOpCuadrilla.css">
 </html>

@@ -1,11 +1,351 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interfaz | Operario establecimiento</title>
+    <title>Panel | Operario de establecimiento</title>
 </head>
 <body>
-    
+    <div class="container">
+        <h1>Panel del operario de establecimiento</h1>
+        <p>Podés registrar las descargas de residuos que ingresan al establecimiento (peso y hora de recepción) y consultar la capacidad del establecimiento y la maquinaria disponible. No tenés acceso a la gestión de rutas, de usuarios ni de incidencias.</p>
+
+        <div class="tabs">
+            <button type="button" class="tab-btn" data-tab="tab-descargas">Descargas</button>
+            <button type="button" class="tab-btn" data-tab="tab-capacidad">Capacidad del establecimiento</button>
+            <button type="button" class="tab-btn" data-tab="tab-maquinaria">Maquinaria disponible</button>
+        </div>
+
+        <!-- ===================== DESCARGAS (crear + consulta, sin editar/eliminar) ===================== -->
+        <div id="tab-descargas" class="tab-content">
+            <h2>Registrar descarga de residuos</h2>
+            <p>Ingresá el vehículo que descarga, el establecimiento receptor, la hora y el peso recibido.</p>
+            <div id="mensaje-crear-descarga" class="mensaje"></div>
+            <div class="form-crud">
+                <div class="campo">
+                    <label for="desc-matricula">Matrícula del vehículo</label>
+                    <input type="text" id="desc-matricula" required>
+                </div>
+                <div class="campo">
+                    <label for="desc-id_establcmto">ID Establecimiento</label>
+                    <input type="number" id="desc-id_establcmto" required>
+                </div>
+                <div class="campo">
+                    <label for="desc-hora">Hora de recepción</label>
+                    <input type="time" id="desc-hora" required>
+                </div>
+                <div class="campo">
+                    <label for="desc-peso">Peso recibido (kg)</label>
+                    <input type="number" step="0.01" id="desc-peso" required>
+                </div>
+                <button type="button" id="btnRegistrarDescarga">Registrar descarga</button>
+            </div>
+
+            <div class="toolbar">
+                <h2>Descargas registradas</h2>
+                <button type="button" id="btnRecargarDescargas">Recargar</button>
+            </div>
+            <div class="form-crud">
+                <div class="campo">
+                    <label for="filtroIdEstablDescarga">Filtrar por ID Establecimiento</label>
+                    <input type="number" id="filtroIdEstablDescarga" placeholder="Ej: 1">
+                </div>
+                <button type="button" id="btnFiltrarDescargas">Filtrar</button>
+                <button type="button" class="secundario" id="btnVerTodasDescargas">Ver todas</button>
+            </div>
+            <div id="mensaje-descargas" class="mensaje"></div>
+            <table>
+                <thead><tr><th>Matrícula</th><th>ID Establecimiento</th><th>Hora</th><th>Peso (kg)</th></tr></thead>
+                <tbody id="tbody-descargas"></tbody>
+            </table>
+        </div>
+
+        <!-- ===================== CAPACIDAD DEL ESTABLECIMIENTO (solo consulta) ===================== -->
+        <div id="tab-capacidad" class="tab-content" hidden>
+            <h2>Capacidad de los establecimientos</h2>
+            <p>Consultá la capacidad actual y máxima de cada establecimiento. Podés filtrar por ID para ver solo el tuyo.</p>
+            <div class="form-crud">
+                <div class="campo">
+                    <label for="filtroIdEstabl">ID Establecimiento</label>
+                    <input type="number" id="filtroIdEstabl" placeholder="Ej: 1">
+                </div>
+                <button type="button" id="btnFiltrarEstablecimientos">Filtrar</button>
+                <button type="button" class="secundario" id="btnVerTodosEstablecimientos">Ver todos</button>
+            </div>
+            <div id="mensaje-establecimientos" class="mensaje"></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Nombre</th><th>Calle</th><th>Número</th><th>Esquina</th>
+                        <th>Tipo</th><th>Capacidad actual</th><th>Capacidad máxima</th><th>Tipo residuo</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-establecimientos"></tbody>
+            </table>
+        </div>
+
+        <!-- ===================== MAQUINARIA DISPONIBLE (solo consulta) ===================== -->
+        <div id="tab-maquinaria" class="tab-content" hidden>
+            <h2>Maquinaria</h2>
+            <p>Consultá la maquinaria del establecimiento y si está disponible o en uso. Podés filtrar por ID de establecimiento.</p>
+            <div class="form-crud">
+                <div class="campo">
+                    <label for="filtroIdEstablMaquinaria">ID Establecimiento</label>
+                    <input type="number" id="filtroIdEstablMaquinaria" placeholder="Ej: 1">
+                </div>
+                <button type="button" id="btnFiltrarMaquinaria">Filtrar</button>
+                <button type="button" class="secundario" id="btnVerTodaMaquinaria">Ver toda</button>
+            </div>
+            <div id="mensaje-maquinaria" class="mensaje"></div>
+            <table>
+                <thead><tr><th>ID Maquinaria</th><th>Nombre</th><th>En uso</th><th>ID Establecimiento</th></tr></thead>
+                <tbody id="tbody-maquinaria"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // Navegación por pestañas
+        // ============================================================
+        const botonesTab = document.querySelectorAll('.tab-btn');
+        const contenidosTab = document.querySelectorAll('.tab-content');
+
+        function activarTab(idTab) {
+            contenidosTab.forEach(div => div.hidden = (div.id !== idTab));
+            botonesTab.forEach(btn => btn.classList.toggle('activo', btn.dataset.tab === idTab));
+        }
+
+        botonesTab.forEach(btn => btn.addEventListener('click', () => activarTab(btn.dataset.tab)));
+        activarTab('tab-descargas');
+        botonesTab[0].classList.add('activo');
+
+        const API_RECOLECCION = 'http://localhost/tareas/Proyecto/DataByte/API_Recoleccion/public/index.php';
+        const API_GESTION = 'http://localhost/tareas/Proyecto/DataByte/API_Gestion/public/index.php';
+
+        function mostrarEn(idDiv, texto, color = '#1f3c88') {
+            const div = document.getElementById(idDiv);
+            div.textContent = texto;
+            div.style.color = color;
+        }
+
+        // ============================================================
+        // DESCARGAS: registrar (crear) + consulta filtrada por establecimiento
+        // ============================================================
+        const tbodyDescargas = document.getElementById('tbody-descargas');
+        let descargasCache = [];
+
+        function renderDescargas(lista) {
+            tbodyDescargas.innerHTML = '';
+            if (lista.length === 0) {
+                tbodyDescargas.innerHTML = '<tr><td colspan="4">No hay descargas para mostrar.</td></tr>';
+                return;
+            }
+            lista.forEach(d => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `<td>${d.matricula}</td><td>${d.id_establcmto}</td><td>${d.hora}</td><td>${d.peso}</td>`;
+                tbodyDescargas.appendChild(fila);
+            });
+        }
+
+        async function consultarDescargas() {
+            try {
+                const response = await fetch(`${API_RECOLECCION}?accion=descargas`, { method: 'GET' });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    descargasCache = [];
+                    tbodyDescargas.innerHTML = `<tr><td colspan="4">${data.message || 'Sin descargas.'}</td></tr>`;
+                    return;
+                }
+
+                descargasCache = data.registros || [];
+                mostrarEn('mensaje-descargas', '');
+                aplicarFiltroDescargas();
+            } catch (error) {
+                mostrarEn('mensaje-descargas', 'Error de conexión: ' + error.message, 'red');
+            }
+        }
+
+        function aplicarFiltroDescargas() {
+            const idEstabl = document.getElementById('filtroIdEstablDescarga').value.trim();
+            if (!idEstabl) {
+                renderDescargas(descargasCache);
+                return;
+            }
+            const filtradas = descargasCache.filter(d => String(d.id_establcmto) === idEstabl);
+            renderDescargas(filtradas);
+            if (filtradas.length === 0) {
+                mostrarEn('mensaje-descargas', `No hay descargas registradas para el establecimiento "${idEstabl}".`, 'red');
+            } else {
+                mostrarEn('mensaje-descargas', '');
+            }
+        }
+
+        document.getElementById('btnFiltrarDescargas').addEventListener('click', aplicarFiltroDescargas);
+        document.getElementById('btnVerTodasDescargas').addEventListener('click', () => {
+            document.getElementById('filtroIdEstablDescarga').value = '';
+            renderDescargas(descargasCache);
+            mostrarEn('mensaje-descargas', '');
+        });
+        document.getElementById('btnRecargarDescargas').addEventListener('click', consultarDescargas);
+        consultarDescargas();
+
+        document.getElementById('btnRegistrarDescarga').addEventListener('click', async () => {
+            const datos = {
+                matricula: document.getElementById('desc-matricula').value.trim(),
+                id_establcmto: document.getElementById('desc-id_establcmto').value.trim(),
+                hora: document.getElementById('desc-hora').value.trim(),
+                peso: document.getElementById('desc-peso').value.trim()
+            };
+
+            try {
+                const response = await fetch(`${API_RECOLECCION}?accion=descargas`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'No se pudo registrar la descarga');
+                mostrarEn('mensaje-crear-descarga', data.message || 'Descarga registrada correctamente', 'green');
+                ['desc-matricula', 'desc-id_establcmto', 'desc-hora', 'desc-peso']
+                    .forEach(id => { document.getElementById(id).value = ''; });
+                consultarDescargas();
+            } catch (error) {
+                mostrarEn('mensaje-crear-descarga', error.message, 'red');
+            }
+        });
+
+        // ============================================================
+        // CAPACIDAD DEL ESTABLECIMIENTO: solo consulta, filtro por ID en cliente
+        // ============================================================
+        const camposEstablecimiento = ['id_establcmto', 'nombre', 'calle', 'nmro', 'esq', 'tipo', 'capac_actual', 'capac_max', 'tipo_res'];
+        const tbodyEstablecimientos = document.getElementById('tbody-establecimientos');
+        let establecimientosCache = [];
+
+        function renderEstablecimientos(lista) {
+            tbodyEstablecimientos.innerHTML = '';
+            if (lista.length === 0) {
+                tbodyEstablecimientos.innerHTML = `<tr><td colspan="${camposEstablecimiento.length}">No hay establecimientos para mostrar.</td></tr>`;
+                return;
+            }
+            lista.forEach(registro => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = camposEstablecimiento.map(c => `<td>${registro[c] ?? ''}</td>`).join('');
+                tbodyEstablecimientos.appendChild(fila);
+            });
+        }
+
+        async function consultarEstablecimientos() {
+            try {
+                const response = await fetch(`${API_GESTION}?accion=establecimientos`, { method: 'GET' });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    establecimientosCache = [];
+                    tbodyEstablecimientos.innerHTML = `<tr><td colspan="${camposEstablecimiento.length}">${data.message || 'Sin establecimientos.'}</td></tr>`;
+                    return;
+                }
+
+                establecimientosCache = data.registros || [];
+                mostrarEn('mensaje-establecimientos', '');
+                aplicarFiltroEstablecimientos();
+            } catch (error) {
+                mostrarEn('mensaje-establecimientos', 'Error de conexión: ' + error.message, 'red');
+            }
+        }
+
+        function aplicarFiltroEstablecimientos() {
+            const idEstabl = document.getElementById('filtroIdEstabl').value.trim();
+            if (!idEstabl) {
+                renderEstablecimientos(establecimientosCache);
+                return;
+            }
+            const filtrados = establecimientosCache.filter(e => String(e.id_establcmto) === idEstabl);
+            renderEstablecimientos(filtrados);
+            if (filtrados.length === 0) {
+                mostrarEn('mensaje-establecimientos', `No hay un establecimiento con ID "${idEstabl}".`, 'red');
+            } else {
+                mostrarEn('mensaje-establecimientos', '');
+            }
+        }
+
+        document.getElementById('btnFiltrarEstablecimientos').addEventListener('click', aplicarFiltroEstablecimientos);
+        document.getElementById('btnVerTodosEstablecimientos').addEventListener('click', () => {
+            document.getElementById('filtroIdEstabl').value = '';
+            renderEstablecimientos(establecimientosCache);
+            mostrarEn('mensaje-establecimientos', '');
+        });
+
+        consultarEstablecimientos();
+
+        // ============================================================
+        // MAQUINARIA DISPONIBLE: solo consulta, filtro por establecimiento en cliente
+        // ============================================================
+        const tbodyMaquinaria = document.getElementById('tbody-maquinaria');
+        let maquinariaCache = [];
+
+        function textoEnUso(valor) {
+            const enUso = Number(valor) === 1;
+            return enUso ? 'En uso' : 'Disponible';
+        }
+
+        function renderMaquinaria(lista) {
+            tbodyMaquinaria.innerHTML = '';
+            if (lista.length === 0) {
+                tbodyMaquinaria.innerHTML = '<tr><td colspan="4">No hay maquinaria para mostrar.</td></tr>';
+                return;
+            }
+            lista.forEach(m => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `<td>${m.id_maquinaria}</td><td>${m.nombre}</td><td>${textoEnUso(m.en_uso)}</td><td>${m.id_establcmto}</td>`;
+                tbodyMaquinaria.appendChild(fila);
+            });
+        }
+
+        async function consultarMaquinaria() {
+            try {
+                const response = await fetch(`${API_GESTION}?accion=maquinarias`, { method: 'GET' });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    maquinariaCache = [];
+                    tbodyMaquinaria.innerHTML = `<tr><td colspan="4">${data.message || 'Sin maquinaria.'}</td></tr>`;
+                    return;
+                }
+
+                maquinariaCache = data.registros || [];
+                mostrarEn('mensaje-maquinaria', '');
+                aplicarFiltroMaquinaria();
+            } catch (error) {
+                mostrarEn('mensaje-maquinaria', 'Error de conexión: ' + error.message, 'red');
+            }
+        }
+
+        function aplicarFiltroMaquinaria() {
+            const idEstabl = document.getElementById('filtroIdEstablMaquinaria').value.trim();
+            if (!idEstabl) {
+                renderMaquinaria(maquinariaCache);
+                return;
+            }
+            const filtrada = maquinariaCache.filter(m => String(m.id_establcmto) === idEstabl);
+            renderMaquinaria(filtrada);
+            if (filtrada.length === 0) {
+                mostrarEn('mensaje-maquinaria', `No hay maquinaria registrada para el establecimiento "${idEstabl}".`, 'red');
+            } else {
+                mostrarEn('mensaje-maquinaria', '');
+            }
+        }
+
+        document.getElementById('btnFiltrarMaquinaria').addEventListener('click', aplicarFiltroMaquinaria);
+        document.getElementById('btnVerTodaMaquinaria').addEventListener('click', () => {
+            document.getElementById('filtroIdEstablMaquinaria').value = '';
+            renderMaquinaria(maquinariaCache);
+            mostrarEn('mensaje-maquinaria', '');
+        });
+
+        consultarMaquinaria();
+    </script>
 </body>
+<link rel="stylesheet" href="InterfazOpEstablecimiento.css">
 </html>
