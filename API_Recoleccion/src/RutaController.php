@@ -216,4 +216,45 @@ class RutaController {
             echo json_encode(["message" => "No se pudieron obtener las asignaciones"]);
         }
     }
+
+    public function eliminarAsignacion() {
+        $data = $this->getPayload();
+        $id_ruta = $this->getInputValue($data, ["id_ruta"]);
+        $matricula = $this->getInputValue($data, ["matricula"]);
+        $fech = $this->getInputValue($data, ["fech", "fecha"]);
+
+        if (!empty($id_ruta) && !empty($matricula) && !empty($fech)) {
+            $id_ruta_int = (int) $id_ruta;
+
+            $query = "DELETE FROM `asigna` WHERE id_ruta = ? AND matricula = ? AND fech = ?";
+            $stmt = $this->db->prepare($query);
+            if (!$stmt) {
+                http_response_code(503);
+                echo json_encode(["message" => "No se pudo eliminar la asignación"]);
+                return;
+            }
+
+            $stmt->bind_param("iss", $id_ruta_int, $matricula, $fech);
+
+            if ($stmt->execute()) {
+                $filasAfectadas = $stmt->affected_rows;
+                $stmt->close();
+
+                if ($filasAfectadas > 0) {
+                    http_response_code(200);
+                    echo json_encode(["message" => "Asignación eliminada exitosamente"]);
+                } else {
+                    http_response_code(404);
+                    echo json_encode(["message" => "La asignación no existe"]);
+                }
+            } else {
+                $stmt->close();
+                http_response_code(503);
+                echo json_encode(["message" => "No se pudo eliminar la asignación"]);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(["message" => "ID Ruta, matrícula y fecha requeridos"]);
+        }
+    }
 }

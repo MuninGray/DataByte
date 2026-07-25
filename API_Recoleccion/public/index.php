@@ -43,6 +43,9 @@ switch ($accion) {
     case "obtenerAsignaciones":
         $controller = new RutaController();
         break;
+    case "eliminarAsignacion":
+        $controller = new RutaController();
+        break;
     default:
         http_response_code(400);
         echo json_encode(["message" => "Acción no válida"]);
@@ -113,6 +116,8 @@ switch ($method) {
             $controller->delete();
         } elseif ($accion == "descargas") {
             $controller->delete();
+        } elseif ($accion == "eliminarAsignacion") {
+            $controller->eliminarAsignacion();
         } else {
             http_response_code(400);
             echo json_encode(["message" => "Acción no válida"]);

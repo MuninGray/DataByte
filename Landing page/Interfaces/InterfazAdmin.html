@@ -95,6 +95,7 @@
                         <th>ID Ruta</th>
                         <th>Matrícula</th>
                         <th>Fecha</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tablaAsignaciones"></tbody>
@@ -256,6 +257,17 @@
             return usuariosCache.find(u => String(u.cedula) === String(cedula)) || null;
         }
 
+        async function asignarRolUsuario(datos) {
+            const response = await fetch(`${API_URL}?accion=asignarRol`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'No se pudo asignar el rol');
+            return data;
+        }
+
         window.cambiarRol = function (cedula, nuevoRol) {
             const usuario = encontrarUsuario(cedula);
             if (!usuario) return;
@@ -266,20 +278,45 @@
                 return;
             }
 
-            actualizarUsuario({
-                cedula: String(cedula),
-                email: usuario.email || '',
-                pass: '',
-                conf_contrasena: '',
-                PrNom: usuario.PrNom || '',
-                PrApel: usuario.PrApel || '',
-                rol: rolFinal,
-                estado_habil: usuario.estado_habil || 'pendiente'
-            }).then(() => {
-                mostrarMensaje('Rol actualizado correctamente', 'green');
+            const datos = { cedula: String(cedula), rol: rolFinal };
+
+            // Según el rol, además de actualizar usuario.rol hay que dar de alta
+            // el registro correspondiente (inspector_municipal / operario_cuadrilla /
+            // operario_establcmto), porque esas tablas tienen llave foránea contra
+            // cedula_inspector, cedula, etc. Sin este dato, por ejemplo, no se puede
+            // crear luego una cuadrilla con ese inspector (falla la FK).
+            if (rolFinal === 'INSPECTOR') {
+                const codigo = prompt('Código de municipio del inspector (A, B, C, CH, D, E, F o G):', usuario.codigo || '');
+                if (!codigo || !codigo.trim()) {
+                    mostrarMensaje('Se canceló: falta el código de municipio para asignar el rol de inspector.', 'red');
+                    consultarUsuarios();
+                    return;
+                }
+                datos.codigo = codigo.trim().toUpperCase();
+            } else if (rolFinal === 'OPERARIO_CUADRILLA') {
+                const nomCuadrilla = prompt('Nombre de la cuadrilla a la que pertenece este operario:');
+                if (!nomCuadrilla || !nomCuadrilla.trim()) {
+                    mostrarMensaje('Se canceló: falta el nombre de la cuadrilla para asignar el rol de operario.', 'red');
+                    consultarUsuarios();
+                    return;
+                }
+                datos.nom_cuadrilla = nomCuadrilla.trim();
+            } else if (rolFinal === 'OPERARIO_ESTABLECIMIENTO') {
+                const idEstabl = prompt('ID del establecimiento al que pertenece este operario:');
+                if (!idEstabl || !idEstabl.trim()) {
+                    mostrarMensaje('Se canceló: falta el ID de establecimiento para asignar el rol de operario.', 'red');
+                    consultarUsuarios();
+                    return;
+                }
+                datos.id_establcmto = idEstabl.trim();
+            }
+
+            asignarRolUsuario(datos).then(() => {
+                mostrarMensaje('Rol asignado correctamente', 'green');
                 consultarUsuarios();
             }).catch(error => {
                 mostrarMensaje(error.message, 'red');
+                consultarUsuarios();
             });
         };
 
@@ -332,12 +369,27 @@
             const permitirEditar = cfg.permitirEditar !== false;
             let cache = [];
 
-            const inputsHtml = cfg.campos.map(c => `
+            const inputsHtml = cfg.campos.map(c => {
+                if (c.tipo === 'seleccion') {
+                    const opciones = (c.opciones || []).map(op =>
+                        `<option value="${op}">${op}</option>`
+                    ).join('');
+                    return `
+                <div class="campo">
+                    <label for="${cfg.contenedorId}-${c.nombre}">${c.etiqueta}${c.opcional ? ' (opcional)' : ''}</label>
+                    <select id="${cfg.contenedorId}-${c.nombre}" ${c.opcional ? '' : 'required'}>
+                        <option value="" ${c.opcional ? 'selected' : 'disabled selected'}>${c.opcional ? 'Sin especificar' : 'Seleccioná una opción'}</option>
+                        ${opciones}
+                    </select>
+                </div>`;
+                }
+                return `
                 <div class="campo">
                     <label for="${cfg.contenedorId}-${c.nombre}">${c.etiqueta}${c.opcional ? ' (opcional)' : ''}</label>
                     <input type="${c.tipo === 'numero' ? 'number' : (c.tipo === 'fecha' ? 'date' : 'text')}"
                            id="${cfg.contenedorId}-${c.nombre}" ${c.opcional ? '' : 'required'}>
-                </div>`).join('');
+                </div>`;
+            }).join('');
 
             const columnasHtml = cfg.campos.map(c => `<th>${c.etiqueta}</th>`).join('') + '<th>Acciones</th>';
 
@@ -402,10 +454,10 @@
                     const fila = document.createElement('tr');
                     const celdas = cfg.campos.map(c => `<td>${registro[c.nombre] ?? ''}</td>`).join('');
                     const accionesEditar = permitirEditar
-                        ? `<button type="button" onclick="window.__crud_${cfg.contenedorId}.editar(${indice})">Editar</button>`
+                        ? `<button type="button" onclick="window['__crud_${cfg.contenedorId}'].editar(${indice})">Editar</button>`
                         : '';
                     fila.innerHTML = `${celdas}<td>${accionesEditar}
-                        <button type="button" class="danger" onclick="window.__crud_${cfg.contenedorId}.eliminar(${indice})">Eliminar</button>
+                        <button type="button" class="danger" onclick="window['__crud_${cfg.contenedorId}'].eliminar(${indice})">Eliminar</button>
                     </td>`;
                     tbody.appendChild(fila);
                 });
@@ -415,14 +467,30 @@
                 const registro = cache[indice];
                 const fila = tbody.children[indice];
                 const celdas = cfg.campos.map(c => {
-                    const tipoInput = c.tipo === 'numero' ? 'number' : (c.tipo === 'fecha' ? 'date' : 'text');
                     const soloLectura = c.pk ? 'readonly' : '';
+                    const valorActual = registro[c.nombre] ?? '';
+
+                    if (c.tipo === 'seleccion') {
+                        if (c.pk) {
+                            return `<td><input class="input-edit" type="text" readonly
+                                data-campo="${c.nombre}" value="${valorActual}"></td>`;
+                        }
+                        const opcionVacia = c.opcional
+                            ? `<option value="" ${valorActual === '' ? 'selected' : ''}>Sin especificar</option>`
+                            : '';
+                        const opciones = (c.opciones || []).map(op =>
+                            `<option value="${op}" ${valorActual === op ? 'selected' : ''}>${op}</option>`
+                        ).join('');
+                        return `<td><select class="input-edit" data-campo="${c.nombre}">${opcionVacia}${opciones}</select></td>`;
+                    }
+
+                    const tipoInput = c.tipo === 'numero' ? 'number' : (c.tipo === 'fecha' ? 'date' : 'text');
                     return `<td><input class="input-edit" type="${tipoInput}" ${soloLectura}
-                        data-campo="${c.nombre}" value="${registro[c.nombre] ?? ''}"></td>`;
+                        data-campo="${c.nombre}" value="${valorActual}"></td>`;
                 }).join('');
                 fila.innerHTML = `${celdas}<td>
-                    <button type="button" onclick="window.__crud_${cfg.contenedorId}.guardar(${indice})">Guardar</button>
-                    <button type="button" class="secundario" onclick="window.__crud_${cfg.contenedorId}.cancelar()">Cancelar</button>
+                    <button type="button" onclick="window['__crud_${cfg.contenedorId}'].guardar(${indice})">Guardar</button>
+                    <button type="button" class="secundario" onclick="window['__crud_${cfg.contenedorId}'].cancelar()">Cancelar</button>
                 </td>`;
             }
 
@@ -446,7 +514,7 @@
 
             async function guardar(indice) {
                 const fila = tbody.children[indice];
-                const inputs = fila.querySelectorAll('input[data-campo]');
+                const inputs = fila.querySelectorAll('[data-campo]');
                 const datos = {};
                 inputs.forEach(input => { datos[input.dataset.campo] = input.value.trim(); });
 
@@ -518,7 +586,8 @@
             accion: 'vehiculos',
             campos: [
                 { nombre: 'matricula', etiqueta: 'Matrícula', pk: true },
-                { nombre: 'estado_optivo', etiqueta: 'Estado operativo' }
+                { nombre: 'estado_optivo', etiqueta: 'Estado operativo', tipo: 'seleccion',
+                  opciones: ['en servicio', 'en stock', 'en mantenimiento'] }
             ]
         });
 
@@ -571,7 +640,8 @@
                 { nombre: 'calle', etiqueta: 'Calle' },
                 { nombre: 'nmro', etiqueta: 'Número' },
                 { nombre: 'esq', etiqueta: 'Esquina' },
-                { nombre: 'tipo', etiqueta: 'Tipo' },
+                { nombre: 'tipo', etiqueta: 'Tipo', tipo: 'seleccion',
+                  opciones: ['vertedero', 'centro de acopio'] },
                 { nombre: 'capac_actual', etiqueta: 'Capacidad actual', tipo: 'numero' },
                 { nombre: 'capac_max', etiqueta: 'Capacidad máxima', tipo: 'numero' },
                 { nombre: 'tipo_res', etiqueta: 'Tipo de residuo' }
@@ -598,8 +668,10 @@
             accion: 'contenedores',
             campos: [
                 { nombre: 'id_contdor', etiqueta: 'ID Contenedor', tipo: 'numero', pk: true },
-                { nombre: 'estado_optivo', etiqueta: 'Estado operativo' },
-                { nombre: 'en_uso', etiqueta: 'En uso', opcional: true },
+                { nombre: 'estado_optivo', etiqueta: 'Estado operativo', tipo: 'seleccion',
+                  opciones: ['funcional', 'roto', 'desbordado'] },
+                { nombre: 'en_uso', etiqueta: 'En uso', tipo: 'seleccion', opcional: true,
+                  opciones: ['desplegado', 'en_stock'] },
                 { nombre: 'tipo', etiqueta: 'Tipo' },
                 { nombre: 'calle', etiqueta: 'Calle' },
                 { nombre: 'nmro', etiqueta: 'Número' },
@@ -614,6 +686,7 @@
         // ============================================================
         const mensajeAsignacion = document.getElementById('mensajeAsignacion');
         const tablaAsignaciones = document.getElementById('tablaAsignaciones');
+        let asignacionesCache = [];
 
         function mostrarMensajeAsignacion(texto, color = '#1f3c88') {
             mensajeAsignacion.textContent = texto;
@@ -626,26 +699,48 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    tablaAsignaciones.innerHTML = `<tr><td colspan="3">${data.message || 'Sin asignaciones.'}</td></tr>`;
+                    asignacionesCache = [];
+                    tablaAsignaciones.innerHTML = `<tr><td colspan="4">${data.message || 'Sin asignaciones.'}</td></tr>`;
                     return;
                 }
 
-                const asignaciones = data.registros || [];
+                asignacionesCache = data.registros || [];
                 tablaAsignaciones.innerHTML = '';
-                if (asignaciones.length === 0) {
-                    tablaAsignaciones.innerHTML = '<tr><td colspan="3">No hay asignaciones registradas.</td></tr>';
+                if (asignacionesCache.length === 0) {
+                    tablaAsignaciones.innerHTML = '<tr><td colspan="4">No hay asignaciones registradas.</td></tr>';
                     return;
                 }
 
-                asignaciones.forEach(asig => {
+                asignacionesCache.forEach((asig, indice) => {
                     const fila = document.createElement('tr');
-                    fila.innerHTML = `<td>${asig.id_ruta}</td><td>${asig.matricula}</td><td>${asig.fech}</td>`;
+                    fila.innerHTML = `<td>${asig.id_ruta}</td><td>${asig.matricula}</td><td>${asig.fech}</td>
+                        <td><button type="button" class="danger" onclick="eliminarAsignacion(${indice})">Eliminar</button></td>`;
                     tablaAsignaciones.appendChild(fila);
                 });
             } catch (error) {
                 mostrarMensajeAsignacion('Error de conexión: ' + error.message, 'red');
             }
         }
+
+        window.eliminarAsignacion = async function (indice) {
+            const asig = asignacionesCache[indice];
+            if (!asig) return;
+            if (!confirm(`¿Eliminar la asignación de la ruta ${asig.id_ruta} al vehículo ${asig.matricula} (${asig.fech})?`)) return;
+
+            try {
+                const response = await fetch(`${API_RECOLECCION}?accion=eliminarAsignacion`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_ruta: asig.id_ruta, matricula: asig.matricula, fech: asig.fech })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'No se pudo eliminar la asignación');
+                mostrarMensajeAsignacion(data.message || 'Asignación eliminada correctamente', 'green');
+                consultarAsignaciones();
+            } catch (error) {
+                mostrarMensajeAsignacion(error.message, 'red');
+            }
+        };
 
         document.getElementById('btnAsignarRuta').addEventListener('click', async () => {
             const id_ruta = document.getElementById('asigId_ruta').value.trim();

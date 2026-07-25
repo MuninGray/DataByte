@@ -218,7 +218,8 @@ class Usuario {
                 $this->conn->rollback();
                 return false;
             }
-            $insertQuery = "INSERT INTO `inspector_municipal` (cedula, codigo) VALUES (?, ?)";
+            $insertQuery = "INSERT INTO `inspector_municipal` (cedula, codigo) VALUES (?, ?)
+                ON DUPLICATE KEY UPDATE codigo = VALUES(codigo)";
             $insertTypes = "is";
             $insertParams = [$this->cedula, $this->codigo];
         } elseif ($this->rol === "OPERARIO_CUADRILLA") {
@@ -226,7 +227,8 @@ class Usuario {
                 $this->conn->rollback();
                 return false;
             }
-            $insertQuery = "INSERT INTO `operario_cuadrilla` (cedula, nom_cuadrilla) VALUES (?, ?)";
+            $insertQuery = "INSERT INTO `operario_cuadrilla` (cedula, nom_cuadrilla) VALUES (?, ?)
+                ON DUPLICATE KEY UPDATE nom_cuadrilla = VALUES(nom_cuadrilla)";
             $insertTypes = "is";
             $insertParams = [$this->cedula, $this->nom_cuadrilla];
         } elseif ($this->rol === "OPERARIO_ESTABLECIMIENTO") {
@@ -234,7 +236,8 @@ class Usuario {
                 $this->conn->rollback();
                 return false;
             }
-            $insertQuery = "INSERT INTO `operario_establcmto` (cedula, id_establcmto) VALUES (?, ?)";
+            $insertQuery = "INSERT INTO `operario_establcmto` (cedula, id_establcmto) VALUES (?, ?)
+                ON DUPLICATE KEY UPDATE id_establcmto = VALUES(id_establcmto)";
             $insertTypes = "ii";
             $insertParams = [$this->cedula, $this->id_establcmto];
         }
