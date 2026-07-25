@@ -12,24 +12,28 @@ class Cuadrilla {
         $this->conn = $db;
     }
 
-    public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (nom_cuadrilla, cedula_inspector) VALUES (?, ?)";
+public function create() {
+    $query = "INSERT INTO `" . $this->table_name . "` (nom_cuadrilla, cedula_inspector) VALUES (?, ?)";
+    $stmt = $this->conn->prepare($query);
+    if (!$stmt) return false;
 
-        $stmt = $this->conn->prepare($query);
-        if (!$stmt) return false;
+    $this->nom_cuadrilla = htmlspecialchars(strip_tags(trim($this->nom_cuadrilla)));
+    $this->cedula_inspector = (int) $this->cedula_inspector;
 
-        $this->nom_cuadrilla = htmlspecialchars(strip_tags(trim($this->nom_cuadrilla)));
-        $this->cedula_inspector = (int) $this->cedula_inspector;
+    $stmt->bind_param("si", $this->nom_cuadrilla, $this->cedula_inspector);
 
-        $stmt->bind_param("si", $this->nom_cuadrilla, $this->cedula_inspector);
-
+    try {
         if ($stmt->execute()) {
             $stmt->close();
             return true;
         }
-
+    } catch (\mysqli_sql_exception $e) {
+        // opcional: loguear $e->getMessage() en un archivo, no al cliente
         return false;
     }
+
+    return false;
+}
 
     public function read() {
         $query = "SELECT nom_cuadrilla, cedula_inspector FROM `" . $this->table_name . "`";

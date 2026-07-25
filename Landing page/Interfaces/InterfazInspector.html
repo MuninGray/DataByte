@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel | Inspector municipal</title>
+    <link rel="stylesheet" href="InterfazInspector.css">
 </head>
 <body>
     <div class="container">
@@ -25,7 +26,7 @@
             <div class="form-crud">
                 <div class="campo">
                     <label for="filtroCodigoMunicipio">Código de municipio</label>
-                    <input type="text" id="filtroCodigoMunicipio" placeholder="Ej: MVD01">
+                    <input type="text" id="filtroCodigoMunicipio" placeholder="Ej: A">
                 </div>
                 <button type="button" id="btnFiltrarContenedores">Filtrar</button>
                 <button type="button" class="secundario" id="btnVerTodosContenedores">Ver todos</button>
@@ -406,5 +407,4 @@
         consultarIncidencias();
     </script>
 </body>
-<link rel="stylesheet" href="InterfazInspector.css">
 </html>
