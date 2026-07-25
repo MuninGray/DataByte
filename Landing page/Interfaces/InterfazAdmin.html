@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel | Administrador</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Gestión de usuarios</h1>
+        <p>Desde aquí el administrador puede consultar, modificar el rol y estado, y eliminar usuarios directamente desde la tabla.</p>
+
+        <div class="toolbar">
+            <h2>Usuarios registrados</h2>
+            <button type="button" id="btnConsultar">Recargar usuarios</button>
+        </div>
+
+        <div id="mensaje" class="mensaje"></div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>CI</th>
+                    <th>Email</th>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaUsuarios"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost/tareas/Proyecto/DataByte/API_Usuarios/public/index.php';
+        const tablaUsuarios = document.getElementById('tablaUsuarios');
+        const mensaje = document.getElementById('mensaje');
+        const btnConsultar = document.getElementById('btnConsultar');
+
+        let usuariosCache = [];
+
+        function mostrarMensaje(texto, color = '#1f3c88') {
+            mensaje.textContent = texto;
+            mensaje.style.color = color;
+        }
+
+        async function consultarUsuarios() {
+            try {
+                const response = await fetch(API_URL, { method: 'GET' });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'No se pudieron cargar los usuarios');
+                }
+
+                const usuarios = data.registros || [];
+                usuariosCache = usuarios;
+                tablaUsuarios.innerHTML = '';
+
+                if (usuarios.length === 0) {
+                    tablaUsuarios.innerHTML = '<tr><td colspan="6">No hay usuarios registrados.</td></tr>';
+                    return;
+                }
+
+                usuarios.forEach(usuario => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td>${usuario.cedula || ''}</td>
+                        <td>${usuario.email || ''}</td>
+                        <td>${(usuario.PrNom || '') + ' ' + (usuario.PrApel || '')}</td>
+                        <td><span class="editable" onclick="cambiarRol(${usuario.cedula})">${usuario.rol || ''}</span></td>
+                        <td><span class="editable" onclick="cambiarEstado(${usuario.cedula})">${usuario.estado_habil || ''}</span></td>
+                        <td>
+                            <button type="button" class="danger" onclick="eliminarUsuario(${usuario.cedula})">Eliminar</button>
+                        </td>`;
+                    tablaUsuarios.appendChild(fila);
+                });
+            } catch (error) {
+                mostrarMensaje(error.message, 'red');
+            }
+        }
+
+        async function actualizarUsuario(datos) {
+            const response = await fetch(API_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'No se pudo actualizar el usuario');
+            return data;
+        }
+
+        async function eliminarUsuario(cedula) {
+            if (!confirm('¿Seguro que deseas eliminar este usuario?')) return;
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cedula: cedula })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'No se pudo eliminar el usuario');
+                mostrarMensaje('Usuario eliminado correctamente', 'green');
+                consultarUsuarios();
+            } catch (error) {
+                mostrarMensaje(error.message, 'red');
+            }
+        }
+
+        function encontrarUsuario(cedula) {
+            return usuariosCache.find(u => String(u.cedula) === String(cedula)) || null;
+        }
+
+        window.cambiarRol = function (cedula) {
+            const usuario = encontrarUsuario(cedula);
+            if (!usuario) return;
+
+            const valorActual = usuario.rol || '';
+            const nuevoRol = window.prompt('Ingrese el nuevo rol para este usuario:', valorActual);
+            if (nuevoRol === null) return;
+
+            const rolFinal = nuevoRol.trim();
+            if (!rolFinal) {
+                mostrarMensaje('El rol no puede estar vacío.', 'red');
+                return;
+            }
+
+            actualizarUsuario({
+                cedula: String(cedula),
+                email: usuario.email || '',
+                pass: '',
+                conf_contrasena: '',
+                PrNom: usuario.PrNom || '',
+                PrApel: usuario.PrApel || '',
+                rol: rolFinal,
+                estado_habil: usuario.estado_habil || 'pendiente'
+            }).then(() => {
+                mostrarMensaje('Rol actualizado correctamente', 'green');
+                consultarUsuarios();
+            }).catch(error => {
+                mostrarMensaje(error.message, 'red');
+            });
+        };
+
+        window.cambiarEstado = function (cedula) {
+            const usuario = encontrarUsuario(cedula);
+            if (!usuario) return;
+
+            const valorActual = usuario.estado_habil || '';
+            const nuevoEstado = window.prompt('Ingrese el nuevo estado (pendiente, aprobado, rechazado):', valorActual);
+            if (nuevoEstado === null) return;
+
+            const estadoFinal = nuevoEstado.trim().toLowerCase();
+            if (!['pendiente', 'aprobado', 'rechazado'].includes(estadoFinal)) {
+                mostrarMensaje('Estado inválido. Use: pendiente, aprobado o rechazado.', 'red');
+                return;
+            }
+
+            actualizarUsuario({
+                cedula: String(cedula),
+                email: usuario.email || '',
+                pass: '',
+                conf_contrasena: '',
+                PrNom: usuario.PrNom || '',
+                PrApel: usuario.PrApel || '',
+                rol: usuario.rol || 'usuario',
+                estado_habil: estadoFinal
+            }).then(() => {
+                mostrarMensaje('Estado actualizado correctamente', 'green');
+                consultarUsuarios();
+            }).catch(error => {
+                mostrarMensaje(error.message, 'red');
+            });
+        };
+
+        window.eliminarUsuario = eliminarUsuario;
+
+        btnConsultar.addEventListener('click', consultarUsuarios);
+        consultarUsuarios();
+    </script>
+</body>
+<link rel="stylesheet" href="InterfazAdmin.css">
+</html>

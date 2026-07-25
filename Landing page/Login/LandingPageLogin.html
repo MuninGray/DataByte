@@ -38,6 +38,24 @@
                 if (response.ok) {
                     mensaje.textContent = data.message || 'Login correcto.';
                     mensaje.style.color = 'green';
+
+                    const rol = String(data.usuario?.rol || '').trim().toUpperCase().replace(/\s+/g, '_');
+                    const rutasPorRol = {
+                        INSPECTOR: '../Interfaces/InterfazInspector.html',
+                        OPERARIO_CUADRILLA: '../Interfaces/InterfazOpCuadrilla.html',
+                        OPERARIO_ESTABLECIMIENTO: '../Interfaces/InterfazOpEstablecimiento.html',
+                        ADMIN: '../Interfaces/InterfazAdmin.html',
+                        ADMINISTRADOR: '../Interfaces/InterfazAdmin.html'
+                    };
+
+                    const rutaDestino = rutasPorRol[rol];
+
+                    if (rutaDestino) {
+                        window.location.href = rutaDestino;
+                    } else {
+                        mensaje.textContent = 'Rol no reconocido: ' + (data.usuario?.rol || '');
+                        mensaje.style.color = 'orange';
+                    }
                 } else {
                     mensaje.textContent = data.message || 'No se pudo iniciar sesión.';
                     mensaje.style.color = 'red';
@@ -69,7 +87,7 @@
 
         <div id="mensajeLogin" style="margin-top: 10px;"></div>
         <!-- Boton que te redirige a la landing page -->
-        <a href="LandingPage.html">Cancelar</a>
+        <a href="../LandingPage/LandingPage.html">Cancelar</a>
     </div>
 
 </body>

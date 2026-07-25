@@ -22,7 +22,7 @@ class Usuario {
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (cedula, email, pass, estado_habil, PrNom, PrApel, rol, cedula_admin) VALUES (?, ?, ?, 'pendiente', ?, ?, ?, NULL)";
+        $query = "INSERT INTO `" . $this->table_name . "` (cedula, email, pass, estado_habil, PrNom, PrApel, rol, cedula_admin) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
@@ -33,11 +33,15 @@ class Usuario {
         $this->PrNom = htmlspecialchars(strip_tags(trim($this->PrNom ?? "")));
         $this->PrApel = htmlspecialchars(strip_tags(trim($this->PrApel ?? "")));
         $this->rol = htmlspecialchars(strip_tags(trim($this->rol ?? "usuario")));
+        $this->estado_habil = htmlspecialchars(strip_tags(trim($this->estado_habil ?? "pendiente")));
         if ($this->rol === "") {
             $this->rol = "usuario";
         }
+        if ($this->estado_habil === "") {
+            $this->estado_habil = "pendiente";
+        }
 
-        $stmt->bind_param("isssss", $this->cedula, $this->email, $this->pass, $this->PrNom, $this->PrApel, $this->rol);
+        $stmt->bind_param("issssss", $this->cedula, $this->email, $this->pass, $this->estado_habil, $this->PrNom, $this->PrApel, $this->rol);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -64,7 +68,7 @@ class Usuario {
     }
 
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET email = ?, pass = ?, PrNom = ?, PrApel = ?, rol = ? WHERE cedula = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET email = ?, pass = ?, PrNom = ?, PrApel = ?, rol = ?, estado_habil = ? WHERE cedula = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
@@ -73,9 +77,17 @@ class Usuario {
         $this->PrNom = htmlspecialchars(strip_tags(trim($this->PrNom ?? "")));
         $this->PrApel = htmlspecialchars(strip_tags(trim($this->PrApel ?? "")));
         $this->rol = htmlspecialchars(strip_tags(trim($this->rol ?? "usuario")));
+        $this->estado_habil = htmlspecialchars(strip_tags(trim($this->estado_habil ?? "pendiente")));
         $this->cedula = (int) $this->cedula;
 
-        $stmt->bind_param("sssssi", $this->email, $this->pass, $this->PrNom, $this->PrApel, $this->rol, $this->cedula);
+        if ($this->rol === "") {
+            $this->rol = "usuario";
+        }
+        if ($this->estado_habil === "") {
+            $this->estado_habil = "pendiente";
+        }
+
+        $stmt->bind_param("ssssssi", $this->email, $this->pass, $this->PrNom, $this->PrApel, $this->rol, $this->estado_habil, $this->cedula);
 
         if ($stmt->execute()) {
             $stmt->close();
