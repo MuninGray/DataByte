@@ -1,7 +1,7 @@
 # ♻️ DataByte
 
 <p align="center">
-  <img src="logo.png" alt="Logo de DataByte" width="220"/>
+  <img src="assets/logo.png" alt="Logo de DataByte" width="220"/>
 </p>
 
 # Sistema de Gestión de Residuos Urbanos
