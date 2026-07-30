@@ -160,7 +160,7 @@
         // ============================================================
         // USUARIOS (API_Usuarios) - sin cambios respecto a la versión anterior
         // ============================================================
-        const API_URL = 'http://localhost/tareas/Proyecto/DataByte/API_Usuarios/public/index.php';
+        const API_URL = new URL('../../API_Usuarios/public/index.php', window.location.href).toString();
         const tablaUsuarios = document.getElementById('tablaUsuarios');
         const mensaje = document.getElementById('mensaje');
         const btnConsultar = document.getElementById('btnConsultar');
@@ -355,8 +355,8 @@
         // ============================================================
         // MÓDULO CRUD GENÉRICO (API_Recoleccion / API_Gestion)
         // ============================================================
-        const API_RECOLECCION = 'http://localhost/tareas/Proyecto/DataByte/API_Recoleccion/public/index.php';
-        const API_GESTION = 'http://localhost/tareas/Proyecto/DataByte/API_Gestion/public/index.php';
+        const API_RECOLECCION = new URL('../../API_Recoleccion/public/index.php', window.location.href).toString();
+        const API_GESTION = new URL('../../API_Gestion/public/index.php', window.location.href).toString();
 
         // cfg = {
         //   contenedorId, apiUrl, accion, campos: [{nombre, etiqueta, tipo, pk, opcional}],

@@ -165,8 +165,8 @@
         activarTab('tab-contenedores');
         botonesTab[0].classList.add('activo');
 
-        const API_RECOLECCION = 'http://localhost/tareas/Proyecto/DataByte/API_Recoleccion/public/index.php';
-        const API_GESTION = 'http://localhost/tareas/Proyecto/DataByte/API_Gestion/public/index.php';
+        const API_RECOLECCION = new URL('../../API_Recoleccion/public/index.php', window.location.href).toString();
+        const API_GESTION = new URL('../../API_Gestion/public/index.php', window.location.href).toString();
 
         function mostrarEn(idDiv, texto, color = '#1f3c88') {
             const div = document.getElementById(idDiv);
