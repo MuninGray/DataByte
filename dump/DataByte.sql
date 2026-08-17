@@ -215,15 +215,6 @@ CREATE TABLE `usuario` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `usuario`
---
-
-INSERT INTO `usuario` (`cedula`, `email`, `pass`, `estado_habil`, `PrNom`, `PrApel`, `rol`, `cedula_admin`) VALUES
-(12345678, 'ana@test.com', '123456', 'pendiente', 'Ana', 'Gonzalez', 'usuario', NULL);
-
--- --------------------------------------------------------
-
---
 -- Estructura de tabla para la tabla `vehiculo`
 --
 
