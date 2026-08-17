@@ -29,7 +29,7 @@ class Usuario {
 
         $this->cedula = (int) $this->cedula;
         $this->email = htmlspecialchars(strip_tags(trim($this->email)));
-        $this->pass = htmlspecialchars(strip_tags(trim($this->pass)));
+        $this->pass = password_hash($this->pass, PASSWORD_DEFAULT);
         $this->PrNom = htmlspecialchars(strip_tags(trim($this->PrNom ?? "")));
         $this->PrApel = htmlspecialchars(strip_tags(trim($this->PrApel ?? "")));
         $this->rol = htmlspecialchars(strip_tags(trim($this->rol ?? "usuario")));
@@ -69,7 +69,6 @@ class Usuario {
 
     public function update() {
         $this->email = htmlspecialchars(strip_tags(trim($this->email)));
-        $this->pass = htmlspecialchars(strip_tags(trim($this->pass ?? "")));
         $this->PrNom = htmlspecialchars(strip_tags(trim($this->PrNom ?? "")));
         $this->PrApel = htmlspecialchars(strip_tags(trim($this->PrApel ?? "")));
         $this->rol = htmlspecialchars(strip_tags(trim($this->rol ?? "usuario")));
@@ -83,14 +82,15 @@ class Usuario {
             $this->estado_habil = "pendiente";
         }
 
-        if ($this->pass !== "") {
-            // Se envió una contraseña nueva: se actualiza también
+        if (!empty($this->pass)) {
+            $this->pass = trim($this->pass);
+            $this->pass = password_hash($this->pass, PASSWORD_DEFAULT);
+
             $query = "UPDATE `" . $this->table_name . "` SET email = ?, pass = ?, PrNom = ?, PrApel = ?, rol = ?, estado_habil = ? WHERE cedula = ?";
             $stmt = $this->conn->prepare($query);
             if (!$stmt) return false;
             $stmt->bind_param("ssssssi", $this->email, $this->pass, $this->PrNom, $this->PrApel, $this->rol, $this->estado_habil, $this->cedula);
         } else {
-            // No se envió contraseña: se conserva la que ya tenía el usuario
             $query = "UPDATE `" . $this->table_name . "` SET email = ?, PrNom = ?, PrApel = ?, rol = ?, estado_habil = ? WHERE cedula = ?";
             $stmt = $this->conn->prepare($query);
             if (!$stmt) return false;
@@ -128,8 +128,6 @@ class Usuario {
         if (!$stmt) return false;
 
         $this->cedula = (int) $this->cedula;
-        $this->pass = htmlspecialchars(strip_tags(trim($this->pass)));
-
         $stmt->bind_param("i", $this->cedula);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -145,7 +143,7 @@ class Usuario {
 
         $usuario = $result->fetch_assoc();
 
-        if ($usuario["pass"] !== $this->pass) {
+        if (!password_verify($this->pass, $usuario["pass"])) {
             return [
                 "success" => false,
                 "message" => "Contraseña incorrecta",
@@ -182,7 +180,7 @@ class Usuario {
             ]
         ];
     }
-
+    
     public function asignarRol() {
         $this->cedula = (int) $this->cedula;
         $this->rol = strtoupper(htmlspecialchars(strip_tags(trim($this->rol ?? ""))));
@@ -287,4 +285,5 @@ class Usuario {
 
         return false;
     }
+
 }
