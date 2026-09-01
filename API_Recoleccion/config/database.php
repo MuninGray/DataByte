@@ -6,7 +6,7 @@ private $host = "localhost";
 private $db_name = "DataByte";
 private $username ="root";
 private $password = "";
-public $conn;
+private $conn;
 
 public function getConnection(){
     $this->conn = null;
