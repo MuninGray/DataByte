@@ -9,6 +9,7 @@ class Maquinaria {
     public $nombre;
     public $en_uso;
     public $id_establcmto;
+    public $id_serv;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -16,17 +17,18 @@ class Maquinaria {
 
     // Crear maquinaria usando prepared statement.
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (id_maquinaria, nombre, en_uso, id_establcmto) VALUES (?, ?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (id_maquinaria, nombre, en_uso, id_establcmto, id_serv) VALUES (?, ?, ?, ?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
         $this->id_maquinaria = (int) $this->id_maquinaria;
         $this->nombre = htmlspecialchars(strip_tags(trim($this->nombre)));
-        $this->en_uso = (int) $this->en_uso;
+        $this->en_uso = htmlspecialchars(strip_tags(trim($this->en_uso)));
         $this->id_establcmto = (int) $this->id_establcmto;
+        $this->id_serv = (int) $this->id_serv;
 
-        $stmt->bind_param("isii", $this->id_maquinaria, $this->nombre, $this->en_uso, $this->id_establcmto);
+        $stmt->bind_param("issii", $this->id_maquinaria, $this->nombre, $this->en_uso, $this->id_establcmto, $this->id_serv);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -38,7 +40,7 @@ class Maquinaria {
 
     // Leer todas las maquinarias usando prepared statement.
     public function read() {
-        $query = "SELECT id_maquinaria, nombre, en_uso, id_establcmto FROM `" . $this->table_name . "`";
+        $query = "SELECT id_maquinaria, nombre, en_uso, id_establcmto, id_serv FROM `" . $this->table_name . "`";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -55,7 +57,7 @@ class Maquinaria {
 
     // Obtener una maquinaria por id usando prepared statement.
     public function readOne() {
-        $query = "SELECT id_maquinaria, nombre, en_uso, id_establcmto FROM `" . $this->table_name . "` WHERE id_maquinaria = ?";
+        $query = "SELECT id_maquinaria, nombre, en_uso, id_establcmto, id_serv FROM `" . $this->table_name . "` WHERE id_maquinaria = ?";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -75,16 +77,17 @@ class Maquinaria {
 
     // Actualizar maquinaria usando prepared statement.
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET nombre = ?, en_uso = ?, id_establcmto = ? WHERE id_maquinaria = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET nombre = ?, en_uso = ?, id_establcmto = ?, id_serv = ? WHERE id_maquinaria = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
         $this->id_maquinaria = (int) $this->id_maquinaria;
         $this->nombre = htmlspecialchars(strip_tags(trim($this->nombre)));
-        $this->en_uso = (int) $this->en_uso;
+        $this->en_uso = htmlspecialchars(strip_tags(trim($this->en_uso)));
         $this->id_establcmto = (int) $this->id_establcmto;
+        $this->id_serv = (int) $this->id_serv;
 
-        $stmt->bind_param("siii", $this->nombre, $this->en_uso, $this->id_establcmto, $this->id_maquinaria);
+        $stmt->bind_param("ssiii", $this->nombre, $this->en_uso, $this->id_establcmto, $this->id_serv, $this->id_maquinaria);
 
         if ($stmt->execute()) {
             $stmt->close();

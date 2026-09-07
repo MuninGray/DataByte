@@ -50,6 +50,7 @@ class UsuarioController {
         $prApel = $this->getInputValue($data, ["PrApel", "prApel"]);
         $rol = $this->getInputValue($data, ["rol"]);
         $estadoHabil = $this->getInputValue($data, ["estado_habil"]);
+        $cedulaAdmin = $this->getInputValue($data, ["cedula_admin"]);
 
         if (!empty($email) && !empty($cedula) && !empty($pass) && !empty($confPass)) {
             if ($pass !== $confPass) {
@@ -67,6 +68,7 @@ class UsuarioController {
             $this->usuario->PrApel = $prApel;
             $this->usuario->rol = !empty($rol) ? $rol : "usuario";
             $this->usuario->estado_habil = !empty($estadoHabil) ? $estadoHabil : "pendiente";
+            $this->usuario->cedula_admin = !empty($cedulaAdmin) ? (int) $cedulaAdmin : 0;
 
             if ($this->usuario->create()) {
                 http_response_code(201);

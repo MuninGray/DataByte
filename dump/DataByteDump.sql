@@ -1,4 +1,8 @@
+DROP DATABASE IF EXISTS databyte;
+CREATE DATABASE databyte;
+
 USE databyte;
+
 CREATE TABLE admin_tecnico (
   cedula_admin int(11) NOT NULL,
   email varchar(50) NOT NULL,

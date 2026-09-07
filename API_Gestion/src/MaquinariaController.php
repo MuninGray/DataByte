@@ -39,24 +39,37 @@ class MaquinariaController {
         return "";
     }
 
-    // Crear maquinaria verificando que exista el establecimiento.
+    // Crear maquinaria verificando que exista el establecimiento y el servicio.
     public function create() {
         $data = $this->getPayload();
         $id_maquinaria = $this->getInputValue($data, ["id_maquinaria"]);
         $nombre = $this->getInputValue($data, ["nombre"]);
         $en_uso = $this->getInputValue($data, ["en_uso"]);
         $id_establcmto = $this->getInputValue($data, ["id_establcmto"]);
+        $id_serv = $this->getInputValue($data, ["id_serv"]);
 
-        if (!empty($id_maquinaria) && !empty($nombre) && !empty($en_uso) && !empty($id_establcmto)) {
-            $check = $this->db->prepare("SELECT id_establcmto FROM establecimiento WHERE id_establcmto = ?");
-            $check->bind_param("i", $id_establcmto);
-            $check->execute();
-            $result = $check->get_result();
-            $check->close();
+        if (!empty($id_maquinaria) && !empty($nombre) && !empty($en_uso) && !empty($id_establcmto) && !empty($id_serv)) {
+            $checkEst = $this->db->prepare("SELECT id_establcmto FROM establecimiento WHERE id_establcmto = ?");
+            $checkEst->bind_param("i", $id_establcmto);
+            $checkEst->execute();
+            $resultEst = $checkEst->get_result();
+            $checkEst->close();
 
-            if ($result->num_rows === 0) {
+            if ($resultEst->num_rows === 0) {
                 http_response_code(404);
                 echo json_encode(["message" => "El establecimiento no existe"]);
+                return;
+            }
+
+            $checkServ = $this->db->prepare("SELECT id_serv FROM servicios_y_mantenimientos WHERE id_serv = ?");
+            $checkServ->bind_param("i", $id_serv);
+            $checkServ->execute();
+            $resultServ = $checkServ->get_result();
+            $checkServ->close();
+
+            if ($resultServ->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(["message" => "El servicio de mantenimiento no existe"]);
                 return;
             }
 
@@ -64,6 +77,7 @@ class MaquinariaController {
             $this->maquinaria->nombre = $nombre;
             $this->maquinaria->en_uso = $en_uso;
             $this->maquinaria->id_establcmto = (int) $id_establcmto;
+            $this->maquinaria->id_serv = (int) $id_serv;
 
             if ($this->maquinaria->create()) {
                 http_response_code(201);
@@ -93,7 +107,8 @@ class MaquinariaController {
                     "id_maquinaria" => $row["id_maquinaria"],
                     "nombre" => $row["nombre"],
                     "en_uso" => $row["en_uso"],
-                    "id_establcmto" => $row["id_establcmto"]
+                    "id_establcmto" => $row["id_establcmto"],
+                    "id_serv" => $row["id_serv"]
                 ]);
             } else {
                 http_response_code(404);
@@ -113,7 +128,8 @@ class MaquinariaController {
                     "id_maquinaria" => $row["id_maquinaria"],
                     "nombre" => $row["nombre"],
                     "en_uso" => $row["en_uso"],
-                    "id_establcmto" => $row["id_establcmto"]
+                    "id_establcmto" => $row["id_establcmto"],
+                    "id_serv" => $row["id_serv"]
                 ];
                 array_push($maquinarias_arr["registros"], $maquinaria_item);
             }
@@ -126,15 +142,16 @@ class MaquinariaController {
         }
     }
 
-    // Actualizar maquinaria verificando que exista y que el establecimiento exista.
+    // Actualizar maquinaria verificando que exista y que el establecimiento y servicio existan.
     public function update() {
         $data = $this->getPayload();
         $id_maquinaria = $this->getInputValue($data, ["id_maquinaria"]);
         $nombre = $this->getInputValue($data, ["nombre"]);
         $en_uso = $this->getInputValue($data, ["en_uso"]);
         $id_establcmto = $this->getInputValue($data, ["id_establcmto"]);
+        $id_serv = $this->getInputValue($data, ["id_serv"]);
 
-        if (!empty($id_maquinaria) && !empty($nombre) && !empty($en_uso) && !empty($id_establcmto)) {
+        if (!empty($id_maquinaria) && !empty($nombre) && !empty($en_uso) && !empty($id_establcmto) && !empty($id_serv)) {
             $checkEst = $this->db->prepare("SELECT id_establcmto FROM establecimiento WHERE id_establcmto = ?");
             $checkEst->bind_param("i", $id_establcmto);
             $checkEst->execute();
@@ -147,10 +164,23 @@ class MaquinariaController {
                 return;
             }
 
+            $checkServ = $this->db->prepare("SELECT id_serv FROM servicios_y_mantenimientos WHERE id_serv = ?");
+            $checkServ->bind_param("i", $id_serv);
+            $checkServ->execute();
+            $resultServ = $checkServ->get_result();
+            $checkServ->close();
+
+            if ($resultServ->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(["message" => "El servicio de mantenimiento no existe"]);
+                return;
+            }
+
             $this->maquinaria->id_maquinaria = (int) $id_maquinaria;
             $this->maquinaria->nombre = $nombre;
             $this->maquinaria->en_uso = $en_uso;
             $this->maquinaria->id_establcmto = (int) $id_establcmto;
+            $this->maquinaria->id_serv = (int) $id_serv;
 
             $result = $this->maquinaria->readOne();
             if ($result && $result->num_rows === 0) {

@@ -22,12 +22,34 @@ class Usuario {
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (cedula, email, pass, estado_habil, PrNom, PrApel, rol, cedula_admin) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)";
+        $this->cedula = (int) $this->cedula;
+        $this->cedula_admin = (int) ($this->cedula_admin ?? 0);
 
+        if ($this->cedula_admin <= 0) {
+            $this->cedula_admin = 1;
+            $adminEmail = "admin@databyte.local";
+            $adminPrNom = "Admin";
+            $adminPrApel = "Sistema";
+            $adminPass = password_hash("admin123", PASSWORD_DEFAULT);
+
+            $adminQuery = "INSERT INTO `admin_tecnico` (cedula_admin, email, PrNom, PrApel, pass) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE email = VALUES(email), PrNom = VALUES(PrNom), PrApel = VALUES(PrApel), pass = VALUES(pass)";
+            $adminStmt = $this->conn->prepare($adminQuery);
+            if (!$adminStmt) {
+                return false;
+            }
+
+            $adminStmt->bind_param("issss", $this->cedula_admin, $adminEmail, $adminPrNom, $adminPrApel, $adminPass);
+            if (!$adminStmt->execute()) {
+                $adminStmt->close();
+                return false;
+            }
+            $adminStmt->close();
+        }
+
+        $query = "INSERT INTO `" . $this->table_name . "` (cedula, email, pass, estado_habil, PrNom, PrApel, rol, cedula_admin) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->cedula = (int) $this->cedula;
         $this->email = htmlspecialchars(strip_tags(trim($this->email)));
         $this->pass = password_hash($this->pass, PASSWORD_DEFAULT);
         $this->PrNom = htmlspecialchars(strip_tags(trim($this->PrNom ?? "")));
@@ -41,7 +63,7 @@ class Usuario {
             $this->estado_habil = "pendiente";
         }
 
-        $stmt->bind_param("issssss", $this->cedula, $this->email, $this->pass, $this->estado_habil, $this->PrNom, $this->PrApel, $this->rol);
+        $stmt->bind_param("issssssi", $this->cedula, $this->email, $this->pass, $this->estado_habil, $this->PrNom, $this->PrApel, $this->rol, $this->cedula_admin);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -216,6 +238,33 @@ class Usuario {
                 $this->conn->rollback();
                 return false;
             }
+
+            $checkMunicipio = $this->conn->prepare("SELECT codigo FROM `municipio` WHERE codigo = ?");
+            if (!$checkMunicipio) {
+                $this->conn->rollback();
+                return false;
+            }
+            $checkMunicipio->bind_param("s", $this->codigo);
+            $checkMunicipio->execute();
+            $municipioResult = $checkMunicipio->get_result();
+            $checkMunicipio->close();
+
+            if ($municipioResult->num_rows === 0) {
+                $municipioInsert = $this->conn->prepare("INSERT INTO `municipio` (codigo, nombre) VALUES (?, ?) ON DUPLICATE KEY UPDATE nombre = VALUES(nombre)");
+                if (!$municipioInsert) {
+                    $this->conn->rollback();
+                    return false;
+                }
+                $nombreMunicipio = "Municipio " . $this->codigo;
+                $municipioInsert->bind_param("ss", $this->codigo, $nombreMunicipio);
+                if (!$municipioInsert->execute()) {
+                    $municipioInsert->close();
+                    $this->conn->rollback();
+                    return false;
+                }
+                $municipioInsert->close();
+            }
+
             $insertQuery = "INSERT INTO `inspector_municipal` (cedula, codigo) VALUES (?, ?)
                 ON DUPLICATE KEY UPDATE codigo = VALUES(codigo)";
             $insertTypes = "is";
@@ -225,7 +274,44 @@ class Usuario {
                 $this->conn->rollback();
                 return false;
             }
-            $insertQuery = "INSERT INTO `operario_cuadrilla` (cedula, nom_cuadrilla) VALUES (?, ?)
+            $checkCuadrilla = $this->conn->prepare("SELECT nom_cuadrilla FROM `cuadrilla` WHERE nom_cuadrilla = ?");
+            if (!$checkCuadrilla) {
+                $this->conn->rollback();
+                return false;
+            }
+            $checkCuadrilla->bind_param("s", $this->nom_cuadrilla);
+            $checkCuadrilla->execute();
+            $cuadrillaResult = $checkCuadrilla->get_result();
+            $checkCuadrilla->close();
+            if ($cuadrillaResult->num_rows === 0) {
+                $this->conn->rollback();
+                return false;
+            }
+
+            $insertQuery = "INSERT INTO `peon` (cedula, nom_cuadrilla) VALUES (?, ?)
+                ON DUPLICATE KEY UPDATE nom_cuadrilla = VALUES(nom_cuadrilla)";
+            $insertTypes = "is";
+            $insertParams = [$this->cedula, $this->nom_cuadrilla];
+        } elseif ($this->rol === "CHOFER") {
+            if ($this->nom_cuadrilla === "") {
+                $this->conn->rollback();
+                return false;
+            }
+            $checkCuadrilla = $this->conn->prepare("SELECT nom_cuadrilla FROM `cuadrilla` WHERE nom_cuadrilla = ?");
+            if (!$checkCuadrilla) {
+                $this->conn->rollback();
+                return false;
+            }
+            $checkCuadrilla->bind_param("s", $this->nom_cuadrilla);
+            $checkCuadrilla->execute();
+            $cuadrillaResult = $checkCuadrilla->get_result();
+            $checkCuadrilla->close();
+            if ($cuadrillaResult->num_rows === 0) {
+                $this->conn->rollback();
+                return false;
+            }
+
+            $insertQuery = "INSERT INTO `chofer` (cedula, nom_cuadrilla) VALUES (?, ?)
                 ON DUPLICATE KEY UPDATE nom_cuadrilla = VALUES(nom_cuadrilla)";
             $insertTypes = "is";
             $insertParams = [$this->cedula, $this->nom_cuadrilla];
@@ -234,6 +320,20 @@ class Usuario {
                 $this->conn->rollback();
                 return false;
             }
+            $checkEst = $this->conn->prepare("SELECT id_establcmto FROM `establecimiento` WHERE id_establcmto = ?");
+            if (!$checkEst) {
+                $this->conn->rollback();
+                return false;
+            }
+            $checkEst->bind_param("i", $this->id_establcmto);
+            $checkEst->execute();
+            $estResult = $checkEst->get_result();
+            $checkEst->close();
+            if ($estResult->num_rows === 0) {
+                $this->conn->rollback();
+                return false;
+            }
+
             $insertQuery = "INSERT INTO `operario_establcmto` (cedula, id_establcmto) VALUES (?, ?)
                 ON DUPLICATE KEY UPDATE id_establcmto = VALUES(id_establcmto)";
             $insertTypes = "ii";

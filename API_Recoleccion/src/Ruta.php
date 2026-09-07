@@ -7,21 +7,23 @@ class Ruta {
 
     public $id_ruta;
     public $nom;
+    public $matricula;
 
     public function __construct($db) {
         $this->conn = $db;
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (id_ruta, nom) VALUES (?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (id_ruta, nom, matricula) VALUES (?, ?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
         $this->id_ruta = (int) $this->id_ruta;
         $this->nom = htmlspecialchars(strip_tags(trim($this->nom)));
+        $this->matricula = htmlspecialchars(strip_tags(trim($this->matricula)));
 
-        $stmt->bind_param("is", $this->id_ruta, $this->nom);
+        $stmt->bind_param("iss", $this->id_ruta, $this->nom, $this->matricula);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -32,7 +34,7 @@ class Ruta {
     }
 
     public function read() {
-        $query = "SELECT id_ruta, nom FROM `" . $this->table_name . "`";
+        $query = "SELECT id_ruta, nom, matricula FROM `" . $this->table_name . "`";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -48,14 +50,15 @@ class Ruta {
     }
 
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET nom = ? WHERE id_ruta = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET nom = ?, matricula = ? WHERE id_ruta = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
         $this->id_ruta = (int) $this->id_ruta;
         $this->nom = htmlspecialchars(strip_tags(trim($this->nom)));
+        $this->matricula = htmlspecialchars(strip_tags(trim($this->matricula)));
 
-        $stmt->bind_param("si", $this->nom, $this->id_ruta);
+        $stmt->bind_param("ssi", $this->nom, $this->matricula, $this->id_ruta);
 
         if ($stmt->execute()) {
             $stmt->close();

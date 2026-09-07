@@ -40,10 +40,25 @@ class RutaController {
         $data = $this->getPayload();
         $id_ruta = $this->getInputValue($data, ["id_ruta"]);
         $nom = $this->getInputValue($data, ["nom"]);
+        $matricula = $this->getInputValue($data, ["matricula"]);
 
-        if (!empty($id_ruta) && !empty($nom)) {
+        if (!empty($id_ruta) && !empty($nom) && !empty($matricula)) {
+            $queryVehiculo = "SELECT matricula FROM `vehiculo` WHERE matricula = ?";
+            $stmtVehiculo = $this->db->prepare($queryVehiculo);
+            $stmtVehiculo->bind_param("s", $matricula);
+            $stmtVehiculo->execute();
+            $resultVehiculo = $stmtVehiculo->get_result();
+            $stmtVehiculo->close();
+
+            if ($resultVehiculo->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(["message" => "El vehículo no existe"]);
+                return;
+            }
+
             $this->ruta->id_ruta = (int) $id_ruta;
             $this->ruta->nom = $nom;
+            $this->ruta->matricula = $matricula;
 
             if ($this->ruta->create()) {
                 http_response_code(201);
@@ -68,7 +83,8 @@ class RutaController {
             while ($row = $result->fetch_assoc()) {
                 $ruta_item = [
                     "id_ruta" => $row["id_ruta"],
-                    "nom" => $row["nom"]
+                    "nom" => $row["nom"],
+                    "matricula" => $row["matricula"]
                 ];
                 array_push($rutas_arr["registros"], $ruta_item);
             }
@@ -85,10 +101,25 @@ class RutaController {
         $data = $this->getPayload();
         $id_ruta = $this->getInputValue($data, ["id_ruta"]);
         $nom = $this->getInputValue($data, ["nom"]);
+        $matricula = $this->getInputValue($data, ["matricula"]);
 
-        if (!empty($id_ruta) && !empty($nom)) {
+        if (!empty($id_ruta) && !empty($nom) && !empty($matricula)) {
+            $queryVehiculo = "SELECT matricula FROM `vehiculo` WHERE matricula = ?";
+            $stmtVehiculo = $this->db->prepare($queryVehiculo);
+            $stmtVehiculo->bind_param("s", $matricula);
+            $stmtVehiculo->execute();
+            $resultVehiculo = $stmtVehiculo->get_result();
+            $stmtVehiculo->close();
+
+            if ($resultVehiculo->num_rows === 0) {
+                http_response_code(404);
+                echo json_encode(["message" => "El vehículo no existe"]);
+                return;
+            }
+
             $this->ruta->id_ruta = (int) $id_ruta;
             $this->ruta->nom = $nom;
+            $this->ruta->matricula = $matricula;
 
             if ($this->ruta->update()) {
                 http_response_code(200);

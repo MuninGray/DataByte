@@ -13,6 +13,7 @@ require_once "../config/database.php";
 require_once "../src/MunicipioController.php";
 require_once "../src/EstablecimientoController.php";
 require_once "../src/MaquinariaController.php";
+require_once "../src/MantenimientoController.php";
 require_once "../src/ContenedorController.php";
 
 $method = $_SERVER["REQUEST_METHOD"] ?? "GET";
@@ -31,6 +32,11 @@ switch ($accion) {
         break;
     case "maquinarias":
         $controller = new MaquinariaController();
+        break;
+    case "mantenimientos":
+    case "servicios":
+    case "servicios_y_mantenimientos":
+        $controller = new MantenimientoController();
         break;
     case "contenedores":
         $controller = new ContenedorController();
