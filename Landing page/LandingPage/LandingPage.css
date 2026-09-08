@@ -10,41 +10,62 @@ body, html {
     background: linear-gradient(135deg, #1a5f2e 0%, #2d8659 25%, #3fa875 50%, #2d8659 75%, #1a5f2e 100%);
     background-attachment: fixed;
     min-height: 100vh;
-    overflow: hidden;
+    overflow: auto;
 }
 
 .contenedor {
     text-align: center;
-    padding: 20px;
-    background-color: #8ab190;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 30px 24px;
+    background-color: rgba(138, 177, 144, 0.96);
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15);
+    max-width: 760px;
+    width: min(90vw, 760px);
 }
 
-.boton_login {
-    background-color: #527958;
-    color: black;
-    padding: 10px 20px;
-    display: inline-block;
-    margin-top: 20px;
-    border-radius: 5px;
-    text-decoration: none;
+h1 {
+    margin-top: 0;
+    color: #153a23;
+    font-size: 2.4rem;
 }
 
+p {
+    color: #1f3324;
+    line-height: 1.5;
+}
+
+.modulos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0 24px;
+}
+
+.modulos span {
+    background: rgba(255,255,255,0.25);
+    border: 1px solid rgba(21,58,35,0.15);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #153a23;
+}
+
+.boton_login,
 .boton_register {
     background-color: #527958;
-    color: black;
-    padding: 10px 20px;
+    color: #fff;
+    padding: 12px 26px;
     display: inline-block;
-    margin-top: 20px;
-    border-radius: 5px;
+    margin: 8px 10px;
+    border-radius: 8px;
     text-decoration: none;
+    font-weight: 700;
+    transition: 0.2s ease;
 }
 
-.boton_login:hover {
-    background-color: #6e9c75;
-}
-
+.boton_login:hover,
 .boton_register:hover {
     background-color: #6e9c75;
 }

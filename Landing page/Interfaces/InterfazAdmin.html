@@ -20,6 +20,7 @@
             <button type="button" class="tab-btn" data-tab="tab-municipios">Municipios</button>
             <button type="button" class="tab-btn" data-tab="tab-establecimientos">Establecimientos</button>
             <button type="button" class="tab-btn" data-tab="tab-maquinaria">Maquinaria</button>
+            <button type="button" class="tab-btn" data-tab="tab-mantenimientos">Servicios y mantenimientos</button>
             <button type="button" class="tab-btn" data-tab="tab-contenedores">Contenedores</button>
         </div>
 
@@ -130,6 +131,13 @@
             <div id="crud-maquinaria"></div>
         </div>
 
+        <!-- ===================== SERVICIOS Y MANTENIMIENTOS ===================== -->
+        <div id="tab-mantenimientos" class="tab-content" hidden>
+            <h2>Servicios y mantenimientos</h2>
+            <p>Alta, baja, modificación y consulta de servicios y mantenimientos asociados a la maquinaria.</p>
+            <div id="crud-mantenimientos"></div>
+        </div>
+
         <!-- ===================== CONTENEDORES ===================== -->
         <div id="tab-contenedores" class="tab-content" hidden>
             <h2>Contenedores</h2>
@@ -167,7 +175,7 @@
 
         let usuariosCache = [];
 
-        const ROLES = ['INSPECTOR', 'OPERARIO_CUADRILLA', 'OPERARIO_ESTABLECIMIENTO', 'ADMIN'];
+        const ROLES = ['INSPECTOR', 'OPERARIO_CUADRILLA', 'OPERARIO_ESTABLECIMIENTO', 'CHOFER', 'ADMIN'];
         const ESTADOS = ['aprobado', 'rechazado', 'pendiente'];
 
         function crearSelectRol(usuario) {
@@ -293,10 +301,10 @@
                     return;
                 }
                 datos.codigo = codigo.trim().toUpperCase();
-            } else if (rolFinal === 'OPERARIO_CUADRILLA') {
-                const nomCuadrilla = prompt('Nombre de la cuadrilla a la que pertenece este operario:');
+            } else if (rolFinal === 'OPERARIO_CUADRILLA' || rolFinal === 'CHOFER') {
+                const nomCuadrilla = prompt('Nombre de la cuadrilla a la que pertenece este usuario:');
                 if (!nomCuadrilla || !nomCuadrilla.trim()) {
-                    mostrarMensaje('Se canceló: falta el nombre de la cuadrilla para asignar el rol de operario.', 'red');
+                    mostrarMensaje('Se canceló: falta el nombre de la cuadrilla para asignar el rol.', 'red');
                     consultarUsuarios();
                     return;
                 }
@@ -587,7 +595,7 @@
             campos: [
                 { nombre: 'matricula', etiqueta: 'Matrícula', pk: true },
                 { nombre: 'estado_optivo', etiqueta: 'Estado operativo', tipo: 'seleccion',
-                  opciones: ['en servicio', 'en stock', 'en mantenimiento'] }
+                  opciones: ['funcional', 'en_reparacion', 'fuera_de_servicio'] }
             ]
         });
 
@@ -598,7 +606,8 @@
             accion: 'rutas',
             campos: [
                 { nombre: 'id_ruta', etiqueta: 'ID Ruta', tipo: 'numero', pk: true },
-                { nombre: 'nom', etiqueta: 'Nombre' }
+                { nombre: 'nom', etiqueta: 'Nombre' },
+                { nombre: 'matricula', etiqueta: 'Matrícula', tipo: 'text' }
             ]
         });
 
@@ -618,14 +627,15 @@
             ]
         });
 
-        // --- Municipios (solo tienen el código como campo, no se editan) ---
+        // --- Municipios ---
         crearModuloCRUD({
             contenedorId: 'crud-municipios',
             apiUrl: API_GESTION,
             accion: 'municipios',
             permitirEditar: false,
             campos: [
-                { nombre: 'codigo', etiqueta: 'Código', pk: true }
+                { nombre: 'codigo', etiqueta: 'Código', pk: true },
+                { nombre: 'nombre', etiqueta: 'Nombre' }
             ]
         });
 
@@ -656,8 +666,25 @@
             campos: [
                 { nombre: 'id_maquinaria', etiqueta: 'ID Maquinaria', tipo: 'numero', pk: true },
                 { nombre: 'nombre', etiqueta: 'Nombre' },
-                { nombre: 'en_uso', etiqueta: 'En uso' },
-                { nombre: 'id_establcmto', etiqueta: 'ID Establecimiento', tipo: 'numero' }
+                { nombre: 'en_uso', etiqueta: 'En uso', tipo: 'seleccion',
+                  opciones: ['desplegado', 'en_stock'] },
+                { nombre: 'id_establcmto', etiqueta: 'ID Establecimiento', tipo: 'numero' },
+                { nombre: 'id_serv', etiqueta: 'ID Servicio', tipo: 'numero' }
+            ]
+        });
+
+        // --- Servicios y mantenimientos ---
+        crearModuloCRUD({
+            contenedorId: 'crud-mantenimientos',
+            apiUrl: API_GESTION,
+            accion: 'mantenimientos',
+            campos: [
+                { nombre: 'id_serv', etiqueta: 'ID Servicio', tipo: 'numero', pk: true },
+                { nombre: 'estado', etiqueta: 'Estado', tipo: 'seleccion',
+                  opciones: ['pendiente', 'en_curso', 'finalizado'] },
+                { nombre: 'fecha', etiqueta: 'Fecha', tipo: 'fecha' },
+                { nombre: 'tipo', etiqueta: 'Tipo', tipo: 'seleccion',
+                  opciones: ['preventivo', 'correctivo', 'otro'] }
             ]
         });
 
@@ -669,15 +696,16 @@
             campos: [
                 { nombre: 'id_contdor', etiqueta: 'ID Contenedor', tipo: 'numero', pk: true },
                 { nombre: 'estado_optivo', etiqueta: 'Estado operativo', tipo: 'seleccion',
-                  opciones: ['funcional', 'roto', 'desbordado'] },
+                  opciones: ['funcional', 'roto', 'desbordado', 'desaparecido', 'otro'] },
                 { nombre: 'en_uso', etiqueta: 'En uso', tipo: 'seleccion', opcional: true,
                   opciones: ['desplegado', 'en_stock'] },
                 { nombre: 'tipo', etiqueta: 'Tipo' },
-                { nombre: 'calle', etiqueta: 'Calle' },
-                { nombre: 'nmro', etiqueta: 'Número' },
                 { nombre: 'esq', etiqueta: 'Esquina', opcional: true },
+                { nombre: 'nmro', etiqueta: 'Número' },
+                { nombre: 'calle', etiqueta: 'Calle' },
                 { nombre: 'codigo', etiqueta: 'Código municipio' },
-                { nombre: 'matricula', etiqueta: 'Matrícula vehículo', opcional: true }
+                { nombre: 'matricula', etiqueta: 'Matrícula vehículo', opcional: true },
+                { nombre: 'id_ruta', etiqueta: 'ID Ruta', tipo: 'numero', opcional: true }
             ]
         });
 
