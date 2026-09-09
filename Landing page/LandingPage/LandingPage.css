@@ -42,15 +42,6 @@ p {
     margin: 20px 0 24px;
 }
 
-.modulos span {
-    background: rgba(255,255,255,0.25);
-    border: 1px solid rgba(21,58,35,0.15);
-    border-radius: 999px;
-    padding: 7px 14px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #153a23;
-}
 
 .boton_login,
 .boton_register {
