@@ -3,7 +3,7 @@
 class Descarga {
 
     private $conn;
-    private $table_name = "descarga";
+    private $table_name = "Descarga";
 
     public $matricula;
     public $id_establcmto;

@@ -49,7 +49,7 @@ class MaquinariaController {
         $id_serv = $this->getInputValue($data, ["id_serv"]);
 
         if (!empty($id_maquinaria) && !empty($nombre) && !empty($en_uso) && !empty($id_establcmto) && !empty($id_serv)) {
-            $checkEst = $this->db->prepare("SELECT id_establcmto FROM establecimiento WHERE id_establcmto = ?");
+            $checkEst = $this->db->prepare("SELECT id_establcmto FROM `Establecimiento` WHERE id_establcmto = ?");
             $checkEst->bind_param("i", $id_establcmto);
             $checkEst->execute();
             $resultEst = $checkEst->get_result();
@@ -61,7 +61,7 @@ class MaquinariaController {
                 return;
             }
 
-            $checkServ = $this->db->prepare("SELECT id_serv FROM servicios_y_mantenimientos WHERE id_serv = ?");
+            $checkServ = $this->db->prepare("SELECT id_serv FROM `Servicios_Y_Mantenimientos` WHERE id_serv = ?");
             $checkServ->bind_param("i", $id_serv);
             $checkServ->execute();
             $resultServ = $checkServ->get_result();
@@ -152,7 +152,7 @@ class MaquinariaController {
         $id_serv = $this->getInputValue($data, ["id_serv"]);
 
         if (!empty($id_maquinaria) && !empty($nombre) && !empty($en_uso) && !empty($id_establcmto) && !empty($id_serv)) {
-            $checkEst = $this->db->prepare("SELECT id_establcmto FROM establecimiento WHERE id_establcmto = ?");
+            $checkEst = $this->db->prepare("SELECT id_establcmto FROM `Establecimiento` WHERE id_establcmto = ?");
             $checkEst->bind_param("i", $id_establcmto);
             $checkEst->execute();
             $resultEst = $checkEst->get_result();
@@ -164,7 +164,7 @@ class MaquinariaController {
                 return;
             }
 
-            $checkServ = $this->db->prepare("SELECT id_serv FROM servicios_y_mantenimientos WHERE id_serv = ?");
+            $checkServ = $this->db->prepare("SELECT id_serv FROM `Servicios_Y_Mantenimientos` WHERE id_serv = ?");
             $checkServ->bind_param("i", $id_serv);
             $checkServ->execute();
             $resultServ = $checkServ->get_result();

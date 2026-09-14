@@ -3,7 +3,7 @@
 class Contenedor {
 
     private $conn;
-    private $table_name = "contenedor";
+    private $table_name = "Contenedor";
 
     public $id_contdor;
     public $estado_optivo;

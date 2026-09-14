@@ -40,16 +40,19 @@
                     mensaje.textContent = data.message || 'Login correcto.';
                     mensaje.style.color = 'green';
 
-                    const rol = String(data.usuario?.rol || '').trim().toUpperCase().replace(/\s+/g, '_');
+                    const rolRaw = String(data.usuario?.rol || '').trim();
+                    const rol = rolRaw.toUpperCase().replace(/[\s_-]+/g, '_');
                     const rutasPorRol = {
+                        USUARIO: '../LandingPage/LandingPage.html',
                         INSPECTOR: '../Interfaces/InterfazInspector.html',
-                        OPERARIO_CUADRILLA: '../Interfaces/InterfazOpCuadrilla.html',
-                        OPERARIO_ESTABLECIMIENTO: '../Interfaces/InterfazOpEstablecimiento.html',
-                        ADMIN: '../Interfaces/InterfazAdmin.html',
-                        ADMINISTRADOR: '../Interfaces/InterfazAdmin.html'
+                        PEON: '../Interfaces/InterfazOpCuadrilla.html',
+                        CHOFER: '../Interfaces/InterfazOpCuadrilla.html',
+                        OPERARIO_ESTABLECIMIENTO: '../Interfaces/InterfazOpEstablecimiento.html'
                     };
 
-                    const rutaDestino = rutasPorRol[rol];
+                    const rutaDestino = rutasPorRol[rol]
+                        || rutasPorRol[rolRaw.toUpperCase()]
+                        || (['CHOFER', 'PEON'].includes(rolRaw.toUpperCase()) ? '../Interfaces/InterfazOpCuadrilla.html' : null);
 
                     if (rutaDestino) {
                         window.location.href = rutaDestino;

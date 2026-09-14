@@ -3,7 +3,7 @@
 class Ruta {
 
     private $conn;
-    private $table_name = "ruta";
+    private $table_name = "Ruta";
 
     public $id_ruta;
     public $nom;

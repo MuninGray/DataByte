@@ -3,7 +3,7 @@
 class Mantenimiento {
 
     private $conn;
-    private $table_name = "servicios_y_mantenimientos";
+    private $table_name = "Servicios_Y_Mantenimientos";
 
     public $id_serv;
     public $estado;

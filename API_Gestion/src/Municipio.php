@@ -3,7 +3,7 @@
 class Municipio {
 
     private $conn;
-    private $table_name = "municipio";
+    private $table_name = "Municipio";
 
     public $codigo;
 
@@ -13,13 +13,14 @@ class Municipio {
 
     // Crear municipio usando prepared statement.
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (codigo) VALUES (?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (codigo, nombre, coordenadas) VALUES (?, ?, NULL)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
         $this->codigo = htmlspecialchars(strip_tags(trim($this->codigo)));
-        $stmt->bind_param("s", $this->codigo);
+        $nombre = "Municipio " . $this->codigo;
+        $stmt->bind_param("ss", $this->codigo, $nombre);
 
         if ($stmt->execute()) {
             $stmt->close();

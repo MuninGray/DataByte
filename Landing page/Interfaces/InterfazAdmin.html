@@ -175,7 +175,7 @@
 
         let usuariosCache = [];
 
-        const ROLES = ['INSPECTOR', 'OPERARIO_CUADRILLA', 'OPERARIO_ESTABLECIMIENTO', 'CHOFER', 'ADMIN'];
+        const ROLES = ['USUARIO', 'INSPECTOR', 'CHOFER', 'PEON', 'OPERARIO_ESTABLECIMIENTO'];
         const ESTADOS = ['aprobado', 'rechazado', 'pendiente'];
 
         function crearSelectRol(usuario) {
@@ -301,7 +301,7 @@
                     return;
                 }
                 datos.codigo = codigo.trim().toUpperCase();
-            } else if (rolFinal === 'OPERARIO_CUADRILLA' || rolFinal === 'CHOFER') {
+            } else if (rolFinal === 'PEON' || rolFinal === 'CHOFER') {
                 const nomCuadrilla = prompt('Nombre de la cuadrilla a la que pertenece este usuario:');
                 if (!nomCuadrilla || !nomCuadrilla.trim()) {
                     mostrarMensaje('Se canceló: falta el nombre de la cuadrilla para asignar el rol.', 'red');
@@ -345,7 +345,7 @@
                 conf_contrasena: '',
                 PrNom: usuario.PrNom || '',
                 PrApel: usuario.PrApel || '',
-                rol: usuario.rol || 'usuario',
+                rol: usuario.rol || 'USUARIO',
                 estado_habil: estadoFinal
             }).then(() => {
                 mostrarMensaje('Estado actualizado correctamente', 'green');

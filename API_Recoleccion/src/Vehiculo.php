@@ -3,7 +3,7 @@
 class Vehiculo {
 
     private $conn;
-    private $table_name = "vehiculo";
+    private $table_name = "Vehiculo";
 
     public $matricula;
     public $estado_optivo;

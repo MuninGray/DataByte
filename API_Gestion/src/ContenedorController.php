@@ -53,7 +53,7 @@ class ContenedorController {
         $matricula = $this->getInputValue($data, ["matricula"]);
 
         if (!empty($id_contdor) && !empty($estado_optivo) && !empty($tipo) && !empty($calle) && !empty($nmro) && !empty($codigo)) {
-            $check = $this->db->prepare("SELECT codigo FROM municipio WHERE codigo = ?");
+            $check = $this->db->prepare("SELECT codigo FROM `Municipio` WHERE codigo = ?");
             $check->bind_param("s", $codigo);
             $check->execute();
             $result = $check->get_result();
@@ -160,7 +160,7 @@ class ContenedorController {
         $matricula = $this->getInputValue($data, ["matricula"]);
 
         if (!empty($id_contdor) && !empty($estado_optivo) && !empty($tipo) && !empty($calle) && !empty($nmro) && !empty($codigo)) {
-            $check = $this->db->prepare("SELECT codigo FROM municipio WHERE codigo = ?");
+            $check = $this->db->prepare("SELECT codigo FROM `Municipio` WHERE codigo = ?");
             $check->bind_param("s", $codigo);
             $check->execute();
             $result = $check->get_result();

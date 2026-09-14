@@ -3,7 +3,7 @@
 class Maquinaria {
 
     private $conn;
-    private $table_name = "maquinaria";
+    private $table_name = "Maquinaria";
 
     public $id_maquinaria;
     public $nombre;

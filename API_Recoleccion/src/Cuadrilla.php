@@ -3,7 +3,7 @@
 class Cuadrilla {
 
     private $conn;
-    private $table_name = "cuadrilla";
+    private $table_name = "Cuadrilla";
 
     public $nom_cuadrilla;
     public $cedula_inspector;

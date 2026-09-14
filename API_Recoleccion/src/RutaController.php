@@ -43,7 +43,7 @@ class RutaController {
         $matricula = $this->getInputValue($data, ["matricula"]);
 
         if (!empty($id_ruta) && !empty($nom) && !empty($matricula)) {
-            $queryVehiculo = "SELECT matricula FROM `vehiculo` WHERE matricula = ?";
+            $queryVehiculo = "SELECT matricula FROM `Vehiculo` WHERE matricula = ?";
             $stmtVehiculo = $this->db->prepare($queryVehiculo);
             $stmtVehiculo->bind_param("s", $matricula);
             $stmtVehiculo->execute();
@@ -104,7 +104,7 @@ class RutaController {
         $matricula = $this->getInputValue($data, ["matricula"]);
 
         if (!empty($id_ruta) && !empty($nom) && !empty($matricula)) {
-            $queryVehiculo = "SELECT matricula FROM `vehiculo` WHERE matricula = ?";
+            $queryVehiculo = "SELECT matricula FROM `Vehiculo` WHERE matricula = ?";
             $stmtVehiculo = $this->db->prepare($queryVehiculo);
             $stmtVehiculo->bind_param("s", $matricula);
             $stmtVehiculo->execute();
@@ -163,7 +163,7 @@ class RutaController {
         if (!empty($id_ruta) && !empty($matricula) && !empty($fech)) {
             $id_ruta_int = (int) $id_ruta;
 
-            $queryRuta = "SELECT id_ruta FROM `ruta` WHERE id_ruta = ?";
+            $queryRuta = "SELECT id_ruta FROM `Ruta` WHERE id_ruta = ?";
             $stmtRuta = $this->db->prepare($queryRuta);
             $stmtRuta->bind_param("i", $id_ruta_int);
             $stmtRuta->execute();
@@ -176,7 +176,7 @@ class RutaController {
                 return;
             }
 
-            $queryVehiculo = "SELECT matricula FROM `vehiculo` WHERE matricula = ?";
+            $queryVehiculo = "SELECT matricula FROM `Vehiculo` WHERE matricula = ?";
             $stmtVehiculo = $this->db->prepare($queryVehiculo);
             $stmtVehiculo->bind_param("s", $matricula);
             $stmtVehiculo->execute();
@@ -189,7 +189,7 @@ class RutaController {
                 return;
             }
 
-            $queryInsert = "INSERT INTO `asigna` (id_ruta, matricula, fech) VALUES (?, ?, ?)";
+            $queryInsert = "INSERT INTO `Asigna` (id_ruta, matricula, fech) VALUES (?, ?, ?)";
             $stmtInsert = $this->db->prepare($queryInsert);
             $stmtInsert->bind_param("iss", $id_ruta_int, $matricula, $fech);
 
@@ -209,7 +209,7 @@ class RutaController {
     }
 
     public function obtenerAsignaciones() {
-        $query = "SELECT id_ruta, matricula, fech FROM `asigna`";
+        $query = "SELECT id_ruta, matricula, fech FROM `Asigna`";
         $stmt = $this->db->prepare($query);
 
         if (!$stmt) {
@@ -257,7 +257,7 @@ class RutaController {
         if (!empty($id_ruta) && !empty($matricula) && !empty($fech)) {
             $id_ruta_int = (int) $id_ruta;
 
-            $query = "DELETE FROM `asigna` WHERE id_ruta = ? AND matricula = ? AND fech = ?";
+            $query = "DELETE FROM `Asigna` WHERE id_ruta = ? AND matricula = ? AND fech = ?";
             $stmt = $this->db->prepare($query);
             if (!$stmt) {
                 http_response_code(503);

@@ -3,7 +3,7 @@
 class Usuario {
 
     private $conn;
-    private $table_name = "usuario";
+    private $table_name = "Usuario";
 
     public $cedula;
     public $email;
@@ -25,6 +25,8 @@ class Usuario {
         $this->cedula = (int) $this->cedula;
         $this->cedula_admin = (int) ($this->cedula_admin ?? 0);
 
+        $allowedRoles = ["USUARIO", "INSPECTOR", "CHOFER", "PEON", "OPERARIO_ESTABLECIMIENTO"];
+
         if ($this->cedula_admin <= 0) {
             $this->cedula_admin = 1;
             $adminEmail = "admin@databyte.local";
@@ -32,7 +34,7 @@ class Usuario {
             $adminPrApel = "Sistema";
             $adminPass = password_hash("admin123", PASSWORD_DEFAULT);
 
-            $adminQuery = "INSERT INTO `admin_tecnico` (cedula_admin, email, PrNom, PrApel, pass) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE email = VALUES(email), PrNom = VALUES(PrNom), PrApel = VALUES(PrApel), pass = VALUES(pass)";
+            $adminQuery = "INSERT INTO `Admin_Tecnico` (cedula_admin, email, PrNom, PrApel, pass) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE email = VALUES(email), PrNom = VALUES(PrNom), PrApel = VALUES(PrApel), pass = VALUES(pass)";
             $adminStmt = $this->conn->prepare($adminQuery);
             if (!$adminStmt) {
                 return false;
@@ -54,10 +56,10 @@ class Usuario {
         $this->pass = password_hash($this->pass, PASSWORD_DEFAULT);
         $this->PrNom = htmlspecialchars(strip_tags(trim($this->PrNom ?? "")));
         $this->PrApel = htmlspecialchars(strip_tags(trim($this->PrApel ?? "")));
-        $this->rol = htmlspecialchars(strip_tags(trim($this->rol ?? "usuario")));
+        $this->rol = strtoupper(htmlspecialchars(strip_tags(trim($this->rol ?? "USUARIO"))));
         $this->estado_habil = htmlspecialchars(strip_tags(trim($this->estado_habil ?? "pendiente")));
-        if ($this->rol === "") {
-            $this->rol = "usuario";
+        if (!in_array($this->rol, $allowedRoles, true)) {
+            $this->rol = "USUARIO";
         }
         if ($this->estado_habil === "") {
             $this->estado_habil = "pendiente";
@@ -90,15 +92,17 @@ class Usuario {
     }
 
     public function update() {
+        $allowedRoles = ["USUARIO", "INSPECTOR", "CHOFER", "PEON", "OPERARIO_ESTABLECIMIENTO"];
+
         $this->email = htmlspecialchars(strip_tags(trim($this->email)));
         $this->PrNom = htmlspecialchars(strip_tags(trim($this->PrNom ?? "")));
         $this->PrApel = htmlspecialchars(strip_tags(trim($this->PrApel ?? "")));
-        $this->rol = htmlspecialchars(strip_tags(trim($this->rol ?? "usuario")));
+        $this->rol = strtoupper(htmlspecialchars(strip_tags(trim($this->rol ?? "USUARIO"))));
         $this->estado_habil = htmlspecialchars(strip_tags(trim($this->estado_habil ?? "pendiente")));
         $this->cedula = (int) $this->cedula;
 
-        if ($this->rol === "") {
-            $this->rol = "usuario";
+        if (!in_array($this->rol, $allowedRoles, true)) {
+            $this->rol = "USUARIO";
         }
         if ($this->estado_habil === "") {
             $this->estado_habil = "pendiente";
@@ -128,19 +132,58 @@ class Usuario {
     }
 
     public function delete() {
-        $query = "DELETE FROM `" . $this->table_name . "` WHERE cedula = ?";
-        $stmt = $this->conn->prepare($query);
-        if (!$stmt) return false;
-
         $this->cedula = (int) $this->cedula;
-        $stmt->bind_param("i", $this->cedula);
 
-        if ($stmt->execute()) {
-            $stmt->close();
-            return true;
+        if (!$this->conn->begin_transaction()) {
+            return false;
         }
 
-        return false;
+        $tables = [
+            "Inspector_Municipal",
+            "Chofer",
+            "Peon",
+            "Operario_Establcmto"
+        ];
+
+        foreach ($tables as $table) {
+            $stmt = $this->conn->prepare("DELETE FROM `" . $table . "` WHERE cedula = ?");
+            if (!$stmt) {
+                $this->conn->rollback();
+                return false;
+            }
+
+            $stmt->bind_param("i", $this->cedula);
+            if (!$stmt->execute()) {
+                $stmt->close();
+                $this->conn->rollback();
+                return false;
+            }
+            $stmt->close();
+        }
+
+        $query = "DELETE FROM `" . $this->table_name . "` WHERE cedula = ?";
+        $stmt = $this->conn->prepare($query);
+        if (!$stmt) {
+            $this->conn->rollback();
+            return false;
+        }
+
+        $stmt->bind_param("i", $this->cedula);
+
+        if (!$stmt->execute()) {
+            $stmt->close();
+            $this->conn->rollback();
+            return false;
+        }
+
+        $stmt->close();
+
+        if (!$this->conn->commit()) {
+            $this->conn->rollback();
+            return false;
+        }
+
+        return true;
     }
 
     public function login() {
@@ -204,11 +247,17 @@ class Usuario {
     }
     
     public function asignarRol() {
+        $allowedRoles = ["USUARIO", "INSPECTOR", "CHOFER", "PEON", "OPERARIO_ESTABLECIMIENTO"];
+
         $this->cedula = (int) $this->cedula;
         $this->rol = strtoupper(htmlspecialchars(strip_tags(trim($this->rol ?? ""))));
         $this->codigo = htmlspecialchars(strip_tags(trim($this->codigo ?? "")));
         $this->nom_cuadrilla = htmlspecialchars(strip_tags(trim($this->nom_cuadrilla ?? "")));
         $this->id_establcmto = (int) ($this->id_establcmto ?? 0);
+
+        if (!in_array($this->rol, $allowedRoles, true)) {
+            return false;
+        }
 
         $this->conn->begin_transaction();
 
@@ -239,7 +288,7 @@ class Usuario {
                 return false;
             }
 
-            $checkMunicipio = $this->conn->prepare("SELECT codigo FROM `municipio` WHERE codigo = ?");
+            $checkMunicipio = $this->conn->prepare("SELECT codigo FROM `Municipio` WHERE codigo = ?");
             if (!$checkMunicipio) {
                 $this->conn->rollback();
                 return false;
@@ -250,31 +299,20 @@ class Usuario {
             $checkMunicipio->close();
 
             if ($municipioResult->num_rows === 0) {
-                $municipioInsert = $this->conn->prepare("INSERT INTO `municipio` (codigo, nombre) VALUES (?, ?) ON DUPLICATE KEY UPDATE nombre = VALUES(nombre)");
-                if (!$municipioInsert) {
-                    $this->conn->rollback();
-                    return false;
-                }
-                $nombreMunicipio = "Municipio " . $this->codigo;
-                $municipioInsert->bind_param("ss", $this->codigo, $nombreMunicipio);
-                if (!$municipioInsert->execute()) {
-                    $municipioInsert->close();
-                    $this->conn->rollback();
-                    return false;
-                }
-                $municipioInsert->close();
+                $this->conn->rollback();
+                return false;
             }
 
-            $insertQuery = "INSERT INTO `inspector_municipal` (cedula, codigo) VALUES (?, ?)
+            $insertQuery = "INSERT INTO `Inspector_Municipal` (cedula, codigo) VALUES (?, ?)
                 ON DUPLICATE KEY UPDATE codigo = VALUES(codigo)";
             $insertTypes = "is";
             $insertParams = [$this->cedula, $this->codigo];
-        } elseif ($this->rol === "OPERARIO_CUADRILLA") {
+        } elseif ($this->rol === "PEON") {
             if ($this->nom_cuadrilla === "") {
                 $this->conn->rollback();
                 return false;
             }
-            $checkCuadrilla = $this->conn->prepare("SELECT nom_cuadrilla FROM `cuadrilla` WHERE nom_cuadrilla = ?");
+            $checkCuadrilla = $this->conn->prepare("SELECT nom_cuadrilla FROM `Cuadrilla` WHERE nom_cuadrilla = ?");
             if (!$checkCuadrilla) {
                 $this->conn->rollback();
                 return false;
@@ -288,7 +326,7 @@ class Usuario {
                 return false;
             }
 
-            $insertQuery = "INSERT INTO `peon` (cedula, nom_cuadrilla) VALUES (?, ?)
+            $insertQuery = "INSERT INTO `Peon` (cedula, nom_cuadrilla) VALUES (?, ?)
                 ON DUPLICATE KEY UPDATE nom_cuadrilla = VALUES(nom_cuadrilla)";
             $insertTypes = "is";
             $insertParams = [$this->cedula, $this->nom_cuadrilla];
@@ -297,7 +335,7 @@ class Usuario {
                 $this->conn->rollback();
                 return false;
             }
-            $checkCuadrilla = $this->conn->prepare("SELECT nom_cuadrilla FROM `cuadrilla` WHERE nom_cuadrilla = ?");
+            $checkCuadrilla = $this->conn->prepare("SELECT nom_cuadrilla FROM `Cuadrilla` WHERE nom_cuadrilla = ?");
             if (!$checkCuadrilla) {
                 $this->conn->rollback();
                 return false;
@@ -311,7 +349,7 @@ class Usuario {
                 return false;
             }
 
-            $insertQuery = "INSERT INTO `chofer` (cedula, nom_cuadrilla) VALUES (?, ?)
+            $insertQuery = "INSERT INTO `Chofer` (cedula, nom_cuadrilla) VALUES (?, ?)
                 ON DUPLICATE KEY UPDATE nom_cuadrilla = VALUES(nom_cuadrilla)";
             $insertTypes = "is";
             $insertParams = [$this->cedula, $this->nom_cuadrilla];
@@ -320,7 +358,7 @@ class Usuario {
                 $this->conn->rollback();
                 return false;
             }
-            $checkEst = $this->conn->prepare("SELECT id_establcmto FROM `establecimiento` WHERE id_establcmto = ?");
+            $checkEst = $this->conn->prepare("SELECT id_establcmto FROM `Establecimiento` WHERE id_establcmto = ?");
             if (!$checkEst) {
                 $this->conn->rollback();
                 return false;
@@ -334,7 +372,7 @@ class Usuario {
                 return false;
             }
 
-            $insertQuery = "INSERT INTO `operario_establcmto` (cedula, id_establcmto) VALUES (?, ?)
+            $insertQuery = "INSERT INTO `Operario_Establcmto` (cedula, id_establcmto) VALUES (?, ?)
                 ON DUPLICATE KEY UPDATE id_establcmto = VALUES(id_establcmto)";
             $insertTypes = "ii";
             $insertParams = [$this->cedula, $this->id_establcmto];

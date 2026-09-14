@@ -1,4 +1,15 @@
 $kind: http-request
-url: ""
-method: GET
+url: http://localhost/DataByte/API_Gestion/public/index.php?accion=mantenimientos
+method: POST
+queryParams:
+  accion: mantenimientos
+body:
+  type: json
+  content: |-
+    {
+      "id_serv": 1,
+      "estado": "pendiente",
+      "fecha": "2026-09-07",
+      "tipo": "preventivo"
+    }
 order: 4496453307145344

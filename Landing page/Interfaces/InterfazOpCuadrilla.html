@@ -42,7 +42,7 @@
             </div>
             <div id="mensaje-rutas" class="mensaje"></div>
             <table>
-                <thead><tr><th>ID Ruta</th><th>Nombre</th></tr></thead>
+                <thead><tr><th>ID Ruta</th><th>Nombre</th><th>Matrícula</th></tr></thead>
                 <tbody id="tbody-rutas"></tbody>
             </table>
         </div>
@@ -167,6 +167,10 @@
         const API_RECOLECCION = new URL('../../API_Recoleccion/public/index.php', window.location.href).toString();
         const API_GESTION = new URL('../../API_Gestion/public/index.php', window.location.href).toString();
 
+        function normalizarMatricula(valor) {
+            return String(valor ?? '').trim().toUpperCase().replace(/\s+/g, '');
+        }
+
         function mostrarEn(idDiv, texto, color = '#1f3c88') {
             const div = document.getElementById(idDiv);
             div.textContent = texto;
@@ -177,6 +181,38 @@
         // RUTA ASIGNADA: rutas (consulta) + asignaciones ruta-vehículo (filtro por matrícula)
         // ============================================================
         const tbodyRutas = document.getElementById('tbody-rutas');
+        let rutasCache = [];
+
+        function renderRutas(lista) {
+            tbodyRutas.innerHTML = '';
+            if (lista.length === 0) {
+                tbodyRutas.innerHTML = '<tr><td colspan="3">No hay rutas para mostrar.</td></tr>';
+                return;
+            }
+            lista.forEach(r => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `<td>${r.id_ruta}</td><td>${r.nom || 'Sin nombre'}</td><td>${r.matricula || 'Sin matrícula'}</td>`;
+                tbodyRutas.appendChild(fila);
+            });
+        }
+
+        function aplicarFiltroRutas() {
+            const matricula = document.getElementById('filtroMatriculaRuta').value.trim();
+            if (!matricula) {
+                renderRutas(rutasCache);
+                mostrarEn('mensaje-rutas', '');
+                return;
+            }
+
+            const filtro = normalizarMatricula(matricula);
+            const filtradas = rutasCache.filter(r => normalizarMatricula(r.matricula).includes(filtro));
+            renderRutas(filtradas);
+            if (filtradas.length === 0) {
+                mostrarEn('mensaje-rutas', `No hay rutas con la matrícula "${matricula}".`, 'red');
+            } else {
+                mostrarEn('mensaje-rutas', '');
+            }
+        }
 
         async function consultarRutas() {
             try {
@@ -184,22 +220,13 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    tbodyRutas.innerHTML = `<tr><td colspan="2">${data.message || 'Sin rutas.'}</td></tr>`;
+                    rutasCache = [];
+                    tbodyRutas.innerHTML = `<tr><td colspan="3">${data.message || 'Sin rutas.'}</td></tr>`;
                     return;
                 }
 
-                const registros = data.registros || [];
-                tbodyRutas.innerHTML = '';
-                if (registros.length === 0) {
-                    tbodyRutas.innerHTML = '<tr><td colspan="2">No hay rutas registradas.</td></tr>';
-                    return;
-                }
-                registros.forEach(r => {
-                    const fila = document.createElement('tr');
-                    fila.innerHTML = `<td>${r.id_ruta}</td><td>${r.nom}</td>`;
-                    tbodyRutas.appendChild(fila);
-                });
-                mostrarEn('mensaje-rutas', '');
+                rutasCache = data.registros || [];
+                aplicarFiltroRutas();
             } catch (error) {
                 mostrarEn('mensaje-rutas', 'Error de conexión: ' + error.message, 'red');
             }
@@ -249,13 +276,16 @@
                 renderAsignaciones(asignacionesCache);
                 return;
             }
-            const filtrados = asignacionesCache.filter(a => String(a.matricula) === matricula);
+
+            const filtro = normalizarMatricula(matricula);
+            const filtrados = asignacionesCache.filter(a => normalizarMatricula(a.matricula).includes(filtro));
             renderAsignaciones(filtrados);
             if (filtrados.length === 0) {
                 mostrarEn('mensaje-asignaciones', `No hay rutas asignadas al vehículo "${matricula}".`, 'red');
             } else {
                 mostrarEn('mensaje-asignaciones', '');
             }
+            aplicarFiltroRutas();
         }
 
         document.getElementById('btnFiltrarAsignaciones').addEventListener('click', aplicarFiltroAsignaciones);

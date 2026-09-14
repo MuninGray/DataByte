@@ -3,7 +3,7 @@
 class Incidencia {
 
     private $conn;
-    private $table_name = "incidencia";
+    private $table_name = "Incidencia";
 
     public $id_incidencia;
     public $id_contdor;
