@@ -12,13 +12,15 @@ class Incidencia {
     public $fch_apert;
     public $fch_resol;
     public $nom_cuadrilla;
+    public $lat;
+    public $lng;
 
     public function __construct($db) {
         $this->conn = $db;
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (id_incidencia, id_contdor, tipo, estado, fch_apert, fch_resol, nom_cuadrilla) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (id_incidencia, id_contdor, tipo, estado, fch_apert, fch_resol, nom_cuadrilla, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
@@ -30,6 +32,8 @@ class Incidencia {
         $this->fch_apert = htmlspecialchars(strip_tags(trim($this->fch_apert)));
         $this->fch_resol = $this->fch_resol !== null ? htmlspecialchars(strip_tags(trim($this->fch_resol))) : null;
         $this->nom_cuadrilla = $this->nom_cuadrilla !== null ? htmlspecialchars(strip_tags(trim($this->nom_cuadrilla))) : null;
+        $this->lat = ($this->lat === null || $this->lat === "") ? null : (float) $this->lat;
+        $this->lng = ($this->lng === null || $this->lng === "") ? null : (float) $this->lng;
 
         if ($this->fch_resol === "") {
             $this->fch_resol = null;
@@ -38,7 +42,7 @@ class Incidencia {
             $this->nom_cuadrilla = null;
         }
 
-        $stmt->bind_param("iisssss", $this->id_incidencia, $this->id_contdor, $this->tipo, $this->estado, $this->fch_apert, $this->fch_resol, $this->nom_cuadrilla);
+        $stmt->bind_param("iissssdd", $this->id_incidencia, $this->id_contdor, $this->tipo, $this->estado, $this->fch_apert, $this->fch_resol, $this->nom_cuadrilla, $this->lat, $this->lng);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -49,7 +53,7 @@ class Incidencia {
     }
 
     public function read() {
-        $query = "SELECT id_incidencia, id_contdor, tipo, estado, fch_apert, fch_resol, nom_cuadrilla FROM `" . $this->table_name . "`";
+        $query = "SELECT id_incidencia, id_contdor, tipo, estado, fch_apert, fch_resol, nom_cuadrilla, lat, lng FROM `" . $this->table_name . "`";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -65,7 +69,7 @@ class Incidencia {
     }
 
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET id_contdor = ?, tipo = ?, estado = ?, fch_apert = ?, fch_resol = ?, nom_cuadrilla = ? WHERE id_incidencia = ? AND id_contdor = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET id_contdor = ?, tipo = ?, estado = ?, fch_apert = ?, fch_resol = ?, nom_cuadrilla = ?, lat = ?, lng = ? WHERE id_incidencia = ? AND id_contdor = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
@@ -76,6 +80,8 @@ class Incidencia {
         $this->fch_apert = htmlspecialchars(strip_tags(trim($this->fch_apert)));
         $this->fch_resol = $this->fch_resol !== null ? htmlspecialchars(strip_tags(trim($this->fch_resol))) : null;
         $this->nom_cuadrilla = $this->nom_cuadrilla !== null ? htmlspecialchars(strip_tags(trim($this->nom_cuadrilla))) : null;
+        $this->lat = ($this->lat === null || $this->lat === "") ? null : (float) $this->lat;
+        $this->lng = ($this->lng === null || $this->lng === "") ? null : (float) $this->lng;
 
         if ($this->fch_resol === "") {
             $this->fch_resol = null;
@@ -84,7 +90,7 @@ class Incidencia {
             $this->nom_cuadrilla = null;
         }
 
-        $stmt->bind_param("issssssi", $this->id_contdor, $this->tipo, $this->estado, $this->fch_apert, $this->fch_resol, $this->nom_cuadrilla, $this->id_incidencia, $this->id_contdor);
+        $stmt->bind_param("iissssddii", $this->id_contdor, $this->tipo, $this->estado, $this->fch_apert, $this->fch_resol, $this->nom_cuadrilla, $this->lat, $this->lng, $this->id_incidencia, $this->id_contdor);
 
         if ($stmt->execute()) {
             $stmt->close();

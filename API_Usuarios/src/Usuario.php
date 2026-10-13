@@ -25,27 +25,47 @@ class Usuario {
         $this->cedula = (int) $this->cedula;
         $this->cedula_admin = (int) ($this->cedula_admin ?? 0);
 
-        $allowedRoles = ["USUARIO", "INSPECTOR", "CHOFER", "PEON", "OPERARIO_ESTABLECIMIENTO"];
+        $allowedRoles = ["ADMIN", "USUARIO", "INSPECTOR", "CHOFER", "PEON", "OPERARIO_ESTABLECIMIENTO"];
+        $this->rol = strtoupper(htmlspecialchars(strip_tags(trim($this->rol ?? "USUARIO"))));
 
-        if ($this->cedula_admin <= 0) {
+        if (!in_array($this->rol, $allowedRoles, true)) {
+            $this->rol = "USUARIO";
+        }
+
+        if ($this->rol === "ADMIN") {
+            if ($this->cedula_admin <= 0) {
+                return false;
+            }
+
+            $checkAdmin = $this->conn->prepare("SELECT cedula_admin FROM `Admin_Tecnico` WHERE cedula_admin = ?");
+            if (!$checkAdmin) {
+                return false;
+            }
+
+            $checkAdmin->bind_param("i", $this->cedula_admin);
+            $checkAdmin->execute();
+            $adminResult = $checkAdmin->get_result();
+            $checkAdmin->close();
+
+            if ($adminResult->num_rows === 0) {
+                return false;
+            }
+        } elseif ($this->cedula_admin <= 0) {
             $this->cedula_admin = 1;
-            $adminEmail = "admin@databyte.local";
-            $adminPrNom = "Admin";
-            $adminPrApel = "Sistema";
-            $adminPass = password_hash("admin123", PASSWORD_DEFAULT);
 
-            $adminQuery = "INSERT INTO `Admin_Tecnico` (cedula_admin, email, PrNom, PrApel, pass) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE email = VALUES(email), PrNom = VALUES(PrNom), PrApel = VALUES(PrApel), pass = VALUES(pass)";
-            $adminStmt = $this->conn->prepare($adminQuery);
-            if (!$adminStmt) {
+            $checkAdmin = $this->conn->prepare("SELECT cedula_admin FROM `Admin_Tecnico` WHERE cedula_admin = ?");
+            if (!$checkAdmin) {
                 return false;
             }
 
-            $adminStmt->bind_param("issss", $this->cedula_admin, $adminEmail, $adminPrNom, $adminPrApel, $adminPass);
-            if (!$adminStmt->execute()) {
-                $adminStmt->close();
+            $checkAdmin->bind_param("i", $this->cedula_admin);
+            $checkAdmin->execute();
+            $adminResult = $checkAdmin->get_result();
+            $checkAdmin->close();
+
+            if ($adminResult->num_rows === 0) {
                 return false;
             }
-            $adminStmt->close();
         }
 
         $query = "INSERT INTO `" . $this->table_name . "` (cedula, email, pass, estado_habil, PrNom, PrApel, rol, cedula_admin) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -56,11 +76,7 @@ class Usuario {
         $this->pass = password_hash($this->pass, PASSWORD_DEFAULT);
         $this->PrNom = htmlspecialchars(strip_tags(trim($this->PrNom ?? "")));
         $this->PrApel = htmlspecialchars(strip_tags(trim($this->PrApel ?? "")));
-        $this->rol = strtoupper(htmlspecialchars(strip_tags(trim($this->rol ?? "USUARIO"))));
         $this->estado_habil = htmlspecialchars(strip_tags(trim($this->estado_habil ?? "pendiente")));
-        if (!in_array($this->rol, $allowedRoles, true)) {
-            $this->rol = "USUARIO";
-        }
         if ($this->estado_habil === "") {
             $this->estado_habil = "pendiente";
         }
@@ -92,7 +108,7 @@ class Usuario {
     }
 
     public function update() {
-        $allowedRoles = ["USUARIO", "INSPECTOR", "CHOFER", "PEON", "OPERARIO_ESTABLECIMIENTO"];
+        $allowedRoles = ["ADMIN", "USUARIO", "INSPECTOR", "CHOFER", "PEON", "OPERARIO_ESTABLECIMIENTO"];
 
         $this->email = htmlspecialchars(strip_tags(trim($this->email)));
         $this->PrNom = htmlspecialchars(strip_tags(trim($this->PrNom ?? "")));
@@ -247,7 +263,7 @@ class Usuario {
     }
     
     public function asignarRol() {
-        $allowedRoles = ["USUARIO", "INSPECTOR", "CHOFER", "PEON", "OPERARIO_ESTABLECIMIENTO"];
+        $allowedRoles = ["ADMIN", "USUARIO", "INSPECTOR", "CHOFER", "PEON", "OPERARIO_ESTABLECIMIENTO"];
 
         $this->cedula = (int) $this->cedula;
         $this->rol = strtoupper(htmlspecialchars(strip_tags(trim($this->rol ?? ""))));

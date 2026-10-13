@@ -33,6 +33,34 @@ class IncidenciaController {
         return "";
     }
 
+    private function getDbErrorMessage($defaultMessage, $operation) {
+        $error = $this->db->error ?? "";
+        if (empty($error)) {
+            return $defaultMessage;
+        }
+
+        $error = preg_replace('/\s+/', ' ', trim($error));
+        $lower = strtolower($error);
+
+        if (strpos($lower, 'duplicate') !== false || strpos($lower, 'ya existe') !== false) {
+            return 'Ya existe un registro con ese valor.';
+        }
+
+        if (strpos($lower, 'foreign key') !== false || strpos($lower, 'child row') !== false) {
+            return 'La operación no se puede completar porque hay datos relacionados que no existen o no son válidos.';
+        }
+
+        if (strpos($lower, 'not null') !== false || strpos($lower, 'cannot be null') !== false) {
+            return 'Falta un dato obligatorio.';
+        }
+
+        if (strpos($lower, 'data too long') !== false || strpos($lower, 'too long') !== false) {
+            return 'Uno de los datos excede la longitud permitida.';
+        }
+
+        return ucfirst($operation) . ': ' . $error;
+    }
+
     public function create() {
         $data = $this->getPayload();
         $id_incidencia = $this->getInputValue($data, ["id_incidencia"]);
@@ -42,6 +70,8 @@ class IncidenciaController {
         $fch_apert = $this->getInputValue($data, ["fch_apert"]);
         $fch_resol = $this->getInputValue($data, ["fch_resol"]);
         $nom_cuadrilla = $this->getInputValue($data, ["nom_cuadrilla"]);
+        $lat = $this->getInputValue($data, ["lat", "latitude"]);
+        $lng = $this->getInputValue($data, ["lng", "longitude"]);
 
         if (!empty($id_incidencia) && !empty($id_contdor) && !empty($tipo) && !empty($estado) && !empty($fch_apert)) {
             $this->incidencia->id_incidencia = (int) $id_incidencia;
@@ -51,13 +81,16 @@ class IncidenciaController {
             $this->incidencia->fch_apert = $fch_apert;
             $this->incidencia->fch_resol = $fch_resol !== "" ? $fch_resol : null;
             $this->incidencia->nom_cuadrilla = $nom_cuadrilla !== "" ? $nom_cuadrilla : null;
+            $this->incidencia->lat = $lat !== "" ? floatval($lat) : null;
+            $this->incidencia->lng = $lng !== "" ? floatval($lng) : null;
 
             if ($this->incidencia->create()) {
                 http_response_code(201);
                 echo json_encode(["message" => "Incidencia creada exitosamente"]);
             } else {
-                http_response_code(503);
-                echo json_encode(["message" => "Incidencia no creada"]);
+                $message = $this->getDbErrorMessage("Incidencia no creada", "crear");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);
@@ -80,7 +113,9 @@ class IncidenciaController {
                     "estado" => $row["estado"],
                     "fch_apert" => $row["fch_apert"],
                     "fch_resol" => $row["fch_resol"],
-                    "nom_cuadrilla" => $row["nom_cuadrilla"]
+                    "nom_cuadrilla" => $row["nom_cuadrilla"],
+                    "lat" => $row["lat"],
+                    "lng" => $row["lng"]
                 ];
                 array_push($incidencias_arr["registros"], $incidencia_item);
             }
@@ -102,6 +137,8 @@ class IncidenciaController {
         $fch_apert = $this->getInputValue($data, ["fch_apert"]);
         $fch_resol = $this->getInputValue($data, ["fch_resol"]);
         $nom_cuadrilla = $this->getInputValue($data, ["nom_cuadrilla"]);
+        $lat = $this->getInputValue($data, ["lat", "latitude"]);
+        $lng = $this->getInputValue($data, ["lng", "longitude"]);
 
         if (!empty($id_incidencia) && !empty($id_contdor) && !empty($tipo) && !empty($estado) && !empty($fch_apert)) {
             $this->incidencia->id_incidencia = (int) $id_incidencia;
@@ -111,13 +148,16 @@ class IncidenciaController {
             $this->incidencia->fch_apert = $fch_apert;
             $this->incidencia->fch_resol = $fch_resol !== "" ? $fch_resol : null;
             $this->incidencia->nom_cuadrilla = $nom_cuadrilla !== "" ? $nom_cuadrilla : null;
+            $this->incidencia->lat = $lat !== "" ? floatval($lat) : null;
+            $this->incidencia->lng = $lng !== "" ? floatval($lng) : null;
 
             if ($this->incidencia->update()) {
                 http_response_code(200);
                 echo json_encode(["message" => "Incidencia actualizada exitosamente"]);
             } else {
-                http_response_code(503);
-                echo json_encode(["message" => "Incidencia no actualizada"]);
+                $message = $this->getDbErrorMessage("Incidencia no actualizada", "actualizar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);
@@ -138,8 +178,9 @@ class IncidenciaController {
                 http_response_code(200);
                 echo json_encode(["message" => "Incidencia eliminada exitosamente"]);
             } else {
-                http_response_code(503);
-                echo json_encode(["message" => "Incidencia no eliminada"]);
+                $message = $this->getDbErrorMessage("Incidencia no eliminada", "eliminar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);

@@ -14,14 +14,15 @@ class Establecimiento {
     public $capac_actual;
     public $capac_max;
     public $tipo_res;
+    public $lat;
+    public $lng;
 
     public function __construct($db) {
         $this->conn = $db;
     }
 
-    // Crear establecimiento usando prepared statement.
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (id_establcmto, nombre, calle, nmro, esq, tipo, capac_actual, capac_max, tipo_res) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (id_establcmto, nombre, calle, nmro, esq, tipo, capac_actual, capac_max, tipo_res, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
@@ -35,8 +36,10 @@ class Establecimiento {
         $this->capac_actual = htmlspecialchars(strip_tags(trim($this->capac_actual)));
         $this->capac_max = htmlspecialchars(strip_tags(trim($this->capac_max)));
         $this->tipo_res = htmlspecialchars(strip_tags(trim($this->tipo_res)));
+        $this->lat = ($this->lat === null || $this->lat === "") ? null : (float) $this->lat;
+        $this->lng = ($this->lng === null || $this->lng === "") ? null : (float) $this->lng;
 
-        $stmt->bind_param("issssssss", $this->id_establcmto, $this->nombre, $this->calle, $this->nmro, $this->esq, $this->tipo, $this->capac_actual, $this->capac_max, $this->tipo_res);
+        $stmt->bind_param("issssssssdd", $this->id_establcmto, $this->nombre, $this->calle, $this->nmro, $this->esq, $this->tipo, $this->capac_actual, $this->capac_max, $this->tipo_res, $this->lat, $this->lng);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -46,9 +49,8 @@ class Establecimiento {
         return false;
     }
 
-    // Leer todos los establecimientos usando prepared statement.
     public function read() {
-        $query = "SELECT id_establcmto, nombre, calle, nmro, esq, tipo, capac_actual, capac_max, tipo_res FROM `" . $this->table_name . "`";
+        $query = "SELECT id_establcmto, nombre, calle, nmro, esq, tipo, capac_actual, capac_max, tipo_res, lat, lng FROM `" . $this->table_name . "`";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -63,9 +65,8 @@ class Establecimiento {
         return false;
     }
 
-    // Obtener un establecimiento por id usando prepared statement.
     public function readOne() {
-        $query = "SELECT id_establcmto, nombre, calle, nmro, esq, tipo, capac_actual, capac_max, tipo_res FROM `" . $this->table_name . "` WHERE id_establcmto = ?";
+        $query = "SELECT id_establcmto, nombre, calle, nmro, esq, tipo, capac_actual, capac_max, tipo_res, lat, lng FROM `" . $this->table_name . "` WHERE id_establcmto = ?";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -83,9 +84,8 @@ class Establecimiento {
         return false;
     }
 
-    // Actualizar establecimiento usando prepared statement.
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET nombre = ?, calle = ?, nmro = ?, esq = ?, tipo = ?, capac_actual = ?, capac_max = ?, tipo_res = ? WHERE id_establcmto = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET nombre = ?, calle = ?, nmro = ?, esq = ?, tipo = ?, capac_actual = ?, capac_max = ?, tipo_res = ?, lat = ?, lng = ? WHERE id_establcmto = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
@@ -98,8 +98,10 @@ class Establecimiento {
         $this->capac_actual = htmlspecialchars(strip_tags(trim($this->capac_actual)));
         $this->capac_max = htmlspecialchars(strip_tags(trim($this->capac_max)));
         $this->tipo_res = htmlspecialchars(strip_tags(trim($this->tipo_res)));
+        $this->lat = ($this->lat === null || $this->lat === "") ? null : (float) $this->lat;
+        $this->lng = ($this->lng === null || $this->lng === "") ? null : (float) $this->lng;
 
-        $stmt->bind_param("ssssssssi", $this->nombre, $this->calle, $this->nmro, $this->esq, $this->tipo, $this->capac_actual, $this->capac_max, $this->tipo_res, $this->id_establcmto);
+        $stmt->bind_param("ssssssssddi", $this->nombre, $this->calle, $this->nmro, $this->esq, $this->tipo, $this->capac_actual, $this->capac_max, $this->tipo_res, $this->lat, $this->lng, $this->id_establcmto);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -109,7 +111,6 @@ class Establecimiento {
         return false;
     }
 
-    // Eliminar establecimiento usando prepared statement.
     public function delete() {
         $query = "DELETE FROM `" . $this->table_name . "` WHERE id_establcmto = ?";
         $stmt = $this->conn->prepare($query);

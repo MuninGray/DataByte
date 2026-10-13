@@ -40,6 +40,59 @@ class UsuarioController {
         return "";
     }
 
+    private function getAdminSecret() {
+        $envFile = __DIR__ . '/../../.env';
+        $secret = getenv("DATA_BYTE_ADMIN_SECRET");
+
+        if (file_exists($envFile)) {
+            $parsed = parse_ini_file($envFile, true, INI_SCANNER_RAW);
+            if (is_array($parsed) && isset($parsed['DATA_BYTE_ADMIN_SECRET'])) {
+                $secret = (string) $parsed['DATA_BYTE_ADMIN_SECRET'];
+            } elseif (is_array($parsed) && isset($parsed['DATA_BYTE_ADMIN_SECRET'][0])) {
+                $secret = (string) $parsed['DATA_BYTE_ADMIN_SECRET'][0];
+            }
+        }
+
+        if ($secret === false || $secret === null) {
+            return "";
+        }
+
+        $secret = trim((string) $secret);
+        if (strlen($secret) >= 2 && $secret[0] === '"' && substr($secret, -1) === '"') {
+            $secret = substr($secret, 1, -1);
+        }
+
+        return $secret;
+    }
+
+    private function getDbErrorMessage($defaultMessage, $operation) {
+        $error = $this->db->error ?? "";
+        if (empty($error)) {
+            return $defaultMessage;
+        }
+
+        $error = preg_replace('/\s+/', ' ', trim($error));
+        $lower = strtolower($error);
+
+        if (strpos($lower, 'duplicate') !== false || strpos($lower, 'ya existe') !== false) {
+            return 'Ya existe un registro con ese valor.';
+        }
+
+        if (strpos($lower, 'foreign key') !== false || strpos($lower, 'child row') !== false) {
+            return 'La operación no se puede completar porque hay datos relacionados que no existen o no son válidos.';
+        }
+
+        if (strpos($lower, 'not null') !== false || strpos($lower, 'cannot be null') !== false) {
+            return 'Falta un dato obligatorio.';
+        }
+
+        if (strpos($lower, 'data too long') !== false || strpos($lower, 'too long') !== false) {
+            return 'Uno de los datos excede la longitud permitida.';
+        }
+
+        return ucfirst($operation) . ': ' . $error;
+    }
+
     public function create() {
         $data = $this->getPayload();
         $email = $this->getInputValue($data, ["correo", "email"]);
@@ -51,42 +104,236 @@ class UsuarioController {
         $rol = $this->getInputValue($data, ["rol"]);
         $estadoHabil = $this->getInputValue($data, ["estado_habil"]);
         $cedulaAdmin = $this->getInputValue($data, ["cedula_admin"]);
+        $adminSecret = $this->getAdminSecret();
+        $providedAdminSecret = $this->getInputValue($data, ["admin_secret"]);
 
-        if (!empty($email) && !empty($cedula) && !empty($pass) && !empty($confPass)) {
-            if ($pass !== $confPass) {
-                http_response_code(400);
+        $rolNormalizada = strtoupper($rol);
+        if ($rolNormalizada === "ADMIN") {
+            if ($adminSecret === "" || $providedAdminSecret !== $adminSecret) {
+                http_response_code(403);
                 echo json_encode([
-                    "message" => "Las contraseñas no coinciden"
+                    "message" => "La creación de administradores está protegida y requiere un secreto válido."
                 ]);
                 return;
             }
 
-            $this->usuario->email = $email;
-            $this->usuario->cedula = (int) $cedula;
-            $this->usuario->pass = $pass;
-            $this->usuario->PrNom = $prNom;
-            $this->usuario->PrApel = $prApel;
-            $this->usuario->rol = !empty($rol) ? strtoupper($rol) : "USUARIO";
-            $this->usuario->estado_habil = !empty($estadoHabil) ? $estadoHabil : "pendiente";
-            $this->usuario->cedula_admin = !empty($cedulaAdmin) ? (int) $cedulaAdmin : 0;
-
-            if ($this->usuario->create()) {
-                http_response_code(201);
+            if (empty($cedulaAdmin) || (int) $cedulaAdmin <= 0) {
+                http_response_code(400);
                 echo json_encode([
-                    "message" => "Usuario creado exitosamente"
+                    "message" => "Para crear un administrador debes enviar cedula_admin válida."
                 ]);
-            } else {
-                http_response_code(503);
-                echo json_encode([
-                    "message" => "Usuario no creado"
-                ]);
+                return;
             }
-        } else {
+        }
+
+        $requiredFields = [
+            "correo" => $email,
+            "CI" => $cedula,
+            "PrNom" => $prNom,
+            "PrApel" => $prApel,
+            "contrasena" => $pass,
+            "conf_contrasena" => $confPass
+        ];
+
+        $missing = [];
+        foreach ($requiredFields as $field => $value) {
+            if (trim((string) $value) === "") {
+                $missing[] = $field;
+            }
+        }
+
+        if (!empty($missing)) {
             http_response_code(400);
             echo json_encode([
-                "message" => "Datos incompletos"
+                "message" => "Faltan datos obligatorios: " . implode(", ", $missing)
+            ]);
+            return;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode([
+                "message" => "El correo ingresado no es válido"
+            ]);
+            return;
+        }
+
+        if (strlen($pass) < 6) {
+            http_response_code(400);
+            echo json_encode([
+                "message" => "La contraseña debe tener al menos 6 caracteres"
+            ]);
+            return;
+        }
+
+        if ($pass !== $confPass) {
+            http_response_code(400);
+            echo json_encode([
+                "message" => "Las contraseñas no coinciden"
+            ]);
+            return;
+        }
+
+        $this->usuario->email = $email;
+        $this->usuario->cedula = (int) $cedula;
+        $this->usuario->pass = $pass;
+        $this->usuario->PrNom = $prNom;
+        $this->usuario->PrApel = $prApel;
+        $this->usuario->rol = !empty($rol) ? strtoupper($rol) : "USUARIO";
+        $this->usuario->estado_habil = !empty($estadoHabil) ? $estadoHabil : "pendiente";
+        $this->usuario->cedula_admin = !empty($cedulaAdmin) ? (int) $cedulaAdmin : 0;
+
+        if ($this->usuario->create()) {
+            http_response_code(201);
+            echo json_encode([
+                "message" => "Usuario creado exitosamente"
+            ]);
+        } else {
+            $message = $this->getDbErrorMessage("Usuario no creado", "crear");
+            http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+            echo json_encode([
+                "message" => $message,
+                "detail" => $this->db->error ?? ""
             ]);
         }
+    }
+
+    public function crearAdminTecnico() {
+        $data = $this->getPayload();
+        $email = $this->getInputValue($data, ["correo", "email"]);
+        $cedula = $this->getInputValue($data, ["CI", "ci", "cedula"]);
+        $pass = $this->getInputValue($data, ["contrasena", "pass"]);
+        $confPass = $this->getInputValue($data, ["conf_contrasena", "confirmar_contrasena"]);
+        $prNom = $this->getInputValue($data, ["PrNom", "prNom"]);
+        $prApel = $this->getInputValue($data, ["PrApel", "prApel"]);
+        $adminSecret = $this->getAdminSecret();
+        $providedAdminSecret = $this->getInputValue($data, ["admin_secret"]);
+
+        if ($adminSecret === "" || $providedAdminSecret !== $adminSecret) {
+            http_response_code(403);
+            echo json_encode([
+                "message" => "La creación de administradores requiere el secreto del servidor."
+            ]);
+            return;
+        }
+
+        $sessionCedula = $_SESSION['usuario']['cedula'] ?? null;
+        $sessionRol = strtoupper((string) ($_SESSION['usuario']['rol'] ?? ""));
+
+        if (empty($sessionCedula) || (int) $sessionCedula <= 0 || $sessionRol !== "ADMIN") {
+            http_response_code(403);
+            echo json_encode([
+                "message" => "Solo un administrador autenticado puede crear otro administrador."
+            ]);
+            return;
+        }
+
+        $cedulaAdmin = (string) $sessionCedula;
+
+        $requiredFields = [
+            "correo" => $email,
+            "CI" => $cedula,
+            "PrNom" => $prNom,
+            "PrApel" => $prApel,
+            "contrasena" => $pass,
+            "conf_contrasena" => $confPass,
+            "cedula_admin" => $cedulaAdmin
+        ];
+
+        $missing = [];
+        foreach ($requiredFields as $field => $value) {
+            if (trim((string) $value) === "") {
+                $missing[] = $field;
+            }
+        }
+
+        if (!empty($missing)) {
+            http_response_code(400);
+            echo json_encode([
+                "message" => "Faltan datos obligatorios: " . implode(", ", $missing)
+            ]);
+            return;
+        }
+
+        $cedulaDigits = preg_replace('/\D+/', '', $cedula);
+        if (strlen($cedulaDigits) < 8) {
+            http_response_code(400);
+            echo json_encode([
+                "message" => "La cédula debe tener al menos 8 dígitos."
+            ]);
+            return;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode([
+                "message" => "El correo ingresado no es válido"
+            ]);
+            return;
+        }
+
+        if (strlen($pass) < 6) {
+            http_response_code(400);
+            echo json_encode([
+                "message" => "La contraseña debe tener al menos 6 caracteres"
+            ]);
+            return;
+        }
+
+        if ($pass !== $confPass) {
+            http_response_code(400);
+            echo json_encode([
+                "message" => "Las contraseñas no coinciden"
+            ]);
+            return;
+        }
+
+        $this->db->begin_transaction();
+
+        $adminHash = password_hash($pass, PASSWORD_DEFAULT);
+
+        $adminStmt = $this->db->prepare("INSERT INTO `Admin_Tecnico` (cedula_admin, email, PrNom, PrApel, pass) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE email = VALUES(email), PrNom = VALUES(PrNom), PrApel = VALUES(PrApel), pass = VALUES(pass)");
+        if (!$adminStmt) {
+            $this->db->rollback();
+            http_response_code(503);
+            echo json_encode(["message" => "No se pudo preparar la creación del administrador técnico."]);
+            return;
+        }
+
+        $adminStmt->bind_param("issss", $cedulaAdmin, $email, $prNom, $prApel, $adminHash);
+        if (!$adminStmt->execute()) {
+            $adminStmt->close();
+            $this->db->rollback();
+            http_response_code(503);
+            echo json_encode(["message" => "No se pudo guardar el administrador técnico."]);
+            return;
+        }
+        $adminStmt->close();
+
+        $this->usuario->email = $email;
+        $this->usuario->cedula = (int) $cedula;
+        $this->usuario->pass = $pass;
+        $this->usuario->PrNom = $prNom;
+        $this->usuario->PrApel = $prApel;
+        $this->usuario->rol = "ADMIN";
+        $this->usuario->estado_habil = "aprobado";
+        $this->usuario->cedula_admin = (int) $cedulaAdmin;
+
+        if (!$this->usuario->create()) {
+            $this->db->rollback();
+            http_response_code(503);
+            echo json_encode(["message" => "No se pudo crear el usuario administrador."]);
+            return;
+        }
+
+        $this->db->commit();
+        http_response_code(201);
+        echo json_encode([
+            "message" => "Administrador técnico creado correctamente",
+            "cedula_admin" => (int) $cedulaAdmin,
+            "cedula_usuario" => (int) $cedula,
+            "rol" => "ADMIN"
+        ]);
     }
 
     public function read() {
@@ -139,8 +386,9 @@ class UsuarioController {
                 http_response_code(201);
                 echo json_encode(["message" => "Usuario actualizado exitosamente"]);
             } else {
-                http_response_code(503);
-                echo json_encode(["message" => "Usuario no actualizado"]);
+                $message = $this->getDbErrorMessage("Usuario no actualizado", "actualizar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);
@@ -159,13 +407,28 @@ class UsuarioController {
                 http_response_code(200);
                 echo json_encode(["message" => "Usuario eliminado exitosamente"]);
             } else {
-                http_response_code(503);
-                echo json_encode(["message" => "Usuario no eliminado"]);
+                $message = $this->getDbErrorMessage("Usuario no eliminado", "eliminar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);
             echo json_encode(["message" => "Datos incompletos"]);
         }
+    }
+
+    public function usuarioActual() {
+        if (empty($_SESSION['usuario']['cedula'])) {
+            http_response_code(401);
+            echo json_encode(["message" => "No hay usuario autenticado"]);
+            return;
+        }
+
+        http_response_code(200);
+        echo json_encode([
+            "message" => "Usuario autenticado",
+            "usuario" => $_SESSION['usuario']
+        ]);
     }
 
     public function login() {
@@ -180,10 +443,18 @@ class UsuarioController {
             $resultado = $this->usuario->login();
 
             if ($resultado["success"] === true) {
+                $_SESSION['usuario'] = [
+                    "cedula" => (int) $this->usuario->cedula,
+                    "email" => $resultado["usuario"]["email"] ?? "",
+                    "PrNom" => $resultado["usuario"]["PrNom"] ?? "",
+                    "PrApel" => $resultado["usuario"]["PrApel"] ?? "",
+                    "rol" => $resultado["usuario"]["rol"] ?? "USUARIO"
+                ];
+
                 http_response_code(200);
                 echo json_encode([
                     "message" => $resultado["message"],
-                    "usuario" => $resultado["usuario"]
+                    "usuario" => $_SESSION['usuario']
                 ]);
             } else {
                 $statusCode = ($resultado["message"] === "Contraseña incorrecta") ? 401 : 403;
@@ -207,6 +478,13 @@ class UsuarioController {
         $codigo = $this->getInputValue($data, ["codigo"]);
         $nom_cuadrilla = $this->getInputValue($data, ["nom_cuadrilla"]);
         $id_establcmto = $this->getInputValue($data, ["id_establcmto"]);
+
+        $allowedAdminRoles = ["ADMIN", "USUARIO", "INSPECTOR", "CHOFER", "PEON", "OPERARIO_ESTABLECIMIENTO"];
+        if (!empty($rol) && !in_array(strtoupper($rol), $allowedAdminRoles, true)) {
+            http_response_code(400);
+            echo json_encode(["message" => "Rol no válido"]);
+            return;
+        }
 
         if (!empty($cedula) && !empty($rol)) {
             $this->usuario->cedula = (int) $cedula;

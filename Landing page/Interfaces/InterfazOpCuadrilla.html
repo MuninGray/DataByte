@@ -458,7 +458,7 @@
                     })
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'No se pudo actualizar el estado');
+                if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo actualizar el estado');
                 mostrarEn('mensaje-incidencias', data.message || 'Estado actualizado correctamente', 'green');
                 await consultarIncidencias();
             } catch (error) {
@@ -520,7 +520,7 @@
                     body: JSON.stringify(datos)
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'No se pudo registrar el recorrido');
+                if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo registrar el recorrido');
                 mostrarEn('mensaje-crear-recorrido', data.message || 'Recorrido registrado correctamente', 'green');
                 ['rec-matricula', 'rec-id_establcmto', 'rec-hora', 'rec-peso']
                     .forEach(id => { document.getElementById(id).value = ''; });

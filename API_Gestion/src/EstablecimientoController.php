@@ -39,6 +39,34 @@ class EstablecimientoController {
         return "";
     }
 
+    private function getDbErrorMessage($defaultMessage, $operation) {
+        $error = $this->db->error ?? "";
+        if (empty($error)) {
+            return $defaultMessage;
+        }
+
+        $error = preg_replace('/\s+/', ' ', trim($error));
+        $lower = strtolower($error);
+
+        if (strpos($lower, 'duplicate') !== false || strpos($lower, 'ya existe') !== false) {
+            return 'Ya existe un registro con ese valor.';
+        }
+
+        if (strpos($lower, 'foreign key') !== false || strpos($lower, 'child row') !== false) {
+            return 'La operación no se puede completar porque hay datos relacionados que no existen o no son válidos.';
+        }
+
+        if (strpos($lower, 'not null') !== false || strpos($lower, 'cannot be null') !== false) {
+            return 'Falta un dato obligatorio.';
+        }
+
+        if (strpos($lower, 'data too long') !== false || strpos($lower, 'too long') !== false) {
+            return 'Uno de los datos excede la longitud permitida.';
+        }
+
+        return ucfirst($operation) . ': ' . $error;
+    }
+
     // Crear establecimiento.
     public function create() {
         $data = $this->getPayload();
@@ -51,6 +79,8 @@ class EstablecimientoController {
         $capac_actual = $this->getInputValue($data, ["capac_actual"]);
         $capac_max = $this->getInputValue($data, ["capac_max"]);
         $tipo_res = $this->getInputValue($data, ["tipo_res"]);
+        $lat = $this->getInputValue($data, ["lat", "latitude"]);
+        $lng = $this->getInputValue($data, ["lng", "longitude"]);
 
         if (!empty($id_establcmto) && !empty($nombre) && !empty($calle) && !empty($nmro) && !empty($esq) && !empty($tipo) && !empty($capac_actual) && !empty($capac_max) && !empty($tipo_res)) {
             $this->establecimiento->id_establcmto = (int) $id_establcmto;
@@ -62,13 +92,16 @@ class EstablecimientoController {
             $this->establecimiento->capac_actual = $capac_actual;
             $this->establecimiento->capac_max = $capac_max;
             $this->establecimiento->tipo_res = $tipo_res;
+            $this->establecimiento->lat = $lat !== "" ? floatval($lat) : null;
+            $this->establecimiento->lng = $lng !== "" ? floatval($lng) : null;
 
             if ($this->establecimiento->create()) {
                 http_response_code(201);
                 echo json_encode(["message" => "Establecimiento creado exitosamente"]);
             } else {
-                http_response_code(500);
-                echo json_encode(["message" => "Establecimiento no creado"]);
+                $message = $this->getDbErrorMessage("Establecimiento no creado", "crear");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 500);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);
@@ -96,7 +129,9 @@ class EstablecimientoController {
                     "tipo" => $row["tipo"],
                     "capac_actual" => $row["capac_actual"],
                     "capac_max" => $row["capac_max"],
-                    "tipo_res" => $row["tipo_res"]
+                    "tipo_res" => $row["tipo_res"],
+                    "lat" => $row["lat"],
+                    "lng" => $row["lng"]
                 ]);
             } else {
                 http_response_code(404);
@@ -121,7 +156,9 @@ class EstablecimientoController {
                     "tipo" => $row["tipo"],
                     "capac_actual" => $row["capac_actual"],
                     "capac_max" => $row["capac_max"],
-                    "tipo_res" => $row["tipo_res"]
+                    "tipo_res" => $row["tipo_res"],
+                    "lat" => $row["lat"],
+                    "lng" => $row["lng"]
                 ];
                 array_push($establecimientos_arr["registros"], $establecimiento_item);
             }
@@ -146,6 +183,8 @@ class EstablecimientoController {
         $capac_actual = $this->getInputValue($data, ["capac_actual"]);
         $capac_max = $this->getInputValue($data, ["capac_max"]);
         $tipo_res = $this->getInputValue($data, ["tipo_res"]);
+        $lat = $this->getInputValue($data, ["lat", "latitude"]);
+        $lng = $this->getInputValue($data, ["lng", "longitude"]);
 
         if (!empty($id_establcmto) && !empty($nombre) && !empty($calle) && !empty($nmro) && !empty($esq) && !empty($tipo) && !empty($capac_actual) && !empty($capac_max) && !empty($tipo_res)) {
             $this->establecimiento->id_establcmto = (int) $id_establcmto;
@@ -157,6 +196,8 @@ class EstablecimientoController {
             $this->establecimiento->capac_actual = $capac_actual;
             $this->establecimiento->capac_max = $capac_max;
             $this->establecimiento->tipo_res = $tipo_res;
+            $this->establecimiento->lat = $lat !== "" ? floatval($lat) : null;
+            $this->establecimiento->lng = $lng !== "" ? floatval($lng) : null;
 
             $result = $this->establecimiento->readOne();
             if ($result && $result->num_rows === 0) {
@@ -169,8 +210,9 @@ class EstablecimientoController {
                 http_response_code(200);
                 echo json_encode(["message" => "Establecimiento actualizado exitosamente"]);
             } else {
-                http_response_code(500);
-                echo json_encode(["message" => "Establecimiento no actualizado"]);
+                $message = $this->getDbErrorMessage("Establecimiento no actualizado", "actualizar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 500);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);
@@ -197,8 +239,9 @@ class EstablecimientoController {
                 http_response_code(200);
                 echo json_encode(["message" => "Establecimiento eliminado exitosamente"]);
             } else {
-                http_response_code(500);
-                echo json_encode(["message" => "Establecimiento no eliminado"]);
+                $message = $this->getDbErrorMessage("Establecimiento no eliminado", "eliminar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 500);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);

@@ -33,6 +33,34 @@ class VehiculoController {
         return "";
     }
 
+    private function getDbErrorMessage($defaultMessage, $operation) {
+        $error = $this->db->error ?? "";
+        if (empty($error)) {
+            return $defaultMessage;
+        }
+
+        $error = preg_replace('/\s+/', ' ', trim($error));
+        $lower = strtolower($error);
+
+        if (strpos($lower, 'duplicate') !== false || strpos($lower, 'ya existe') !== false) {
+            return 'Ya existe un registro con ese valor.';
+        }
+
+        if (strpos($lower, 'foreign key') !== false || strpos($lower, 'child row') !== false) {
+            return 'La operación no se puede completar porque hay datos relacionados que no existen o no son válidos.';
+        }
+
+        if (strpos($lower, 'not null') !== false || strpos($lower, 'cannot be null') !== false) {
+            return 'Falta un dato obligatorio.';
+        }
+
+        if (strpos($lower, 'data too long') !== false || strpos($lower, 'too long') !== false) {
+            return 'Uno de los datos excede la longitud permitida.';
+        }
+
+        return ucfirst($operation) . ': ' . $error;
+    }
+
     public function create() {
         $data = $this->getPayload();
         $matricula = $this->getInputValue($data, ["matricula"]);
@@ -46,8 +74,9 @@ class VehiculoController {
                 http_response_code(201);
                 echo json_encode(["message" => "Vehículo creado exitosamente"]);
             } else {
-                http_response_code(503);
-                echo json_encode(["message" => "Vehículo no creado"]);
+                $message = $this->getDbErrorMessage("Vehículo no creado", "crear");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);
@@ -91,8 +120,9 @@ class VehiculoController {
                 http_response_code(200);
                 echo json_encode(["message" => "Vehículo actualizado exitosamente"]);
             } else {
-                http_response_code(503);
-                echo json_encode(["message" => "Vehículo no actualizado"]);
+                $message = $this->getDbErrorMessage("Vehículo no actualizado", "actualizar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);
@@ -111,8 +141,9 @@ class VehiculoController {
                 http_response_code(200);
                 echo json_encode(["message" => "Vehículo eliminado exitosamente"]);
             } else {
-                http_response_code(503);
-                echo json_encode(["message" => "Vehículo no eliminado"]);
+                $message = $this->getDbErrorMessage("Vehículo no eliminado", "eliminar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);

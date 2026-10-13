@@ -19,7 +19,7 @@ create table Usuario(
     estado_habil enum('pendiente','aprobado','rechazado') not null,
     PrNom varchar(50) not null,
     PrApel varchar(50) not null,
-    rol enum('USUARIO','INSPECTOR','CHOFER','PEON','OPERARIO_ESTABLECIMIENTO') not null,
+    rol enum('USUARIO','ADMIN','INSPECTOR','CHOFER','PEON','OPERARIO_ESTABLECIMIENTO') not null,
     cedula_admin int not null,
     constraint PK_Usuario primary key (cedula)
 );
@@ -47,6 +47,8 @@ create table Establecimiento(
     capac_actual decimal(10,2) not null,
     capac_max decimal(10,2) not null,
     tipo_res varchar(50) not null,
+    lat decimal(10,7),
+    lng decimal(10,7),
     constraint PK_Establecimiento primary key (id_establcmto)
 );
 
@@ -122,6 +124,8 @@ create table Contenedor(
     codigo varchar(20) not null,
     matricula varchar(10),
     id_ruta int,
+    lat decimal(10,7),
+    lng decimal(10,7),
     constraint PK_Contenedor primary key (id_contdor)
 );
 
@@ -133,6 +137,8 @@ create table Incidencia(
     fch_apert date not null,
     fch_resol date,
     nom_cuadrilla varchar(50),
+    lat decimal(10,7),
+    lng decimal(10,7),
     constraint PK_Incidencia primary key (id_incidencia)
 );
 
@@ -209,12 +215,12 @@ add constraint FK_Contenedor_Municipio
 foreign key (codigo) references Municipio(codigo);
 
 alter table Contenedor
-add constraint FK_Contenedor_Asigna_matricula
-foreign key (matricula) references Asigna(matricula);
+add constraint FK_Contenedor_Vehiculo
+foreign key (matricula) references Vehiculo(matricula);
 
 alter table Contenedor
-add constraint FK_Contenedor_Asigna_id_ruta
-foreign key (id_ruta) references Asigna(id_ruta);
+add constraint FK_Contenedor_Ruta
+foreign key (id_ruta) references Ruta(id_ruta);
 
 alter table Incidencia
 add constraint FK_Incidencia_Contenedor

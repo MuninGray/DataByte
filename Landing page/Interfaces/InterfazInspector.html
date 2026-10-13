@@ -76,6 +76,14 @@
                     <input type="date" id="inc-fch_apert" required>
                 </div>
                 <div class="campo">
+                    <label for="inc-lat">Latitud</label>
+                    <input type="number" step="any" id="inc-lat" placeholder="-34.90">
+                </div>
+                <div class="campo">
+                    <label for="inc-lng">Longitud</label>
+                    <input type="number" step="any" id="inc-lng" placeholder="-56.16">
+                </div>
+                <div class="campo">
                     <label for="inc-nom_cuadrilla">Cuadrilla (opcional)</label>
                     <input type="text" id="inc-nom_cuadrilla">
                 </div>
@@ -368,7 +376,7 @@
                     })
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'No se pudo actualizar el estado');
+                if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo actualizar el estado');
                 mostrarEn('mensaje-incidencias', data.message || 'Estado actualizado correctamente', 'green');
                 consultarIncidencias();
             } catch (error) {
@@ -383,6 +391,8 @@
                 tipo: document.getElementById('inc-tipo').value.trim(),
                 estado: document.getElementById('inc-estado').value.trim(),
                 fch_apert: document.getElementById('inc-fch_apert').value.trim(),
+                lat: document.getElementById('inc-lat').value.trim(),
+                lng: document.getElementById('inc-lng').value.trim(),
                 nom_cuadrilla: document.getElementById('inc-nom_cuadrilla').value.trim()
             };
 
@@ -393,9 +403,9 @@
                     body: JSON.stringify(datos)
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'No se pudo crear la incidencia');
+                if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo crear la incidencia');
                 mostrarEn('mensaje-crear-incidencia', data.message || 'Incidencia creada correctamente', 'green');
-                ['inc-id_incidencia', 'inc-id_contdor', 'inc-tipo', 'inc-estado', 'inc-fch_apert', 'inc-nom_cuadrilla']
+                ['inc-id_incidencia', 'inc-id_contdor', 'inc-tipo', 'inc-estado', 'inc-fch_apert', 'inc-lat', 'inc-lng', 'inc-nom_cuadrilla']
                     .forEach(id => { document.getElementById(id).value = ''; });
                 consultarIncidencias();
             } catch (error) {

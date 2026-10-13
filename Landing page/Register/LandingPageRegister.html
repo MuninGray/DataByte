@@ -25,7 +25,32 @@
             const confContrasena = document.getElementById('conf_contrasena').value.trim();
 
             if (!correo || !primerNombre || !primerApellido || !ci || !contrasena || !confContrasena) {
-                mensaje.textContent = 'Completa todos los campos.';
+                mensaje.textContent = 'Faltan datos obligatorios: correo, nombres, apellidos, CI o contraseña.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+            if (!emailValido) {
+                mensaje.textContent = 'Ingresa un correo válido.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            if (primerNombre.length < 2 || primerApellido.length < 2) {
+                mensaje.textContent = 'El nombre y el apellido deben tener al menos 2 caracteres.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            if (ci.length < 8) {
+                mensaje.textContent = 'La cédula debe tener al menos 8 caracteres.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            if (contrasena.length < 6) {
+                mensaje.textContent = 'La contraseña debe tener al menos 6 caracteres.';
                 mensaje.style.color = 'red';
                 return;
             }
@@ -51,19 +76,18 @@
                     })
                 });
 
-                const data = await response.json();
+                const data = await response.json().catch(() => ({}));
 
                 if (response.ok) {
                     mensaje.textContent = data.message || 'Usuario creado correctamente.';
                     mensaje.style.color = 'green';
-                    
-                    // Redirigir a la landing page después de 2 segundos
+
                     setTimeout(() => {
                         window.location.href = '../LandingPage/LandingPage.html';
                     }, 2000);
-                    
+
                 } else {
-                    mensaje.textContent = data.message || 'No se pudo registrar el usuario.';
+                    mensaje.textContent = data.message || data.detail || 'No se pudo registrar el usuario.';
                     mensaje.style.color = 'red';
                 }
             } catch (error) {
@@ -79,7 +103,7 @@
     <div class="contenedor_register">
 
         <h1>Registrar</h1>
-        <form id="formRegistro">
+        <form id="formRegistro" novalidate>
             <!-- Etiqueta de correo para el registrar -->
             <label for="correo">Correo:</label>
             <input type="email" name="correo" id="correo" required><br><br>

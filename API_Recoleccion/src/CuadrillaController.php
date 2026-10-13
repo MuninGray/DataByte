@@ -33,6 +33,34 @@ class CuadrillaController {
         return "";
     }
 
+    private function getDbErrorMessage($defaultMessage, $operation) {
+        $error = $this->db->error ?? "";
+        if (empty($error)) {
+            return $defaultMessage;
+        }
+
+        $error = preg_replace('/\s+/', ' ', trim($error));
+        $lower = strtolower($error);
+
+        if (strpos($lower, 'duplicate') !== false || strpos($lower, 'ya existe') !== false) {
+            return 'Ya existe un registro con ese valor.';
+        }
+
+        if (strpos($lower, 'foreign key') !== false || strpos($lower, 'child row') !== false) {
+            return 'La operación no se puede completar porque hay datos relacionados que no existen o no son válidos.';
+        }
+
+        if (strpos($lower, 'not null') !== false || strpos($lower, 'cannot be null') !== false) {
+            return 'Falta un dato obligatorio.';
+        }
+
+        if (strpos($lower, 'data too long') !== false || strpos($lower, 'too long') !== false) {
+            return 'Uno de los datos excede la longitud permitida.';
+        }
+
+        return ucfirst($operation) . ': ' . $error;
+    }
+
     public function create() {
         $data = $this->getPayload();
         $nom_cuadrilla = $this->getInputValue($data, ["nom_cuadrilla"]);
@@ -46,8 +74,9 @@ class CuadrillaController {
                 http_response_code(201);
                 echo json_encode(["message" => "Cuadrilla creada exitosamente"]);
             } else {
-                http_response_code(503);
-                echo json_encode(["message" => "Cuadrilla no creada"]);
+                $message = $this->getDbErrorMessage("Cuadrilla no creada", "crear");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);
@@ -91,8 +120,9 @@ class CuadrillaController {
                 http_response_code(200);
                 echo json_encode(["message" => "Cuadrilla actualizada exitosamente"]);
             } else {
-                http_response_code(503);
-                echo json_encode(["message" => "Cuadrilla no actualizada"]);
+                $message = $this->getDbErrorMessage("Cuadrilla no actualizada", "actualizar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);
@@ -111,8 +141,9 @@ class CuadrillaController {
                 http_response_code(200);
                 echo json_encode(["message" => "Cuadrilla eliminada exitosamente"]);
             } else {
-                http_response_code(503);
-                echo json_encode(["message" => "Cuadrilla no eliminada"]);
+                $message = $this->getDbErrorMessage("Cuadrilla no eliminada", "eliminar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);

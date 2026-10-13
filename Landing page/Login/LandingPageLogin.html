@@ -30,6 +30,7 @@
                 const apiUrl = new URL('../../API_Usuarios/public/index.php?accion=login', window.location.href).toString();
                 const response = await fetch(apiUrl, {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ CI: ci, contrasena: contrasena })
                 });
@@ -43,6 +44,7 @@
                     const rolRaw = String(data.usuario?.rol || '').trim();
                     const rol = rolRaw.toUpperCase().replace(/[\s_-]+/g, '_');
                     const rutasPorRol = {
+                        ADMIN: '../Interfaces/InterfazAdmin.html',
                         USUARIO: '../LandingPage/LandingPage.html',
                         INSPECTOR: '../Interfaces/InterfazInspector.html',
                         PEON: '../Interfaces/InterfazOpCuadrilla.html',
@@ -77,7 +79,7 @@
     <div class="contenedor_login">
 
         <h1>Login</h1>
-        <form id="formLogin">
+        <form id="formLogin" novalidate>
             <!-- Etiqueta de Cedula de identidad para el logear -->
             <label for="CI">CI:</label>
             <input type="text" name="CI" id="CI" required><br><br>

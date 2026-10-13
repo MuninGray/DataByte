@@ -39,6 +39,34 @@ class MaquinariaController {
         return "";
     }
 
+    private function getDbErrorMessage($defaultMessage, $operation) {
+        $error = $this->db->error ?? "";
+        if (empty($error)) {
+            return $defaultMessage;
+        }
+
+        $error = preg_replace('/\s+/', ' ', trim($error));
+        $lower = strtolower($error);
+
+        if (strpos($lower, 'duplicate') !== false || strpos($lower, 'ya existe') !== false) {
+            return 'Ya existe un registro con ese valor.';
+        }
+
+        if (strpos($lower, 'foreign key') !== false || strpos($lower, 'child row') !== false) {
+            return 'La operación no se puede completar porque hay datos relacionados que no existen o no son válidos.';
+        }
+
+        if (strpos($lower, 'not null') !== false || strpos($lower, 'cannot be null') !== false) {
+            return 'Falta un dato obligatorio.';
+        }
+
+        if (strpos($lower, 'data too long') !== false || strpos($lower, 'too long') !== false) {
+            return 'Uno de los datos excede la longitud permitida.';
+        }
+
+        return ucfirst($operation) . ': ' . $error;
+    }
+
     // Crear maquinaria verificando que exista el establecimiento y el servicio.
     public function create() {
         $data = $this->getPayload();
@@ -83,8 +111,9 @@ class MaquinariaController {
                 http_response_code(201);
                 echo json_encode(["message" => "Maquinaria creada exitosamente"]);
             } else {
-                http_response_code(500);
-                echo json_encode(["message" => "Maquinaria no creada"]);
+                $message = $this->getDbErrorMessage("Maquinaria no creada", "crear");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 500);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);
@@ -193,8 +222,9 @@ class MaquinariaController {
                 http_response_code(200);
                 echo json_encode(["message" => "Maquinaria actualizada exitosamente"]);
             } else {
-                http_response_code(500);
-                echo json_encode(["message" => "Maquinaria no actualizada"]);
+                $message = $this->getDbErrorMessage("Maquinaria no actualizada", "actualizar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 500);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);
@@ -221,8 +251,9 @@ class MaquinariaController {
                 http_response_code(200);
                 echo json_encode(["message" => "Maquinaria eliminada exitosamente"]);
             } else {
-                http_response_code(500);
-                echo json_encode(["message" => "Maquinaria no eliminada"]);
+                $message = $this->getDbErrorMessage("Maquinaria no eliminada", "eliminar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 500);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);

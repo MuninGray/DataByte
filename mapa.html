@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mapa DataByte</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f3f6fb;
+      }
+      #map {
+        height: 68vh;
+        width: 100%;
+      }
+      .panel {
+        background: #fff;
+        border-bottom: 1px solid #dfe7f0;
+        padding: 12px 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: end;
+      }
+      .form-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 180px;
+      }
+      label {
+        font-size: 12px;
+        color: #485b67;
+      }
+      input, select, button {
+        padding: 8px 10px;
+        border: 1px solid #cfd9e3;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      button {
+        background: #1d4ed8;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      .legend {
+        margin-left: auto;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        color: #495d6d;
+        font-size: 13px;
+      }
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .green { background: #2e7d32; }
+      .blue { background: #1565c0; }
+      .red { background: #c62828; }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <div class="form-wrap">
+        <label>Formulario</label>
+        <select id="tipoEntidad">
+          <option value="contenedor">Contenedor</option>
+          <option value="establecimiento">Establecimiento</option>
+          <option value="incidencia">Incidencia</option>
+        </select>
+      </div>
+
+      <div class="form-wrap">
+        <label>ID</label>
+        <input id="idCampo" type="number" placeholder="ID" />
+      </div>
+
+      <div class="form-wrap">
+        <label>Latitud</label>
+        <input id="latCampo" type="number" step="any" placeholder="-34.90" />
+      </div>
+
+      <div class="form-wrap">
+        <label>Longitud</label>
+        <input id="lngCampo" type="number" step="any" placeholder="-56.16" />
+      </div>
+
+      <div class="form-wrap">
+        <label>Tipo / Estado</label>
+        <input id="tipoCampo" type="text" placeholder="tipo o estado" />
+      </div>
+
+      <div class="form-wrap">
+        <label>Calle</label>
+        <input id="calleCampo" type="text" placeholder="calle" />
+      </div>
+
+      <div class="form-wrap">
+        <label>Número</label>
+        <input id="numeroCampo" type="number" placeholder="123" />
+      </div>
+
+      <div class="form-wrap">
+        <label>Nombre</label>
+        <input id="nombreCampo" type="text" placeholder="nombre" />
+      </div>
+
+      <button id="btnAgregar">Agregar</button>
+
+      <div class="legend">
+        <span class="legend-item"><span class="dot green"></span>Contenedor</span>
+        <span class="legend-item"><span class="dot blue"></span>Establecimiento</span>
+        <span class="legend-item"><span class="dot red"></span>Incidencia</span>
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const map = L.map('map').setView([-34.90, -56.16], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      const greenIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34]
+      });
+
+      const blueIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34]
+      });
+
+      const redIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34]
+      });
+
+      async function fetchJson(url) {
+        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+        if (!response.ok) {
+          throw new Error('Error al consultar la API');
+        }
+        const data = await response.json();
+        return data.registros || [];
+      }
+
+      function agregarMarcador(lat, lng, icon, popupHtml) {
+        L.marker([lat, lng], { icon }).addTo(map).bindPopup(popupHtml);
+      }
+
+      function dibujarContenedores() {
+        fetchJson('http://localhost/DataByte/API_Gestion/public/index.php?accion=contenedores')
+          .then((items) => {
+            items.forEach((item) => {
+              if (item.lat && item.lng) {
+                agregarMarcador(item.lat, item.lng, greenIcon, `
+                  <strong>Contenedor</strong><br>
+                  ID: ${item.id_contdor}<br>
+                  Estado: ${item.estado_optivo}<br>
+                  Calle: ${item.calle} ${item.nmro}<br>
+                  Tipo: ${item.tipo}
+                `);
+              }
+            });
+          })
+          .catch((error) => console.error('Contenedores:', error));
+      }
+
+      function dibujarEstablecimientos() {
+        fetchJson('http://localhost/DataByte/API_Gestion/public/index.php?accion=establecimientos')
+          .then((items) => {
+            items.forEach((item) => {
+              if (item.lat && item.lng) {
+                agregarMarcador(item.lat, item.lng, blueIcon, `
+                  <strong>Establecimiento</strong><br>
+                  ${item.nombre}<br>
+                  ${item.calle} ${item.nmro}<br>
+                  Tipo: ${item.tipo}
+                `);
+              }
+            });
+          })
+          .catch((error) => console.error('Establecimientos:', error));
+      }
+
+      function dibujarIncidencias() {
+        fetchJson('http://localhost/DataByte/API_Recoleccion/public/index.php?accion=incidencias')
+          .then((items) => {
+            items.forEach((item) => {
+              if (item.lat && item.lng) {
+                agregarMarcador(item.lat, item.lng, redIcon, `
+                  <strong>Incidencia</strong><br>
+                  ID: ${item.id_incidencia}<br>
+                  Contenedor: ${item.id_contdor}<br>
+                  Tipo: ${item.tipo}<br>
+                  Estado: ${item.estado}
+                `);
+              }
+            });
+          })
+          .catch((error) => console.error('Incidencias:', error));
+      }
+
+      async function agregarRegistro() {
+        const entidad = document.getElementById('tipoEntidad').value;
+        const id = document.getElementById('idCampo').value;
+        const lat = document.getElementById('latCampo').value;
+        const lng = document.getElementById('lngCampo').value;
+        const tipo = document.getElementById('tipoCampo').value;
+        const calle = document.getElementById('calleCampo').value;
+        const numero = document.getElementById('numeroCampo').value;
+        const nombre = document.getElementById('nombreCampo').value;
+
+        if (!lat || !lng) {
+          alert('Debes completar latitud y longitud.');
+          return;
+        }
+
+        let payload = {};
+        let url = '';
+
+        if (entidad === 'contenedor') {
+          url = 'http://localhost/DataByte/API_Gestion/public/index.php?accion=contenedores';
+          payload = {
+            id_contdor: id,
+            estado_optivo: tipo || 'funcional',
+            tipo: tipo || 'general',
+            calle: calle || 'Calle sin nombre',
+            nmro: numero || 0,
+            codigo: 'MVD',
+            lat,
+            lng
+          };
+        }
+
+        if (entidad === 'establecimiento') {
+          url = 'http://localhost/DataByte/API_Gestion/public/index.php?accion=establecimientos';
+          payload = {
+            id_establcmto: id,
+            nombre: nombre || 'Establecimiento',
+            calle: calle || 'Calle sin nombre',
+            nmro: numero || 0,
+            esq: 'Sin esquina',
+            tipo: tipo || 'centro de acopio',
+            capac_actual: 0,
+            capac_max: 100,
+            tipo_res: 'domiciliario',
+            lat,
+            lng
+          };
+        }
+
+        if (entidad === 'incidencia') {
+          url = 'http://localhost/DataByte/API_Recoleccion/public/index.php?accion=incidencias';
+          payload = {
+            id_incidencia: id,
+            id_contdor: id || 1,
+            tipo: tipo || 'otro',
+            estado: 'abierta',
+            fch_apert: new Date().toISOString().slice(0, 10),
+            lat,
+            lng
+          };
+        }
+
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const text = await response.text();
+          let result = null;
+          try { result = JSON.parse(text); } catch (e) { result = { message: text }; }
+
+          if (!response.ok) {
+            throw new Error(result.detail || result.message || 'No se pudo crear el registro');
+          }
+
+          alert(result.message || 'Registro creado correctamente');
+          map.eachLayer((layer) => {
+            if (layer instanceof L.Marker) {
+              layer.remove();
+            }
+          });
+          dibujarContenedores();
+          dibujarEstablecimientos();
+          dibujarIncidencias();
+        } catch (error) {
+          alert(error.message);
+        }
+      }
+
+      document.getElementById('btnAgregar').addEventListener('click', agregarRegistro);
+
+      dibujarContenedores();
+      dibujarEstablecimientos();
+      dibujarIncidencias();
+    </script>
+  </body>
+</html>

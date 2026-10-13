@@ -207,7 +207,7 @@
                     body: JSON.stringify(datos)
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'No se pudo registrar la descarga');
+                if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo registrar la descarga');
                 mostrarEn('mensaje-crear-descarga', data.message || 'Descarga registrada correctamente', 'green');
                 ['desc-matricula', 'desc-id_establcmto', 'desc-hora', 'desc-peso']
                     .forEach(id => { document.getElementById(id).value = ''; });

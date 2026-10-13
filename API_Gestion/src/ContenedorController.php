@@ -39,6 +39,34 @@ class ContenedorController {
         return "";
     }
 
+    private function getDbErrorMessage($defaultMessage, $operation) {
+        $error = $this->db->error ?? "";
+        if (empty($error)) {
+            return $defaultMessage;
+        }
+
+        $error = preg_replace('/\s+/', ' ', trim($error));
+        $lower = strtolower($error);
+
+        if (strpos($lower, 'duplicate') !== false || strpos($lower, 'ya existe') !== false) {
+            return 'Ya existe un registro con ese valor.';
+        }
+
+        if (strpos($lower, 'foreign key') !== false || strpos($lower, 'child row') !== false) {
+            return 'La operación no se puede completar porque hay datos relacionados que no existen o no son válidos.';
+        }
+
+        if (strpos($lower, 'not null') !== false || strpos($lower, 'cannot be null') !== false) {
+            return 'Falta un dato obligatorio.';
+        }
+
+        if (strpos($lower, 'data too long') !== false || strpos($lower, 'too long') !== false) {
+            return 'Uno de los datos excede la longitud permitida.';
+        }
+
+        return ucfirst($operation) . ': ' . $error;
+    }
+
     // Crear contenedor verificando que exista el municipio.
     public function create() {
         $data = $this->getPayload();
@@ -51,6 +79,8 @@ class ContenedorController {
         $esq = $this->getInputValue($data, ["esq"]);
         $codigo = $this->getInputValue($data, ["codigo"]);
         $matricula = $this->getInputValue($data, ["matricula"]);
+        $lat = $this->getInputValue($data, ["lat", "latitude"]);
+        $lng = $this->getInputValue($data, ["lng", "longitude"]);
 
         if (!empty($id_contdor) && !empty($estado_optivo) && !empty($tipo) && !empty($calle) && !empty($nmro) && !empty($codigo)) {
             $check = $this->db->prepare("SELECT codigo FROM `Municipio` WHERE codigo = ?");
@@ -74,13 +104,19 @@ class ContenedorController {
             $this->contenedor->esq = $esq !== "" ? $esq : null;
             $this->contenedor->codigo = $codigo;
             $this->contenedor->matricula = $matricula !== "" ? $matricula : null;
+            $this->contenedor->lat = $lat !== "" ? floatval($lat) : null;
+            $this->contenedor->lng = $lng !== "" ? floatval($lng) : null;
 
             if ($this->contenedor->create()) {
                 http_response_code(201);
                 echo json_encode(["message" => "Contenedor creado exitosamente"]);
             } else {
-                http_response_code(500);
-                echo json_encode(["message" => "Contenedor no creado"]);
+                $message = $this->getDbErrorMessage("Contenedor no creado", "crear");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 500);
+                echo json_encode([
+                    "message" => $message,
+                    "detail" => $this->contenedor->lastError ?: $this->db->error ?: "Error desconocido"
+                ]);
             }
         } else {
             http_response_code(400);
@@ -108,7 +144,9 @@ class ContenedorController {
                     "nmro" => $row["nmro"],
                     "esq" => $row["esq"],
                     "codigo" => $row["codigo"],
-                    "matricula" => $row["matricula"]
+                    "matricula" => $row["matricula"],
+                    "lat" => $row["lat"],
+                    "lng" => $row["lng"]
                 ]);
             } else {
                 http_response_code(404);
@@ -133,7 +171,9 @@ class ContenedorController {
                     "nmro" => $row["nmro"],
                     "esq" => $row["esq"],
                     "codigo" => $row["codigo"],
-                    "matricula" => $row["matricula"]
+                    "matricula" => $row["matricula"],
+                    "lat" => $row["lat"],
+                    "lng" => $row["lng"]
                 ];
                 array_push($contenedores_arr["registros"], $contenedor_item);
             }
@@ -158,6 +198,8 @@ class ContenedorController {
         $esq = $this->getInputValue($data, ["esq"]);
         $codigo = $this->getInputValue($data, ["codigo"]);
         $matricula = $this->getInputValue($data, ["matricula"]);
+        $lat = $this->getInputValue($data, ["lat", "latitude"]);
+        $lng = $this->getInputValue($data, ["lng", "longitude"]);
 
         if (!empty($id_contdor) && !empty($estado_optivo) && !empty($tipo) && !empty($calle) && !empty($nmro) && !empty($codigo)) {
             $check = $this->db->prepare("SELECT codigo FROM `Municipio` WHERE codigo = ?");
@@ -181,6 +223,8 @@ class ContenedorController {
             $this->contenedor->esq = $esq !== "" ? $esq : null;
             $this->contenedor->codigo = $codigo;
             $this->contenedor->matricula = $matricula !== "" ? $matricula : null;
+            $this->contenedor->lat = $lat !== "" ? floatval($lat) : null;
+            $this->contenedor->lng = $lng !== "" ? floatval($lng) : null;
 
             $resultExist = $this->contenedor->readOne();
             if ($resultExist && $resultExist->num_rows === 0) {
@@ -193,8 +237,12 @@ class ContenedorController {
                 http_response_code(200);
                 echo json_encode(["message" => "Contenedor actualizado exitosamente"]);
             } else {
-                http_response_code(500);
-                echo json_encode(["message" => "Contenedor no actualizado"]);
+                $message = $this->getDbErrorMessage("Contenedor no actualizado", "actualizar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 500);
+                echo json_encode([
+                    "message" => $message,
+                    "detail" => $this->contenedor->lastError ?: $this->db->error ?: "Error desconocido"
+                ]);
             }
         } else {
             http_response_code(400);
@@ -221,8 +269,9 @@ class ContenedorController {
                 http_response_code(200);
                 echo json_encode(["message" => "Contenedor eliminado exitosamente"]);
             } else {
-                http_response_code(500);
-                echo json_encode(["message" => "Contenedor no eliminado"]);
+                $message = $this->getDbErrorMessage("Contenedor no eliminado", "eliminar");
+                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 500);
+                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
             }
         } else {
             http_response_code(400);

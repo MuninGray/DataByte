@@ -31,6 +31,46 @@
                 <button type="button" id="btnConsultar">Recargar usuarios</button>
             </div>
 
+            <div style="margin: 18px 0; padding: 16px; border: 1px solid #d0d9f7; border-radius: 8px; background: #f7f9ff;">
+                <h3 style="margin-top:0;">Crear nuevo administrador técnico</h3>
+                <form id="formCrearAdmin" class="form-crud" autocomplete="off" novalidate>
+                    <div class="campo">
+                        <label for="adminCI">CI</label>
+                        <input type="text" id="adminCI" name="CI" placeholder="Ingrese la CI">
+                    </div>
+                    <div class="campo">
+                        <label for="adminCorreo">Correo</label>
+                        <input type="email" id="adminCorreo" name="correo" placeholder="Ingrese el correo">
+                    </div>
+                    <div class="campo">
+                        <label for="adminNombre">Nombre</label>
+                        <input type="text" id="adminNombre" name="PrNom" placeholder="Ingrese el nombre">
+                    </div>
+                    <div class="campo">
+                        <label for="adminApellido">Apellido</label>
+                        <input type="text" id="adminApellido" name="PrApel" placeholder="Ingrese el apellido">
+                    </div>
+                    <div class="campo">
+                        <label for="adminPass">Contraseña</label>
+                        <input type="password" id="adminPass" name="contrasena" placeholder="Ingrese la contraseña" autocomplete="new-password">
+                    </div>
+                    <div class="campo">
+                        <label for="adminPassConfirm">Confirmar contraseña</label>
+                        <input type="password" id="adminPassConfirm" name="conf_contrasena" placeholder="Repita la contraseña" autocomplete="new-password">
+                    </div>
+                    <div class="campo">
+                        <label for="adminCedulaAdmin">Cédula del admin responsable</label>
+                        <input type="text" id="adminCedulaAdmin" name="cedula_admin" placeholder="Ingrese la cédula del admin">
+                    </div>
+                    <div class="campo">
+                        <label for="adminSecret">Secreto del servidor</label>
+                        <input type="password" id="adminSecret" name="admin_secret" placeholder="Ingrese el secreto del servidor" autocomplete="off">
+                    </div>
+                    <button type="submit" id="btnCrearAdmin">Crear administrador</button>
+                </form>
+                <div id="mensajeAdmin" class="mensaje"></div>
+            </div>
+
             <div id="mensaje" class="mensaje"></div>
 
             <table>
@@ -173,12 +213,59 @@
         const mensaje = document.getElementById('mensaje');
         const btnConsultar = document.getElementById('btnConsultar');
 
+        async function cargarUsuarioAutenticado() {
+            try {
+                const response = await fetch(`${API_URL}?accion=usuarioActual`, {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'No hay usuario autenticado');
+                }
+
+                const usuarioActual = data.usuario;
+                const inputCedulaAdmin = document.getElementById('adminCedulaAdmin');
+
+                if (inputCedulaAdmin && usuarioActual && usuarioActual.cedula) {
+                    inputCedulaAdmin.value = usuarioActual.cedula;
+                    inputCedulaAdmin.readOnly = true;
+                    inputCedulaAdmin.setAttribute('aria-readonly', 'true');
+                }
+
+                return usuarioActual;
+            } catch (error) {
+                const inputCedulaAdmin = document.getElementById('adminCedulaAdmin');
+                if (inputCedulaAdmin) {
+                    inputCedulaAdmin.value = '';
+                    inputCedulaAdmin.placeholder = 'No hay usuario autenticado';
+                    inputCedulaAdmin.readOnly = true;
+                }
+
+                mostrarMensaje(error.message || 'No hay usuario autenticado. Volvé al login.', 'red');
+                setTimeout(() => {
+                    window.location.href = '../Login/LandingPageLogin.html';
+                }, 1200);
+                return null;
+            }
+        }
+
         let usuariosCache = [];
+        let usuarioActual = null;
+
+        cargarUsuarioAutenticado().then((usuario) => {
+            usuarioActual = usuario;
+        });
 
         const ROLES = ['USUARIO', 'INSPECTOR', 'CHOFER', 'PEON', 'OPERARIO_ESTABLECIMIENTO'];
         const ESTADOS = ['aprobado', 'rechazado', 'pendiente'];
 
         function crearSelectRol(usuario) {
+            if (String(usuario.rol || '').toUpperCase() === 'ADMIN') {
+                return '<span class="select-readonly">ADMIN</span>';
+            }
+
             const opciones = ROLES.map(rol =>
                 `<option value="${rol}" ${usuario.rol === rol ? 'selected' : ''}>${rol}</option>`
             ).join('');
@@ -196,6 +283,70 @@
             mensaje.textContent = texto;
             mensaje.style.color = color;
         }
+
+        function mostrarMensajeAdmin(texto, color = '#1f3c88') {
+            const mensajeAdmin = document.getElementById('mensajeAdmin');
+            mensajeAdmin.textContent = texto;
+            mensajeAdmin.style.color = color;
+        }
+
+        document.getElementById('formCrearAdmin').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const form = event.currentTarget;
+            const payload = Object.fromEntries(new FormData(form).entries());
+
+            if (usuarioActual && usuarioActual.cedula) {
+                payload.cedula_admin = String(usuarioActual.cedula);
+            }
+
+            const camposObligatorios = [
+                { key: 'CI', label: 'CI' },
+                { key: 'correo', label: 'correo' },
+                { key: 'PrNom', label: 'nombre' },
+                { key: 'PrApel', label: 'apellido' },
+                { key: 'contrasena', label: 'contraseña' },
+                { key: 'conf_contrasena', label: 'confirmación de contraseña' },
+                { key: 'admin_secret', label: 'secreto del servidor' }
+            ];
+
+            const faltantes = camposObligatorios.filter(campo => !String(payload[campo.key] || '').trim());
+            if (faltantes.length > 0) {
+                mostrarMensajeAdmin('Faltan campos obligatorios: ' + faltantes.map(c => c.label).join(', '), 'red');
+                return;
+            }
+
+            const ciDigits = String(payload.CI || '').replace(/\D+/g, '');
+            if (ciDigits.length < 8) {
+                mostrarMensajeAdmin('La cédula debe tener al menos 8 dígitos.', 'red');
+                return;
+            }
+
+            if (payload.contrasena !== payload.conf_contrasena) {
+                mostrarMensajeAdmin('La contraseña y la confirmación deben coincidir.', 'red');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}?accion=crearAdminTecnico`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'No se pudo crear el administrador.');
+                }
+
+                mostrarMensajeAdmin('Administrador creado correctamente.', 'green');
+                form.reset();
+                consultarUsuarios();
+            } catch (error) {
+                mostrarMensajeAdmin(error.message, 'red');
+            }
+        });
 
         async function consultarUsuarios() {
             try {
@@ -240,7 +391,7 @@
                 body: JSON.stringify(datos)
             });
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'No se pudo actualizar el usuario');
+            if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo actualizar el usuario');
             return data;
         }
 
@@ -253,7 +404,7 @@
                     body: JSON.stringify({ cedula: cedula })
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'No se pudo eliminar el usuario');
+                if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo eliminar el usuario');
                 mostrarMensaje('Usuario eliminado correctamente', 'green');
                 consultarUsuarios();
             } catch (error) {
@@ -272,7 +423,7 @@
                 body: JSON.stringify(datos)
             });
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'No se pudo asignar el rol');
+            if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo asignar el rol');
             return data;
         }
 
@@ -511,7 +662,7 @@
                         body: JSON.stringify(datos)
                     });
                     const data = await response.json();
-                    if (!response.ok) throw new Error(data.message || 'No se pudo crear el registro');
+                    if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo crear el registro');
                     mostrar(data.message || 'Registro creado correctamente', 'green');
                     cfg.campos.forEach(c => { document.getElementById(`${cfg.contenedorId}-${c.nombre}`).value = ''; });
                     consultar();
@@ -533,7 +684,7 @@
                         body: JSON.stringify(datos)
                     });
                     const data = await response.json();
-                    if (!response.ok) throw new Error(data.message || 'No se pudo actualizar el registro');
+                    if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo actualizar el registro');
                     mostrar(data.message || 'Registro actualizado correctamente', 'green');
                     consultar();
                 } catch (error) {
@@ -555,7 +706,7 @@
                         body: JSON.stringify(datos)
                     });
                     const data = await response.json();
-                    if (!response.ok) throw new Error(data.message || 'No se pudo eliminar el registro');
+                    if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo eliminar el registro');
                     mostrar(data.message || 'Registro eliminado correctamente', 'green');
                     consultar();
                 } catch (error) {
@@ -623,6 +774,8 @@
                 { nombre: 'estado', etiqueta: 'Estado' },
                 { nombre: 'fch_apert', etiqueta: 'Fecha apertura', tipo: 'fecha' },
                 { nombre: 'fch_resol', etiqueta: 'Fecha resolución', tipo: 'fecha', opcional: true },
+                { nombre: 'lat', etiqueta: 'Latitud', tipo: 'numero', opcional: true },
+                { nombre: 'lng', etiqueta: 'Longitud', tipo: 'numero', opcional: true },
                 { nombre: 'nom_cuadrilla', etiqueta: 'Cuadrilla asignada', opcional: true }
             ]
         });
@@ -654,7 +807,9 @@
                   opciones: ['vertedero', 'centro de acopio'] },
                 { nombre: 'capac_actual', etiqueta: 'Capacidad actual', tipo: 'numero' },
                 { nombre: 'capac_max', etiqueta: 'Capacidad máxima', tipo: 'numero' },
-                { nombre: 'tipo_res', etiqueta: 'Tipo de residuo' }
+                { nombre: 'tipo_res', etiqueta: 'Tipo de residuo' },
+                { nombre: 'lat', etiqueta: 'Latitud', tipo: 'numero', opcional: true },
+                { nombre: 'lng', etiqueta: 'Longitud', tipo: 'numero', opcional: true }
             ]
         });
 
@@ -705,7 +860,9 @@
                 { nombre: 'calle', etiqueta: 'Calle' },
                 { nombre: 'codigo', etiqueta: 'Código municipio' },
                 { nombre: 'matricula', etiqueta: 'Matrícula vehículo', opcional: true },
-                { nombre: 'id_ruta', etiqueta: 'ID Ruta', tipo: 'numero', opcional: true }
+                { nombre: 'id_ruta', etiqueta: 'ID Ruta', tipo: 'numero', opcional: true },
+                { nombre: 'lat', etiqueta: 'Latitud', tipo: 'numero', opcional: true },
+                { nombre: 'lng', etiqueta: 'Longitud', tipo: 'numero', opcional: true }
             ]
         });
 
@@ -762,7 +919,7 @@
                     body: JSON.stringify({ id_ruta: asig.id_ruta, matricula: asig.matricula, fech: asig.fech })
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'No se pudo eliminar la asignación');
+                if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo eliminar la asignación');
                 mostrarMensajeAsignacion(data.message || 'Asignación eliminada correctamente', 'green');
                 consultarAsignaciones();
             } catch (error) {
@@ -787,7 +944,7 @@
                     body: JSON.stringify({ id_ruta, matricula, fech })
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'No se pudo asignar la ruta');
+                if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo asignar la ruta');
                 mostrarMensajeAsignacion(data.message || 'Ruta asignada correctamente', 'green');
                 consultarAsignaciones();
             } catch (error) {

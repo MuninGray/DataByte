@@ -1,4 +1,5 @@
 <?php
+session_start();
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -16,7 +17,13 @@ $controller = new UsuarioController();
 
 switch ($method) {
     case "GET":
-        $controller->read();
+        $accion = $_GET["accion"] ?? "";
+
+        if ($accion === "usuarioActual") {
+            $controller->usuarioActual();
+        } else {
+            $controller->read();
+        }
         break;
     case "POST":
         $accion = $_GET["accion"] ?? "";
@@ -27,6 +34,10 @@ switch ($method) {
             $controller->asignarRol();
         } elseif ($accion == "rechazarUsuario") {
             $controller->rechazarUsuario();
+        } elseif ($accion == "crearAdminTecnico") {
+            $controller->crearAdminTecnico();
+        } elseif ($accion == "usuarioActual") {
+            $controller->usuarioActual();
         } else {
             $controller->create();
         }
