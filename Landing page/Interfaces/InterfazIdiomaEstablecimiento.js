@@ -778,6 +778,12 @@
     }
 
     function instalarSelector() {
+        const selectorPagina = document.querySelector('.page-language-switch');
+        const barra = document.querySelector('.app-header-inner');
+        const perfil = barra?.querySelector('.profile-control');
+        if (selectorPagina && barra && perfil && selectorPagina.parentElement !== barra) {
+            barra.insertBefore(selectorPagina, perfil);
+        }
         document.querySelectorAll('.language-switch button').forEach(button => {
             button.addEventListener('click', () => cambiarIdioma(button.dataset.language));
         });

@@ -193,11 +193,10 @@ class UsuarioController {
             return;
         }
 
-        $cedulaDigits = preg_replace('/\D+/', '', $cedula);
-        if (strlen($cedulaDigits) < 8) {
+        if (!preg_match('/^[0-9]{8,}$/', $cedula)) {
             http_response_code(400);
             echo json_encode([
-                "message" => "La cédula debe tener al menos 8 dígitos."
+                "message" => "La cédula debe contener solo dígitos y tener al menos 8."
             ]);
             return;
         }
@@ -323,11 +322,10 @@ class UsuarioController {
             return;
         }
 
-        $cedulaDigits = preg_replace('/\D+/', '', $cedula);
-        if (strlen($cedulaDigits) < 8) {
+        if (!preg_match('/^[0-9]{8,}$/', $cedula)) {
             http_response_code(400);
             echo json_encode([
-                "message" => "La cédula debe tener al menos 8 dígitos."
+                "message" => "La cédula debe contener solo dígitos y tener al menos 8."
             ]);
             return;
         }
@@ -640,11 +638,10 @@ class UsuarioController {
             return;
         }
 
-        $cedulaDigits = preg_replace('/\D+/', '', $cedula);
-        if (strlen($cedulaDigits) < 8) {
+        if (!preg_match('/^[0-9]{8,}$/', $cedula)) {
             http_response_code(400);
             echo json_encode([
-                "message" => "La cédula debe tener al menos 8 dígitos."
+                "message" => "La cédula debe contener solo dígitos y tener al menos 8."
             ]);
             return;
         }

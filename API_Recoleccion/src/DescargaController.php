@@ -33,6 +33,18 @@ class DescargaController {
         return "";
     }
 
+    private function datosDescargaValidos($matricula, $idEstablecimiento, $hora, $peso) {
+        $idValido = filter_var($idEstablecimiento, FILTER_VALIDATE_INT) !== false
+            && (int) $idEstablecimiento > 0;
+        $pesoValido = preg_match('/^[0-9]+(?:\.[0-9]{1,2})?$/', $peso)
+            && is_finite((float) $peso) && (float) $peso > 0 && (float) $peso <= 99999999.99;
+
+        return preg_match('/^[A-Z]{3}[0-9]{4}$/', strtoupper($matricula)) === 1
+            && $idValido
+            && preg_match('/^([01][0-9]|2[0-3]):[0-5][0-9]$/', $hora) === 1
+            && $pesoValido;
+    }
+
     private function getDbErrorMessage($defaultMessage, $operation) {
         $error = $this->db->error ?? "";
         if (empty($error)) {
@@ -68,8 +80,8 @@ class DescargaController {
         $hora = $this->getInputValue($data, ["hora"]);
         $peso = $this->getInputValue($data, ["peso"]);
 
-        if (!empty($matricula) && !empty($id_establcmto) && !empty($hora) && !empty($peso)) {
-            $this->descarga->matricula = $matricula;
+        if ($this->datosDescargaValidos($matricula, $id_establcmto, $hora, $peso)) {
+            $this->descarga->matricula = strtoupper($matricula);
             $this->descarga->id_establcmto = (int) $id_establcmto;
             $this->descarga->hora = $hora;
             $this->descarga->peso = $peso;
@@ -120,8 +132,8 @@ class DescargaController {
         $hora = $this->getInputValue($data, ["hora"]);
         $peso = $this->getInputValue($data, ["peso"]);
 
-        if (!empty($matricula) && !empty($id_establcmto) && !empty($hora) && !empty($peso)) {
-            $this->descarga->matricula = $matricula;
+        if ($this->datosDescargaValidos($matricula, $id_establcmto, $hora, $peso)) {
+            $this->descarga->matricula = strtoupper($matricula);
             $this->descarga->id_establcmto = (int) $id_establcmto;
             $this->descarga->hora = $hora;
             $this->descarga->peso = $peso;

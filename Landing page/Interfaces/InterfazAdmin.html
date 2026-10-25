@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel | Administrador</title>
-    <link rel="stylesheet" href="InterfazAdmin.css">
+    <link rel="stylesheet" href="InterfazAdmin.css?v=dashboard-visual-2">
     <link rel="stylesheet" href="InterfazComun.css">
 </head>
 <body>
@@ -90,7 +90,15 @@
                 <article class="dashboard-panel dashboard-volume-panel">
                     <div class="dashboard-panel-heading"><div><span class="dashboard-kicker">RECOLECCIÓN</span><h3>Volumen recolectado</h3></div><span class="dashboard-tag simulated-tag">Datos simulados</span></div>
                     <div class="volume-total"><strong id="volumenTotal">—</strong><span>kg <small>estimados esta semana</small></span></div>
-                    <div id="volumenChart" class="volume-chart" role="img" aria-label="Gráfico semanal de volumen simulado"></div><div class="chart-days"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
+                    <div id="volumenChart" class="volume-chart" role="img" aria-label="Gráfico semanal de volumen simulado">
+                        <span class="volume-bar" style="height:59%" data-value="410" aria-label="410 kilogramos"></span>
+                        <span class="volume-bar" style="height:75%" data-value="520" aria-label="520 kilogramos"></span>
+                        <span class="volume-bar" style="height:67%" data-value="465" aria-label="465 kilogramos"></span>
+                        <span class="volume-bar" style="height:88%" data-value="610" aria-label="610 kilogramos"></span>
+                        <span class="volume-bar" style="height:83%" data-value="575" aria-label="575 kilogramos"></span>
+                        <span class="volume-bar" style="height:100%" data-value="690" aria-label="690 kilogramos"></span>
+                        <span class="volume-bar" style="height:91%" data-value="630" aria-label="630 kilogramos"></span>
+                    </div><div class="chart-days"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
                     <p class="dashboard-footnote">Estimación demostrativa; el sistema no registra el peso por fecha para calcular una serie histórica real.</p>
                 </article>
                 <article class="dashboard-panel">
@@ -450,10 +458,9 @@
                 return;
             }
 
-            const ciDigits = String(payload.CI || '').replace(/\D+/g, '');
-            if (ciDigits.length < 8) {
-                setInputError(document.getElementById('adminCI'), 'La cédula debe tener al menos 8 dígitos.');
-                mostrarMensajeAdmin('La cédula debe tener al menos 8 dígitos.', 'red');
+            if (!/^\d{8,}$/.test(String(payload.CI || '').trim())) {
+                setInputError(document.getElementById('adminCI'), 'La cédula debe contener solo dígitos y tener al menos 8.');
+                mostrarMensajeAdmin('La cédula debe contener solo dígitos y tener al menos 8.', 'red');
                 return;
             }
 
@@ -773,7 +780,7 @@
                 const clase = porcentaje >= 80 ? 'capacity-high' : '';
                 const diasEscenario = maxima > actual && maxima > 0 ? Math.ceil((maxima - actual) / (maxima * 0.02)) : 0;
                 const proyeccion = diasEscenario ? `Escenario +2%/día: ≈${diasEscenario} días` : 'Capacidad completa o sin máximo informado';
-                return `<div class="capacity-row"><div class="capacity-main"><strong>${escaparHTML(item.nombre || `Establecimiento ${item.id_establcmto}`)}</strong><small>${escaparHTML(item.tipo || '')} · ${escaparHTML(item.tipo_res || 'residuo sin clasificar')}</small><i class="capacity-track"><i class="${clase}" style="width:${porcentaje}%"></i></i><small>${proyeccion}</small></div><span class="capacity-numbers">${actual.toLocaleString('es-UY')} / ${maxima.toLocaleString('es-UY')}<br>${porcentaje}%</span></div>`;
+                return `<div class="capacity-row"><div class="capacity-main"><strong>${escaparHTML(item.nombre || `Establecimiento ${item.id_establcmto}`)}</strong><small>${escaparHTML(item.tipo || '')} · ${escaparHTML(item.tipo_res || 'residuo sin clasificar')}</small><i class="capacity-track"><i class="${clase}" style="width:${porcentaje}%"></i></i><small>${proyeccion}</small></div><span class="capacity-numbers"><span class="capacity-gauge" style="--capacity:${porcentaje}%"><strong>${porcentaje}%</strong></span><small>${actual.toLocaleString('es-UY')} / ${maxima.toLocaleString('es-UY')}</small></span></div>`;
             }).join('') : '<p class="dashboard-empty">No hay establecimientos registrados.</p>';
         }
 
@@ -894,10 +901,12 @@
                     <h3 style="margin:0;">Registros</h3>
                     <button type="button" id="${cfg.contenedorId}-btnRecargar">Recargar</button>
                 </div>
-                <table>
+                ${cfg.accion === 'contenedores' ? '<div class="tabla-contenedores-scroll">' : ''}
+                <table class="${cfg.accion === 'contenedores' ? 'tabla-contenedores' : ''}">
                     <thead><tr>${columnasHtml}</tr></thead>
                     <tbody id="${cfg.contenedorId}-tbody"></tbody>
                 </table>
+                ${cfg.accion === 'contenedores' ? '</div>' : ''}
             `;
 
             const divMensaje = document.getElementById(`${cfg.contenedorId}-mensaje`);
@@ -931,6 +940,14 @@
             }
 
             function validarCamposRequeridos(datos, exigirCoordenadasCompletas = true, registroOriginal = null) {
+                if (cfg.accion === 'incidencias') {
+                    if (datos.estado === 'resuelta' && !String(datos.fch_resol ?? '').trim()) {
+                        datos.fch_resol = fechaMinima;
+                    } else if (datos.estado !== 'resuelta') {
+                        datos.fch_resol = '';
+                    }
+                }
+
                 const faltantes = [];
                 cfg.campos.forEach(c => {
                     if (esCampoAutogenerado(c)) {
@@ -1459,6 +1476,14 @@
 
             if (!id_ruta || !matricula || !fech) {
                 mostrarMensajeAsignacion('Completá la ruta, la matrícula y la fecha.', 'red');
+                return;
+            }
+            if (!Number.isInteger(Number(id_ruta)) || Number(id_ruta) <= 0) {
+                mostrarMensajeAsignacion('Ingresá un ID de ruta entero y mayor a cero.', 'red');
+                return;
+            }
+            if (!/^[A-Z]{3}[0-9]{4}$/.test(matricula.toUpperCase())) {
+                mostrarMensajeAsignacion('La matrícula debe tener 3 letras y 4 números.', 'red');
                 return;
             }
             if (fech < fechaHoyISO) {

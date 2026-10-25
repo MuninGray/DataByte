@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel | Operario de establecimiento</title>
-    <link rel="stylesheet" href="InterfazOpEstablecimiento.css">
-    <link rel="stylesheet" href="InterfazComun.css">
+    <link rel="stylesheet" href="InterfazOpEstablecimiento.css?v=green-theme-1">
+    <link rel="stylesheet" href="InterfazComun.css?v=green-theme-1">
 </head>
 <body>
     <script>
@@ -233,7 +233,7 @@
                 if (!/^[A-Z]{3}[0-9]{4}$/.test(datos.matricula.toUpperCase())) throw new Error('La matrícula debe tener 3 letras y 4 números (ejemplo: SBC1234).');
                 if (!Number.isInteger(Number(datos.id_establcmto)) || Number(datos.id_establcmto) <= 0) throw new Error('Ingresá un ID de establecimiento entero y mayor a cero.');
                 if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(datos.hora)) throw new Error('Ingresá una hora válida.');
-                if (!Number.isFinite(Number(datos.peso)) || Number(datos.peso) <= 0) throw new Error('El peso debe ser mayor a cero.');
+                if (!/^\d+(?:\.\d{1,2})?$/.test(datos.peso) || !Number.isFinite(Number(datos.peso)) || Number(datos.peso) <= 0 || Number(datos.peso) > 99999999.99) throw new Error('El peso debe ser mayor a cero y tener como máximo dos decimales.');
                 datos.matricula = datos.matricula.toUpperCase();
                 const response = await fetch(`${API_RECOLECCION}?accion=descargas`, {
                     method: 'POST',

@@ -85,13 +85,17 @@ class IncidenciaController {
         $fechaResolucionValida = $fch_resol === "" || $this->fechaValidaDesdeHoy($fch_resol);
         $coordenadasVacias = $lat === "" && $lng === "";
         $coordenadasValidas = $coordenadasVacias || (is_numeric($lat) && is_numeric($lng) && (float) $lat >= -90 && (float) $lat <= 90 && (float) $lng >= -180 && (float) $lng <= 180);
+        $idContenedorValido = filter_var($id_contdor, FILTER_VALIDATE_INT) !== false && (int) $id_contdor > 0;
+        $estadoFechaResolucionValida = ($estado === "resuelta") || $fch_resol === "";
 
-        if ((int) $id_contdor > 0 && in_array($tipo, ["rotura", "desborde", "falta de recoleccion", "otro"], true) && in_array($estado, ["abierta", "en curso", "resuelta"], true) && $fechaValida && $fechaResolucionValida && $coordenadasValidas) {
+        if ($idContenedorValido && in_array($tipo, ["rotura", "desborde", "falta de recoleccion", "otro"], true) && in_array($estado, ["abierta", "en curso", "resuelta"], true) && $fechaValida && $fechaResolucionValida && $estadoFechaResolucionValida && $coordenadasValidas) {
             $this->incidencia->id_contdor = (int) $id_contdor;
             $this->incidencia->tipo = $tipo;
             $this->incidencia->estado = $estado;
             $this->incidencia->fch_apert = $fch_apert;
-            $this->incidencia->fch_resol = $fch_resol !== "" ? $fch_resol : null;
+            $this->incidencia->fch_resol = $estado === "resuelta"
+                ? ($fch_resol !== "" ? $fch_resol : date("Y-m-d"))
+                : null;
             $this->incidencia->nom_cuadrilla = $nom_cuadrilla !== "" ? $nom_cuadrilla : null;
             $this->incidencia->lat = $lat !== "" ? floatval($lat) : null;
             $this->incidencia->lng = $lng !== "" ? floatval($lng) : null;

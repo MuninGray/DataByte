@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign up page | proyecto</title>
-    <link rel="stylesheet" href="LandingPageRegister.css">
+    <title>Crear cuenta | DataByte</title>
+    <link rel="stylesheet" href="LandingPageRegister.css?v=green-auth-1">
 </head>
 
 <script>
@@ -112,10 +112,9 @@
                 return;
             }
 
-            const ciDigits = ci.replace(/\D+/g, '');
-            if (ciDigits.length < 8) {
-                setFieldError('CI', 'La cédula debe tener al menos 8 dígitos.');
-                mensaje.textContent = 'La cédula debe tener al menos 8 dígitos.';
+            if (!/^\d{8,}$/.test(ci)) {
+                setFieldError('CI', 'La cédula debe contener solo dígitos y tener al menos 8.');
+                mensaje.textContent = 'La cédula debe contener solo dígitos y tener al menos 8.';
                 mensaje.style.color = 'red';
                 return;
             }
@@ -176,7 +175,7 @@
     <!-- Contenedor para register -->
     <div class="contenedor_register">
 
-        <h1>Registrar</h1>
+        <h1>Crear una cuenta</h1>
         <form id="formRegistro" novalidate>
             <!-- Etiqueta de correo para el registrar -->
             <label for="correo">Correo:</label>
@@ -202,12 +201,12 @@
             <label for="conf_contrasena">Confirmar contraseña:</label>
             <input type="password" name="conf_contrasena" id="conf_contrasena" required><br><br>
 
-            <button type="submit" id="btnRegistrar">Registrar</button>
+            <button type="submit" id="btnRegistrar">Crear cuenta</button>
         </form>
 
         <div id="mensajeRegistro" style="margin-top: 10px;"></div>
         <!-- Boton que te redirige a la landing page -->
-        <a href="../LandingPage/LandingPage.html">Cancelar</a>
+        <a href="../LandingPage/LandingPage.html">Volver al inicio</a>
 
     </div>
 

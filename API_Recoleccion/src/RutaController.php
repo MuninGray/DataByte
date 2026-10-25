@@ -224,12 +224,13 @@ class RutaController {
         $id_ruta = $this->getInputValue($data, ["id_ruta"]);
         $matricula = $this->getInputValue($data, ["matricula"]);
         $fech = $this->getInputValue($data, ["fech", "fecha"]);
+        $idRutaValido = filter_var($id_ruta, FILTER_VALIDATE_INT) !== false && (int) $id_ruta > 0;
         $fechaAsignacion = DateTime::createFromFormat('!Y-m-d', $fech);
         $erroresFecha = DateTime::getLastErrors();
         $fechaValida = $fechaAsignacion && (!$erroresFecha || ($erroresFecha['warning_count'] === 0 && $erroresFecha['error_count'] === 0))
             && $fechaAsignacion->format('Y-m-d') === $fech && $fech >= date('Y-m-d');
 
-        if (!empty($id_ruta) && !empty($matricula) && $fechaValida) {
+        if ($idRutaValido && preg_match('/^[A-Z]{3}[0-9]{4}$/', strtoupper($matricula)) === 1 && $fechaValida) {
             $id_ruta_int = (int) $id_ruta;
 
             $queryRuta = "SELECT id_ruta FROM `Ruta` WHERE id_ruta = ?";
