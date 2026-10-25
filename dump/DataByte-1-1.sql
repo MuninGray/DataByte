@@ -38,7 +38,7 @@ create table Inspector_Municipal(
 );
 
 create table Establecimiento(
-    id_establcmto int not null,
+    id_establcmto int not null auto_increment,
     nombre varchar(50) not null,
     calle varchar(100) not null,
     nmro int not null,
@@ -83,14 +83,14 @@ create table Vehiculo(
 );
 
 create table Ruta(
-    id_ruta int not null,
+    id_ruta int not null auto_increment,
     nom varchar(100) not null,
     matricula varchar(10) not null,
     constraint PK_Ruta primary key (id_ruta)
 );
 
 create table Servicios_Y_Mantenimientos(
-    id_serv int not null,
+    id_serv int not null auto_increment,
     estado enum('en_curso','finalizado') not null,
     fecha date not null,
     tipo enum('pendiente','preventivo','correctivo','otro') not null,
@@ -98,7 +98,7 @@ create table Servicios_Y_Mantenimientos(
 );
 
 create table Maquinaria(
-    id_maquinaria int not null,
+    id_maquinaria int not null auto_increment,
     nombre varchar(100) not null,
     en_uso enum('desplegado','en_stock') not null,
     id_establcmto int not null,
@@ -114,7 +114,7 @@ create table Asigna(
 );
 
 create table Contenedor(
-    id_contdor int not null,
+    id_contdor int not null auto_increment,
     estado_optivo enum('funcional','roto','desbordado','desaparecido','otro') not null,
     en_uso enum('desplegado','en_stock'),
     tipo varchar(50) not null,
@@ -130,7 +130,7 @@ create table Contenedor(
 );
 
 create table Incidencia(
-    id_incidencia int not null,
+    id_incidencia int not null auto_increment,
     id_contdor int not null,
     tipo enum('rotura','desborde','falta de recoleccion','otro') not null,
     estado enum('abierta','en curso','resuelta') not null,
@@ -241,3 +241,9 @@ foreign key (id_establcmto) references Establecimiento(id_establcmto);
 alter table Establecimiento
 add constraint CHK_Capacidad
 check (capac_actual <= capac_max);
+
+INSERT INTO Admin_Tecnico (cedula_admin, email, PrNom, PrApel, pass)
+VALUES (57286720, 'lorena@databyte.local', 'Lorena', 'Pensatori', '$2y$10$ZbfrW8.TeqcJqKbBDFq68ehpD1X1GCbdlvI1dy9urNir4SEyU1SNm');
+
+INSERT INTO Usuario (cedula, email, pass, estado_habil, PrNom, PrApel, rol, cedula_admin)
+VALUES (57286720, 'lorena@databyte.local', '$2y$10$ZbfrW8.TeqcJqKbBDFq68ehpD1X1GCbdlvI1dy9urNir4SEyU1SNm', 'aprobado', 'Lorena', 'Pensatori', 'ADMIN', 57286720);

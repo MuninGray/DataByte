@@ -7,6 +7,27 @@
     <link rel="stylesheet" href="InterfazOpCuadrilla.css">
 </head>
 <body>
+    <script>
+        (function () {
+            const body = document.body;
+            if (body) body.style.visibility = 'hidden';
+
+            const redirigirLogin = () => window.location.replace('../Login/LandingPageLogin.html');
+            const apiUrl = new URL('../../API_Usuarios/public/index.php?accion=usuarioActual', window.location.href).toString();
+
+            fetch(apiUrl, { method: 'GET', credentials: 'same-origin' })
+            .then(async (response) => {
+                const data = await response.json().catch(() => ({}));
+                const rol = String(data.usuario?.rol || '').toUpperCase();
+                if (!response.ok || !data.usuario || !(rol === 'PEON' || rol === 'CHOFER')) {
+                    redirigirLogin();
+                    return;
+                }
+                if (body) body.style.visibility = 'visible';
+            })
+            .catch(() => redirigirLogin());
+        })();
+    </script>
     <div class="container">
         <h1>Panel del operario de cuadrilla</h1>
         <p>Podés consultar la ruta asignada, los contenedores a recorrer y las incidencias de tu cuadrilla, actualizar el estado de una incidencia y registrar el recorrido realizado. No tenés acceso a la creación de usuarios ni a la edición de datos maestros (rutas, vehículos, contenedores, establecimientos, cuadrillas).</p>

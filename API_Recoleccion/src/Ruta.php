@@ -14,16 +14,15 @@ class Ruta {
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (id_ruta, nom, matricula) VALUES (?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (nom, matricula) VALUES (?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->id_ruta = (int) $this->id_ruta;
         $this->nom = htmlspecialchars(strip_tags(trim($this->nom)));
         $this->matricula = htmlspecialchars(strip_tags(trim($this->matricula)));
 
-        $stmt->bind_param("iss", $this->id_ruta, $this->nom, $this->matricula);
+        $stmt->bind_param("ss", $this->nom, $this->matricula);
 
         if ($stmt->execute()) {
             $stmt->close();

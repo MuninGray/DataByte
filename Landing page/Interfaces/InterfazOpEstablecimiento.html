@@ -7,6 +7,27 @@
     <link rel="stylesheet" href="InterfazOpEstablecimiento.css">
 </head>
 <body>
+    <script>
+        (function () {
+            const body = document.body;
+            if (body) body.style.visibility = 'hidden';
+
+            const redirigirLogin = () => window.location.replace('../Login/LandingPageLogin.html');
+            const apiUrl = new URL('../../API_Usuarios/public/index.php?accion=usuarioActual', window.location.href).toString();
+
+            fetch(apiUrl, { method: 'GET', credentials: 'same-origin' })
+            .then(async (response) => {
+                const data = await response.json().catch(() => ({}));
+                const rol = String(data.usuario?.rol || '').toUpperCase();
+                if (!response.ok || !data.usuario || rol !== 'OPERARIO_ESTABLECIMIENTO') {
+                    redirigirLogin();
+                    return;
+                }
+                if (body) body.style.visibility = 'visible';
+            })
+            .catch(() => redirigirLogin());
+        })();
+    </script>
     <div class="container">
         <h1>Panel del operario de establecimiento</h1>
         <p>Podés registrar las descargas de residuos que ingresan al establecimiento (peso y hora de recepción) y consultar la capacidad del establecimiento y la maquinaria disponible. No tenés acceso a la gestión de rutas, de usuarios ni de incidencias.</p>

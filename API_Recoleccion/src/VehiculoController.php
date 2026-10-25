@@ -43,7 +43,7 @@ class VehiculoController {
         $lower = strtolower($error);
 
         if (strpos($lower, 'duplicate') !== false || strpos($lower, 'ya existe') !== false) {
-            return 'Ya existe un registro con ese valor.';
+            return 'No se puede crear el vehículo porque ya existe una matrícula registrada.';
         }
 
         if (strpos($lower, 'foreign key') !== false || strpos($lower, 'child row') !== false) {
@@ -63,10 +63,24 @@ class VehiculoController {
 
     public function create() {
         $data = $this->getPayload();
-        $matricula = $this->getInputValue($data, ["matricula"]);
+        $matricula = strtoupper(trim((string) $this->getInputValue($data, ["matricula"])));
         $estado_optivo = $this->getInputValue($data, ["estado_optivo"]);
 
         if (!empty($matricula) && !empty($estado_optivo)) {
+            $checkStmt = $this->db->prepare("SELECT matricula FROM `Vehiculo` WHERE matricula = ? LIMIT 1");
+            if ($checkStmt) {
+                $checkStmt->bind_param("s", $matricula);
+                $checkStmt->execute();
+                $result = $checkStmt->get_result();
+                if ($result && $result->num_rows > 0) {
+                    $checkStmt->close();
+                    http_response_code(409);
+                    echo json_encode(["message" => "No se puede crear el vehículo porque ya existe una matrícula registrada."]);
+                    return;
+                }
+                $checkStmt->close();
+            }
+
             $this->vehiculo->matricula = $matricula;
             $this->vehiculo->estado_optivo = $estado_optivo;
 

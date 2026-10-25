@@ -46,7 +46,7 @@ class RutaController {
         $lower = strtolower($error);
 
         if (strpos($lower, 'duplicate') !== false || strpos($lower, 'ya existe') !== false) {
-            return 'Ya existe un registro con ese valor.';
+            return 'Ya existe una ruta con ese nombre y matrícula.';
         }
 
         if (strpos($lower, 'foreign key') !== false || strpos($lower, 'child row') !== false) {
@@ -64,41 +64,68 @@ class RutaController {
         return ucfirst($operation) . ': ' . $error;
     }
 
+    private function existeRutaDuplicada($nom, $matricula, $id_ruta_actual = null) {
+        $query = "SELECT id_ruta FROM `Ruta` WHERE nom = ? AND matricula = ?";
+        $params = [$nom, $matricula];
+        $types = "ss";
+
+        if ($id_ruta_actual !== null) {
+            $query .= " AND id_ruta != ?";
+            $params[] = $id_ruta_actual;
+            $types .= "i";
+        }
+
+        $stmt = $this->db->prepare($query);
+        if (!$stmt) return false;
+
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stmt->close();
+
+        return $result && $result->num_rows > 0;
+    }
+
     public function create() {
         $data = $this->getPayload();
-        $id_ruta = $this->getInputValue($data, ["id_ruta"]);
         $nom = $this->getInputValue($data, ["nom"]);
         $matricula = $this->getInputValue($data, ["matricula"]);
 
-        if (!empty($id_ruta) && !empty($nom) && !empty($matricula)) {
-            $queryVehiculo = "SELECT matricula FROM `Vehiculo` WHERE matricula = ?";
-            $stmtVehiculo = $this->db->prepare($queryVehiculo);
-            $stmtVehiculo->bind_param("s", $matricula);
-            $stmtVehiculo->execute();
-            $resultVehiculo = $stmtVehiculo->get_result();
-            $stmtVehiculo->close();
-
-            if ($resultVehiculo->num_rows === 0) {
-                http_response_code(404);
-                echo json_encode(["message" => "El vehículo no existe"]);
-                return;
-            }
-
-            $this->ruta->id_ruta = (int) $id_ruta;
-            $this->ruta->nom = $nom;
-            $this->ruta->matricula = $matricula;
-
-            if ($this->ruta->create()) {
-                http_response_code(201);
-                echo json_encode(["message" => "Ruta creada exitosamente"]);
-            } else {
-                $message = $this->getDbErrorMessage("Ruta no creada", "crear");
-                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
-                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
-            }
-        } else {
+        if (empty($nom) || empty($matricula)) {
             http_response_code(400);
-            echo json_encode(["message" => "Datos incompletos"]);
+            echo json_encode(["message" => "Falta completar nombre y matrícula."]);
+            return;
+        }
+
+        if ($this->existeRutaDuplicada($nom, $matricula)) {
+            http_response_code(409);
+            echo json_encode(["message" => "Ya existe una ruta con ese nombre y la misma matrícula."]);
+            return;
+        }
+
+        $queryVehiculo = "SELECT matricula FROM `Vehiculo` WHERE matricula = ?";
+        $stmtVehiculo = $this->db->prepare($queryVehiculo);
+        $stmtVehiculo->bind_param("s", $matricula);
+        $stmtVehiculo->execute();
+        $resultVehiculo = $stmtVehiculo->get_result();
+        $stmtVehiculo->close();
+
+        if ($resultVehiculo->num_rows === 0) {
+            http_response_code(404);
+            echo json_encode(["message" => "La matrícula ingresada no pertenece a un vehículo registrado."]);
+            return;
+        }
+
+        $this->ruta->nom = $nom;
+        $this->ruta->matricula = $matricula;
+
+        if ($this->ruta->create()) {
+            http_response_code(201);
+            echo json_encode(["message" => "Ruta creada exitosamente"]);
+        } else {
+            $message = $this->getDbErrorMessage("Ruta no creada", "crear");
+            http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+            echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
         }
     }
 
@@ -132,35 +159,42 @@ class RutaController {
         $nom = $this->getInputValue($data, ["nom"]);
         $matricula = $this->getInputValue($data, ["matricula"]);
 
-        if (!empty($id_ruta) && !empty($nom) && !empty($matricula)) {
-            $queryVehiculo = "SELECT matricula FROM `Vehiculo` WHERE matricula = ?";
-            $stmtVehiculo = $this->db->prepare($queryVehiculo);
-            $stmtVehiculo->bind_param("s", $matricula);
-            $stmtVehiculo->execute();
-            $resultVehiculo = $stmtVehiculo->get_result();
-            $stmtVehiculo->close();
-
-            if ($resultVehiculo->num_rows === 0) {
-                http_response_code(404);
-                echo json_encode(["message" => "El vehículo no existe"]);
-                return;
-            }
-
-            $this->ruta->id_ruta = (int) $id_ruta;
-            $this->ruta->nom = $nom;
-            $this->ruta->matricula = $matricula;
-
-            if ($this->ruta->update()) {
-                http_response_code(200);
-                echo json_encode(["message" => "Ruta actualizada exitosamente"]);
-            } else {
-                $message = $this->getDbErrorMessage("Ruta no actualizada", "actualizar");
-                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
-                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
-            }
-        } else {
+        if (empty($id_ruta) || empty($nom) || empty($matricula)) {
             http_response_code(400);
-            echo json_encode(["message" => "Datos incompletos"]);
+            echo json_encode(["message" => "Falta completar el ID de la ruta, el nombre y la matrícula."]);
+            return;
+        }
+
+        if ($this->existeRutaDuplicada($nom, $matricula, (int) $id_ruta)) {
+            http_response_code(409);
+            echo json_encode(["message" => "Ya existe otra ruta con ese nombre y la misma matrícula."]);
+            return;
+        }
+
+        $queryVehiculo = "SELECT matricula FROM `Vehiculo` WHERE matricula = ?";
+        $stmtVehiculo = $this->db->prepare($queryVehiculo);
+        $stmtVehiculo->bind_param("s", $matricula);
+        $stmtVehiculo->execute();
+        $resultVehiculo = $stmtVehiculo->get_result();
+        $stmtVehiculo->close();
+
+        if ($resultVehiculo->num_rows === 0) {
+            http_response_code(404);
+            echo json_encode(["message" => "La matrícula ingresada no pertenece a un vehículo registrado."]);
+            return;
+        }
+
+        $this->ruta->id_ruta = (int) $id_ruta;
+        $this->ruta->nom = $nom;
+        $this->ruta->matricula = $matricula;
+
+        if ($this->ruta->update()) {
+            http_response_code(200);
+            echo json_encode(["message" => "Ruta actualizada exitosamente"]);
+        } else {
+            $message = $this->getDbErrorMessage("Ruta no actualizada", "actualizar");
+            http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
+            echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
         }
     }
 

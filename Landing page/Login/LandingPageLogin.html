@@ -8,11 +8,39 @@
 </head>
 
 <script>
+    function setFieldError(inputId, message) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        input.style.borderColor = '#d93025';
+        input.style.boxShadow = '0 0 0 1px rgba(217, 48, 37, 0.12)';
+        input.setAttribute('aria-invalid', 'true');
+        input.dataset.error = message || '';
+    }
+
+    function clearFieldError(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        input.style.borderColor = '';
+        input.style.boxShadow = '';
+        input.removeAttribute('aria-invalid');
+        delete input.dataset.error;
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('formLogin');
         const mensaje = document.getElementById('mensajeLogin');
 
         if (!form || !mensaje) return;
+
+        const ciInput = document.getElementById('CI');
+        const passInput = document.getElementById('contrasena');
+
+        [ciInput, passInput].forEach(input => {
+            if (!input) return;
+            input.addEventListener('input', () => clearFieldError(input.id));
+        });
 
         form.addEventListener('submit', async function (event) {
             event.preventDefault();
@@ -20,8 +48,34 @@
             const ci = document.getElementById('CI').value.trim();
             const contrasena = document.getElementById('contrasena').value.trim();
 
-            if (!ci || !contrasena) {
-                mensaje.textContent = 'Completa CI y contraseña.';
+            clearFieldError('CI');
+            clearFieldError('contrasena');
+
+            if (!ci) {
+                setFieldError('CI', 'La cédula es obligatoria.');
+                mensaje.textContent = 'La cédula es obligatoria.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            if (!contrasena) {
+                setFieldError('contrasena', 'La contraseña es obligatoria.');
+                mensaje.textContent = 'La contraseña es obligatoria.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            const ciDigits = ci.replace(/\D+/g, '');
+            if (ciDigits.length < 8) {
+                setFieldError('CI', 'La cédula debe tener al menos 8 dígitos.');
+                mensaje.textContent = 'La cédula debe tener al menos 8 dígitos.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            if (contrasena.length < 6) {
+                setFieldError('contrasena', 'La contraseña debe tener al menos 6 caracteres.');
+                mensaje.textContent = 'La contraseña debe tener al menos 6 caracteres.';
                 mensaje.style.color = 'red';
                 return;
             }

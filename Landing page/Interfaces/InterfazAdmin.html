@@ -7,6 +7,41 @@
     <link rel="stylesheet" href="InterfazAdmin.css">
 </head>
 <body>
+    <script>
+        (function () {
+            const body = document.body;
+            if (body) {
+                body.style.visibility = 'hidden';
+            }
+
+            const redirigirLogin = () => {
+                window.location.replace('../Login/LandingPageLogin.html');
+            };
+
+            const apiUrl = new URL('../../API_Usuarios/public/index.php?accion=usuarioActual', window.location.href).toString();
+
+            fetch(apiUrl, {
+                method: 'GET',
+                credentials: 'same-origin'
+            })
+            .then(async (response) => {
+                const data = await response.json().catch(() => ({}));
+                const rol = String(data.usuario?.rol || '').toUpperCase();
+
+                if (!response.ok || !data.usuario || rol !== 'ADMIN') {
+                    redirigirLogin();
+                    return;
+                }
+
+                if (body) {
+                    body.style.visibility = 'visible';
+                }
+            })
+            .catch(() => {
+                redirigirLogin();
+            });
+        })();
+    </script>
     <div class="container">
         <h1>Panel de administración</h1>
         <p>Desde aquí el administrador gestiona usuarios, cuadrillas, vehículos, rutas, incidencias, municipios, establecimientos, maquinaria y contenedores.</p>
@@ -117,11 +152,11 @@
                 </div>
                 <div class="campo">
                     <label for="asigMatricula">Matrícula</label>
-                    <input type="text" id="asigMatricula" required>
+                    <input type="text" id="asigMatricula" readonly required>
                 </div>
                 <div class="campo">
                     <label for="asigFecha">Fecha</label>
-                    <input type="date" id="asigFecha" required>
+                    <input type="date" id="asigFecha" min="" required>
                 </div>
                 <button type="button" id="btnAsignarRuta">Asignar</button>
             </div>
@@ -273,6 +308,11 @@
         }
 
         function crearSelectEstado(usuario) {
+            if (String(usuario.rol || '').toUpperCase() === 'ADMIN') {
+                const estado = usuario.estado_habil || 'aprobado';
+                return `<span class="select-readonly">${estado}</span>`;
+            }
+
             const opciones = ESTADOS.map(estado =>
                 `<option value="${estado}" ${usuario.estado_habil === estado ? 'selected' : ''}>${estado}</option>`
             ).join('');
@@ -290,39 +330,86 @@
             mensajeAdmin.style.color = color;
         }
 
+        function clearInputError(input) {
+            if (!input) return;
+            input.style.borderColor = '';
+            input.style.boxShadow = '';
+            input.removeAttribute('aria-invalid');
+        }
+
+        function setInputError(input, message) {
+            if (!input) return;
+            input.style.borderColor = '#d93025';
+            input.style.boxShadow = '0 0 0 1px rgba(217, 48, 37, 0.12)';
+            input.setAttribute('aria-invalid', 'true');
+            if (message) input.dataset.error = message;
+        }
+
         document.getElementById('formCrearAdmin').addEventListener('submit', async function (event) {
             event.preventDefault();
 
             const form = event.currentTarget;
             const payload = Object.fromEntries(new FormData(form).entries());
 
+            ['adminCI', 'adminCorreo', 'adminNombre', 'adminApellido', 'adminPass', 'adminPassConfirm', 'adminSecret'].forEach(id => {
+                clearInputError(document.getElementById(id));
+            });
+
             if (usuarioActual && usuarioActual.cedula) {
                 payload.cedula_admin = String(usuarioActual.cedula);
             }
 
             const camposObligatorios = [
-                { key: 'CI', label: 'CI' },
-                { key: 'correo', label: 'correo' },
-                { key: 'PrNom', label: 'nombre' },
-                { key: 'PrApel', label: 'apellido' },
-                { key: 'contrasena', label: 'contraseña' },
-                { key: 'conf_contrasena', label: 'confirmación de contraseña' },
-                { key: 'admin_secret', label: 'secreto del servidor' }
+                { key: 'CI', label: 'CI', inputId: 'adminCI' },
+                { key: 'correo', label: 'correo', inputId: 'adminCorreo' },
+                { key: 'PrNom', label: 'nombre', inputId: 'adminNombre' },
+                { key: 'PrApel', label: 'apellido', inputId: 'adminApellido' },
+                { key: 'contrasena', label: 'contraseña', inputId: 'adminPass' },
+                { key: 'conf_contrasena', label: 'confirmación de contraseña', inputId: 'adminPassConfirm' },
+                { key: 'admin_secret', label: 'secreto del servidor', inputId: 'adminSecret' }
             ];
 
             const faltantes = camposObligatorios.filter(campo => !String(payload[campo.key] || '').trim());
             if (faltantes.length > 0) {
+                faltantes.forEach(campo => setInputError(document.getElementById(campo.inputId), 'Este campo es obligatorio.'));
                 mostrarMensajeAdmin('Faltan campos obligatorios: ' + faltantes.map(c => c.label).join(', '), 'red');
                 return;
             }
 
             const ciDigits = String(payload.CI || '').replace(/\D+/g, '');
             if (ciDigits.length < 8) {
+                setInputError(document.getElementById('adminCI'), 'La cédula debe tener al menos 8 dígitos.');
                 mostrarMensajeAdmin('La cédula debe tener al menos 8 dígitos.', 'red');
                 return;
             }
 
+            const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(payload.correo || ''));
+            if (!emailValido) {
+                setInputError(document.getElementById('adminCorreo'), 'Ingresá un correo electrónico válido.');
+                mostrarMensajeAdmin('Ingresa un correo electrónico válido.', 'red');
+                return;
+            }
+
+            if (String(payload.PrNom || '').trim().length < 2 || String(payload.PrApel || '').trim().length < 2) {
+                if (String(payload.PrNom || '').trim().length < 2) {
+                    setInputError(document.getElementById('adminNombre'), 'El nombre debe tener al menos 2 caracteres.');
+                }
+                if (String(payload.PrApel || '').trim().length < 2) {
+                    setInputError(document.getElementById('adminApellido'), 'El apellido debe tener al menos 2 caracteres.');
+                }
+                mostrarMensajeAdmin('El nombre y el apellido deben tener al menos 2 caracteres.', 'red');
+                return;
+            }
+
+            if (String(payload.contrasena || '').length < 6) {
+                setInputError(document.getElementById('adminPass'), 'La contraseña debe tener al menos 6 caracteres.');
+                mostrarMensajeAdmin('La contraseña debe tener al menos 6 caracteres.', 'red');
+                return;
+            }
+
             if (payload.contrasena !== payload.conf_contrasena) {
+                setInputError(document.getElementById('adminPass'), 'Las contraseñas no coinciden.');
+                setInputError(document.getElementById('adminPassConfirm'), 'Las contraseñas no coinciden.');
                 mostrarMensajeAdmin('La contraseña y la confirmación deben coincidir.', 'red');
                 return;
             }
@@ -368,15 +455,18 @@
 
                 usuarios.forEach(usuario => {
                     const fila = document.createElement('tr');
+                    const esAdmin = String(usuario.rol || '').toUpperCase() === 'ADMIN';
+                    const celdaAccion = esAdmin
+                        ? '<td><span class="select-readonly">Admin protegido</span></td>'
+                        : `<td><button type="button" class="danger" onclick="eliminarUsuario(${usuario.cedula})">Eliminar</button></td>`;
+
                     fila.innerHTML = `
                         <td>${usuario.cedula || ''}</td>
                         <td>${usuario.email || ''}</td>
                         <td>${(usuario.PrNom || '') + ' ' + (usuario.PrApel || '')}</td>
                         <td>${crearSelectRol(usuario)}</td>
                         <td>${crearSelectEstado(usuario)}</td>
-                        <td>
-                            <button type="button" class="danger" onclick="eliminarUsuario(${usuario.cedula})">Eliminar</button>
-                        </td>`;
+                        ${celdaAccion}`;
                     tablaUsuarios.appendChild(fila);
                 });
             } catch (error) {
@@ -396,6 +486,12 @@
         }
 
         async function eliminarUsuario(cedula) {
+            const usuario = encontrarUsuario(cedula);
+            if (usuario && String(usuario.rol || '').toUpperCase() === 'ADMIN') {
+                mostrarMensaje('No se puede borrar un administrador del sistema.', 'red');
+                return;
+            }
+
             if (!confirm('¿Seguro que deseas eliminar este usuario?')) return;
             try {
                 const response = await fetch(API_URL, {
@@ -430,6 +526,12 @@
         window.cambiarRol = function (cedula, nuevoRol) {
             const usuario = encontrarUsuario(cedula);
             if (!usuario) return;
+
+            if (String(usuario.rol || '').toUpperCase() === 'ADMIN') {
+                mostrarMensaje('No se puede editar un administrador del sistema.', 'red');
+                consultarUsuarios();
+                return;
+            }
 
             const rolFinal = nuevoRol;
             if (!ROLES.includes(rolFinal)) {
@@ -483,6 +585,12 @@
             const usuario = encontrarUsuario(cedula);
             if (!usuario) return;
 
+            if (String(usuario.rol || '').toUpperCase() === 'ADMIN') {
+                mostrarMensaje('No se puede editar un administrador del sistema.', 'red');
+                consultarUsuarios();
+                return;
+            }
+
             const estadoFinal = nuevoEstado;
             if (!ESTADOS.includes(estadoFinal)) {
                 mostrarMensaje('Estado inválido.', 'red');
@@ -528,7 +636,16 @@
             const permitirEditar = cfg.permitirEditar !== false;
             let cache = [];
 
+            function esCampoAutogenerado(c) {
+                const nombre = String(c.nombre || '').toLowerCase();
+                return !!(c.autoIncrement || (c.pk && c.tipo === 'numero' && (nombre.includes('id_') || nombre.includes('codigo'))));
+            }
+
             const inputsHtml = cfg.campos.map(c => {
+                if (esCampoAutogenerado(c)) {
+                    return '';
+                }
+
                 if (c.tipo === 'seleccion') {
                     const opciones = (c.opciones || []).map(op =>
                         `<option value="${op}">${op}</option>`
@@ -576,13 +693,66 @@
                 divMensaje.style.color = color;
             }
 
+            function normalizarValorCampo(nombre, valor) {
+                const nombreCampo = String(nombre || '').toLowerCase();
+                const texto = String(valor ?? '').trim();
+                if (nombreCampo.includes('matricula')) {
+                    return texto.toUpperCase();
+                }
+                return texto;
+            }
+
             function leerInputsAlta() {
                 const datos = {};
                 cfg.campos.forEach(c => {
-                    const val = document.getElementById(`${cfg.contenedorId}-${c.nombre}`).value.trim();
+                    if (esCampoAutogenerado(c)) {
+                        return;
+                    }
+                    const input = document.getElementById(`${cfg.contenedorId}-${c.nombre}`);
+                    const val = input ? normalizarValorCampo(c.nombre, input.value) : '';
                     datos[c.nombre] = val;
                 });
                 return datos;
+            }
+
+            function validarCamposRequeridos(datos) {
+                const faltantes = [];
+                cfg.campos.forEach(c => {
+                    if (esCampoAutogenerado(c)) {
+                        return;
+                    }
+                    if (!c.opcional && (datos[c.nombre] === undefined || String(datos[c.nombre]).trim() === '')) {
+                        faltantes.push(c.etiqueta);
+                    }
+                });
+
+                if (faltantes.length > 0) {
+                    throw new Error('Completá los campos obligatorios: ' + faltantes.join(', ') + '.');
+                }
+
+                for (const c of cfg.campos) {
+                    if (esCampoAutogenerado(c)) {
+                        continue;
+                    }
+                    if (!c.opcional && String(datos[c.nombre] ?? '').trim() !== '') {
+                        if (c.tipo === 'numero') {
+                            const numero = Number(datos[c.nombre]);
+                            if (!Number.isFinite(numero) || numero < 0) {
+                                throw new Error('El campo "' + c.etiqueta + '" debe ser un número válido y no negativo.');
+                            }
+                        }
+                        if (c.nombre.toLowerCase().includes('fecha') && Number.isNaN(Date.parse(datos[c.nombre]))) {
+                            throw new Error('El campo "' + c.etiqueta + '" tiene una fecha inválida.');
+                        }
+                        if (c.nombre.toLowerCase().includes('matricula')) {
+                            const matricula = String(datos[c.nombre]).trim().toUpperCase();
+                            if (!/^[A-Z]{3}[0-9]{4}$/.test(matricula)) {
+                                throw new Error('La matrícula debe tener 3 letras y 4 números (ejemplo: ABC1234).');
+                            }
+                            datos[c.nombre] = matricula;
+                        }
+                    }
+                }
             }
 
             async function consultar() {
@@ -626,7 +796,7 @@
                 const registro = cache[indice];
                 const fila = tbody.children[indice];
                 const celdas = cfg.campos.map(c => {
-                    const soloLectura = c.pk ? 'readonly' : '';
+                    const soloLectura = (c.pk || c.autoIncrement) ? 'readonly' : '';
                     const valorActual = registro[c.nombre] ?? '';
 
                     if (c.tipo === 'seleccion') {
@@ -653,9 +823,26 @@
                 </td>`;
             }
 
+            function registroDuplicado(datos) {
+                const camposComparables = cfg.campos.filter(c => !c.autoIncrement);
+                return cache.some(registro => {
+                    return camposComparables.every(c => {
+                        const actual = String(registro[c.nombre] ?? '').trim().toLowerCase();
+                        const nuevo = String(datos[c.nombre] ?? '').trim().toLowerCase();
+                        return actual === nuevo;
+                    });
+                });
+            }
+
             async function crear() {
                 const datos = leerInputsAlta();
                 try {
+                    validarCamposRequeridos(datos);
+
+                    if (registroDuplicado(datos)) {
+                        throw new Error('No se creó porque ya existe un registro con esos datos.');
+                    }
+
                     const response = await fetch(`${cfg.apiUrl}?accion=${cfg.accion}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -664,7 +851,12 @@
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo crear el registro');
                     mostrar(data.message || 'Registro creado correctamente', 'green');
-                    cfg.campos.forEach(c => { document.getElementById(`${cfg.contenedorId}-${c.nombre}`).value = ''; });
+                    cfg.campos.forEach(c => {
+                        const input = document.getElementById(`${cfg.contenedorId}-${c.nombre}`);
+                        if (input) {
+                            input.value = '';
+                        }
+                    });
                     consultar();
                 } catch (error) {
                     mostrar(error.message, 'red');
@@ -675,9 +867,13 @@
                 const fila = tbody.children[indice];
                 const inputs = fila.querySelectorAll('[data-campo]');
                 const datos = {};
-                inputs.forEach(input => { datos[input.dataset.campo] = input.value.trim(); });
+                inputs.forEach(input => {
+                    const nombreCampo = String(input.dataset.campo || '');
+                    datos[nombreCampo] = normalizarValorCampo(nombreCampo, input.value);
+                });
 
                 try {
+                    validarCamposRequeridos(datos);
                     const response = await fetch(`${cfg.apiUrl}?accion=${cfg.accion}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -756,7 +952,7 @@
             apiUrl: API_RECOLECCION,
             accion: 'rutas',
             campos: [
-                { nombre: 'id_ruta', etiqueta: 'ID Ruta', tipo: 'numero', pk: true },
+                { nombre: 'id_ruta', etiqueta: 'ID Ruta', tipo: 'numero', pk: true, autoIncrement: true },
                 { nombre: 'nom', etiqueta: 'Nombre' },
                 { nombre: 'matricula', etiqueta: 'Matrícula', tipo: 'text' }
             ]
@@ -768,10 +964,12 @@
             apiUrl: API_RECOLECCION,
             accion: 'incidencias',
             campos: [
-                { nombre: 'id_incidencia', etiqueta: 'ID Incidencia', tipo: 'numero', pk: true },
-                { nombre: 'id_contdor', etiqueta: 'ID Contenedor', tipo: 'numero', pk: true },
-                { nombre: 'tipo', etiqueta: 'Tipo' },
-                { nombre: 'estado', etiqueta: 'Estado' },
+                { nombre: 'id_incidencia', etiqueta: 'ID Incidencia', tipo: 'numero', pk: true, autoIncrement: true },
+                { nombre: 'id_contdor', etiqueta: 'ID Contenedor', tipo: 'numero', pk: true, autoIncrement: true },
+                { nombre: 'tipo', etiqueta: 'Tipo', tipo: 'seleccion',
+                  opciones: ['rotura', 'desborde', 'falta de recoleccion', 'otro'] },
+                { nombre: 'estado', etiqueta: 'Estado', tipo: 'seleccion',
+                  opciones: ['abierta', 'en curso', 'resuelta'] },
                 { nombre: 'fch_apert', etiqueta: 'Fecha apertura', tipo: 'fecha' },
                 { nombre: 'fch_resol', etiqueta: 'Fecha resolución', tipo: 'fecha', opcional: true },
                 { nombre: 'lat', etiqueta: 'Latitud', tipo: 'numero', opcional: true },
@@ -798,7 +996,7 @@
             apiUrl: API_GESTION,
             accion: 'establecimientos',
             campos: [
-                { nombre: 'id_establcmto', etiqueta: 'ID Establecimiento', tipo: 'numero', pk: true },
+                { nombre: 'id_establcmto', etiqueta: 'ID Establecimiento', tipo: 'numero', pk: true, autoIncrement: true },
                 { nombre: 'nombre', etiqueta: 'Nombre' },
                 { nombre: 'calle', etiqueta: 'Calle' },
                 { nombre: 'nmro', etiqueta: 'Número' },
@@ -819,7 +1017,7 @@
             apiUrl: API_GESTION,
             accion: 'maquinarias',
             campos: [
-                { nombre: 'id_maquinaria', etiqueta: 'ID Maquinaria', tipo: 'numero', pk: true },
+                { nombre: 'id_maquinaria', etiqueta: 'ID Maquinaria', tipo: 'numero', pk: true, autoIncrement: true },
                 { nombre: 'nombre', etiqueta: 'Nombre' },
                 { nombre: 'en_uso', etiqueta: 'En uso', tipo: 'seleccion',
                   opciones: ['desplegado', 'en_stock'] },
@@ -834,7 +1032,7 @@
             apiUrl: API_GESTION,
             accion: 'mantenimientos',
             campos: [
-                { nombre: 'id_serv', etiqueta: 'ID Servicio', tipo: 'numero', pk: true },
+                { nombre: 'id_serv', etiqueta: 'ID Servicio', tipo: 'numero', pk: true, autoIncrement: true },
                 { nombre: 'estado', etiqueta: 'Estado', tipo: 'seleccion',
                   opciones: ['pendiente', 'en_curso', 'finalizado'] },
                 { nombre: 'fecha', etiqueta: 'Fecha', tipo: 'fecha' },
@@ -849,7 +1047,7 @@
             apiUrl: API_GESTION,
             accion: 'contenedores',
             campos: [
-                { nombre: 'id_contdor', etiqueta: 'ID Contenedor', tipo: 'numero', pk: true },
+                { nombre: 'id_contdor', etiqueta: 'ID Contenedor', tipo: 'numero', pk: true, autoIncrement: true },
                 { nombre: 'estado_optivo', etiqueta: 'Estado operativo', tipo: 'seleccion',
                   opciones: ['funcional', 'roto', 'desbordado', 'desaparecido', 'otro'] },
                 { nombre: 'en_uso', etiqueta: 'En uso', tipo: 'seleccion', opcional: true,
@@ -927,13 +1125,50 @@
             }
         };
 
+        const inputAsigIdRuta = document.getElementById('asigId_ruta');
+        const inputAsigMatricula = document.getElementById('asigMatricula');
+        const inputAsigFecha = document.getElementById('asigFecha');
+
+        const hoy = new Date();
+        const fechaHoyISO = hoy.toISOString().split('T')[0];
+        inputAsigFecha.min = fechaHoyISO;
+
+        async function autocompletarMatriculaPorRuta() {
+            const id_ruta = inputAsigIdRuta.value.trim();
+            if (!id_ruta) {
+                inputAsigMatricula.value = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_RECOLECCION}?accion=rutas`, { method: 'GET' });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'No se pudo consultar la ruta');
+
+                const ruta = (data.registros || []).find(item => String(item.id_ruta) === String(id_ruta));
+                if (!ruta) {
+                    inputAsigMatricula.value = '';
+                    mostrarMensajeAsignacion('La ruta seleccionada no existe.', 'red');
+                    return;
+                }
+
+                inputAsigMatricula.value = ruta.matricula;
+                mostrarMensajeAsignacion(`Matrícula autocompletada para la ruta ${ruta.id_ruta}.`, 'green');
+            } catch (error) {
+                inputAsigMatricula.value = '';
+                mostrarMensajeAsignacion(error.message, 'red');
+            }
+        }
+
+        inputAsigIdRuta.addEventListener('change', autocompletarMatriculaPorRuta);
+
         document.getElementById('btnAsignarRuta').addEventListener('click', async () => {
-            const id_ruta = document.getElementById('asigId_ruta').value.trim();
-            const matricula = document.getElementById('asigMatricula').value.trim();
-            const fech = document.getElementById('asigFecha').value.trim();
+            const id_ruta = inputAsigIdRuta.value.trim();
+            const matricula = inputAsigMatricula.value.trim();
+            const fech = inputAsigFecha.value.trim();
 
             if (!id_ruta || !matricula || !fech) {
-                mostrarMensajeAsignacion('Completá ID Ruta, matrícula y fecha.', 'red');
+                mostrarMensajeAsignacion('Completá la ruta, la matrícula y la fecha.', 'red');
                 return;
             }
 
@@ -946,6 +1181,9 @@
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo asignar la ruta');
                 mostrarMensajeAsignacion(data.message || 'Ruta asignada correctamente', 'green');
+                inputAsigIdRuta.value = '';
+                inputAsigMatricula.value = '';
+                inputAsigFecha.value = '';
                 consultarAsignaciones();
             } catch (error) {
                 mostrarMensajeAsignacion(error.message, 'red');

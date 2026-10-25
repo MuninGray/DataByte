@@ -93,6 +93,49 @@ class UsuarioController {
         return ucfirst($operation) . ': ' . $error;
     }
 
+    private function existeUsuarioDuplicado($cedula, $email) {
+        $cedula = (int) preg_replace('/\D+/', '', (string) $cedula);
+        $email = trim((string) $email);
+
+        if ($cedula <= 0 && $email === "") {
+            return false;
+        }
+
+        $query = "SELECT cedula FROM `Usuario` WHERE";
+        $params = [];
+        $types = "";
+        $conditions = [];
+
+        if ($cedula > 0) {
+            $conditions[] = "cedula = ?";
+            $params[] = $cedula;
+            $types .= "i";
+        }
+
+        if ($email !== "") {
+            $conditions[] = "email = ?";
+            $params[] = strtolower($email);
+            $types .= "s";
+        }
+
+        $query .= " " . implode(" OR ", $conditions);
+
+        $stmt = $this->db->prepare($query);
+        if (!$stmt) {
+            return false;
+        }
+
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stmt->close();
+
+        return $result && $result->num_rows > 0;
+    }
+
     public function create() {
         $data = $this->getPayload();
         $email = $this->getInputValue($data, ["correo", "email"]);
@@ -146,6 +189,31 @@ class UsuarioController {
             http_response_code(400);
             echo json_encode([
                 "message" => "Faltan datos obligatorios: " . implode(", ", $missing)
+            ]);
+            return;
+        }
+
+        $cedulaDigits = preg_replace('/\D+/', '', $cedula);
+        if (strlen($cedulaDigits) < 8) {
+            http_response_code(400);
+            echo json_encode([
+                "message" => "La cédula debe tener al menos 8 dígitos."
+            ]);
+            return;
+        }
+
+        if ($this->existeUsuarioDuplicado($cedula, $email)) {
+            http_response_code(409);
+            echo json_encode([
+                "message" => "Ya existe un usuario con esa cédula o ese correo."
+            ]);
+            return;
+        }
+
+        if (strlen($prNom) < 2 || strlen($prApel) < 2) {
+            http_response_code(400);
+            echo json_encode([
+                "message" => "El nombre y el apellido deben tener al menos 2 caracteres cada uno."
             ]);
             return;
         }
@@ -260,6 +328,14 @@ class UsuarioController {
             http_response_code(400);
             echo json_encode([
                 "message" => "La cédula debe tener al menos 8 dígitos."
+            ]);
+            return;
+        }
+
+        if ($this->existeUsuarioDuplicado($cedula, $email)) {
+            http_response_code(409);
+            echo json_encode([
+                "message" => "Ya existe un usuario con esa cédula o ese correo."
             ]);
             return;
         }
@@ -382,6 +458,20 @@ class UsuarioController {
             $this->usuario->rol = !empty($rol) ? strtoupper($rol) : "USUARIO";
             $this->usuario->estado_habil = !empty($estadoHabil) ? $estadoHabil : "pendiente";
 
+            $checkAdmin = $this->db->prepare("SELECT 1 FROM `Usuario` WHERE cedula = ? AND rol = 'ADMIN' LIMIT 1");
+            if ($checkAdmin) {
+                $checkAdmin->bind_param("i", $this->usuario->cedula);
+                $checkAdmin->execute();
+                $adminResult = $checkAdmin->get_result();
+                $checkAdmin->close();
+
+                if ($adminResult && $adminResult->num_rows > 0) {
+                    http_response_code(403);
+                    echo json_encode(["message" => "No se puede editar un administrador del sistema."]);
+                    return;
+                }
+            }
+
             if ($this->usuario->update()) {
                 http_response_code(201);
                 echo json_encode(["message" => "Usuario actualizado exitosamente"]);
@@ -402,6 +492,20 @@ class UsuarioController {
 
         if (!empty($cedula)) {
             $this->usuario->cedula = (int) $cedula;
+
+            $checkAdmin = $this->db->prepare("SELECT 1 FROM `Usuario` WHERE cedula = ? AND rol = 'ADMIN' LIMIT 1");
+            if ($checkAdmin) {
+                $checkAdmin->bind_param("i", $this->usuario->cedula);
+                $checkAdmin->execute();
+                $adminResult = $checkAdmin->get_result();
+                $checkAdmin->close();
+
+                if ($adminResult && $adminResult->num_rows > 0) {
+                    http_response_code(403);
+                    echo json_encode(["message" => "No se puede borrar un administrador del sistema."]);
+                    return;
+                }
+            }
 
             if ($this->usuario->delete()) {
                 http_response_code(200);
@@ -436,37 +540,55 @@ class UsuarioController {
         $cedula = $this->getInputValue($data, ["CI", "ci", "cedula"]);
         $pass = $this->getInputValue($data, ["contrasena", "pass"]);
 
-        if (!empty($cedula) && !empty($pass)) {
-            $this->usuario->cedula = (int) $cedula;
-            $this->usuario->pass = $pass;
-
-            $resultado = $this->usuario->login();
-
-            if ($resultado["success"] === true) {
-                $_SESSION['usuario'] = [
-                    "cedula" => (int) $this->usuario->cedula,
-                    "email" => $resultado["usuario"]["email"] ?? "",
-                    "PrNom" => $resultado["usuario"]["PrNom"] ?? "",
-                    "PrApel" => $resultado["usuario"]["PrApel"] ?? "",
-                    "rol" => $resultado["usuario"]["rol"] ?? "USUARIO"
-                ];
-
-                http_response_code(200);
-                echo json_encode([
-                    "message" => $resultado["message"],
-                    "usuario" => $_SESSION['usuario']
-                ]);
-            } else {
-                $statusCode = ($resultado["message"] === "Contraseña incorrecta") ? 401 : 403;
-                http_response_code($statusCode);
-                echo json_encode([
-                    "message" => $resultado["message"]
-                ]);
-            }
-        } else {
+        if (trim((string) $cedula) === "" || trim((string) $pass) === "") {
             http_response_code(400);
             echo json_encode([
-                "message" => "Datos incompletos"
+                "message" => "La cédula y la contraseña son obligatorias."
+            ]);
+            return;
+        }
+
+        $cedulaDigits = preg_replace('/\D+/', '', $cedula);
+        if (strlen($cedulaDigits) < 8) {
+            http_response_code(400);
+            echo json_encode([
+                "message" => "La cédula debe tener al menos 8 dígitos."
+            ]);
+            return;
+        }
+
+        if (strlen($pass) < 6) {
+            http_response_code(400);
+            echo json_encode([
+                "message" => "La contraseña debe tener al menos 6 caracteres."
+            ]);
+            return;
+        }
+
+        $this->usuario->cedula = (int) $cedula;
+        $this->usuario->pass = $pass;
+
+        $resultado = $this->usuario->login();
+
+        if ($resultado["success"] === true) {
+            $_SESSION['usuario'] = [
+                "cedula" => (int) $this->usuario->cedula,
+                "email" => $resultado["usuario"]["email"] ?? "",
+                "PrNom" => $resultado["usuario"]["PrNom"] ?? "",
+                "PrApel" => $resultado["usuario"]["PrApel"] ?? "",
+                "rol" => $resultado["usuario"]["rol"] ?? "USUARIO"
+            ];
+
+            http_response_code(200);
+            echo json_encode([
+                "message" => $resultado["message"],
+                "usuario" => $_SESSION['usuario']
+            ]);
+        } else {
+            $statusCode = ($resultado["message"] === "Contraseña incorrecta") ? 401 : 403;
+            http_response_code($statusCode);
+            echo json_encode([
+                "message" => $resultado["message"]
             ]);
         }
     }
@@ -480,29 +602,50 @@ class UsuarioController {
         $id_establcmto = $this->getInputValue($data, ["id_establcmto"]);
 
         $allowedAdminRoles = ["ADMIN", "USUARIO", "INSPECTOR", "CHOFER", "PEON", "OPERARIO_ESTABLECIMIENTO"];
-        if (!empty($rol) && !in_array(strtoupper($rol), $allowedAdminRoles, true)) {
+        $rolNormalizado = strtoupper($rol);
+        if ($rol === "" || !in_array($rolNormalizado, $allowedAdminRoles, true)) {
             http_response_code(400);
-            echo json_encode(["message" => "Rol no válido"]);
+            echo json_encode(["message" => "Rol no válido. Elegí un rol permitido."]);
             return;
         }
 
-        if (!empty($cedula) && !empty($rol)) {
-            $this->usuario->cedula = (int) $cedula;
-            $this->usuario->rol = $rol;
-            $this->usuario->codigo = $codigo;
-            $this->usuario->nom_cuadrilla = $nom_cuadrilla;
-            $this->usuario->id_establcmto = (int) $id_establcmto;
-
-            if ($this->usuario->asignarRol()) {
-                http_response_code(200);
-                echo json_encode(["message" => "Rol asignado correctamente"]);
-            } else {
-                http_response_code(503);
-                echo json_encode(["message" => "No se pudo asignar el rol"]);
-            }
-        } else {
+        $cedulaDigits = preg_replace('/\D+/', '', $cedula);
+        if ($cedula === "" || strlen($cedulaDigits) < 8) {
             http_response_code(400);
-            echo json_encode(["message" => "Datos incompletos"]);
+            echo json_encode(["message" => "La cédula del usuario es obligatoria y debe tener al menos 8 dígitos."]);
+            return;
+        }
+
+        if ($rolNormalizado === "INSPECTOR" && trim($codigo) === "") {
+            http_response_code(400);
+            echo json_encode(["message" => "Para asignar el rol de inspector es obligatorio indicar el código del municipio."]);
+            return;
+        }
+
+        if (in_array($rolNormalizado, ["CHOFER", "PEON"], true) && trim($nom_cuadrilla) === "") {
+            http_response_code(400);
+            echo json_encode(["message" => "Para asignar este rol es obligatorio indicar la cuadrilla."]);
+            return;
+        }
+
+        if ($rolNormalizado === "OPERARIO_ESTABLECIMIENTO" && ((int) $id_establcmto <= 0)) {
+            http_response_code(400);
+            echo json_encode(["message" => "Para este rol debe indicarse un ID de establecimiento válido."]);
+            return;
+        }
+
+        $this->usuario->cedula = (int) $cedula;
+        $this->usuario->rol = $rolNormalizado;
+        $this->usuario->codigo = $codigo;
+        $this->usuario->nom_cuadrilla = $nom_cuadrilla;
+        $this->usuario->id_establcmto = (int) $id_establcmto;
+
+        if ($this->usuario->asignarRol()) {
+            http_response_code(200);
+            echo json_encode(["message" => "Rol asignado correctamente"]);
+        } else {
+            http_response_code(503);
+            echo json_encode(["message" => "No se pudo asignar el rol. Revisá los datos relacionados."]);
         }
     }
 

@@ -64,7 +64,21 @@ class Usuario {
             $checkAdmin->close();
 
             if ($adminResult->num_rows === 0) {
-                return false;
+                $defaultAdminPass = password_hash('AdminDataByte#2024', PASSWORD_DEFAULT);
+                $defaultAdminStmt = $this->conn->prepare("INSERT INTO `Admin_Tecnico` (cedula_admin, email, PrNom, PrApel, pass) VALUES (?, ?, ?, ?, ?)");
+                if (!$defaultAdminStmt) {
+                    return false;
+                }
+
+                $defaultAdminEmail = 'admin@default.local';
+                $defaultAdminNombre = 'Administrador';
+                $defaultAdminApellido = 'Sistema';
+                $defaultAdminStmt->bind_param("issss", $this->cedula_admin, $defaultAdminEmail, $defaultAdminNombre, $defaultAdminApellido, $defaultAdminPass);
+                if (!$defaultAdminStmt->execute()) {
+                    $defaultAdminStmt->close();
+                    return false;
+                }
+                $defaultAdminStmt->close();
             }
         }
 

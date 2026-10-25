@@ -8,11 +8,39 @@
 </head>
 
 <script>
+    function setFieldError(inputId, message) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        input.style.borderColor = '#d93025';
+        input.style.boxShadow = '0 0 0 1px rgba(217, 48, 37, 0.12)';
+        input.setAttribute('aria-invalid', 'true');
+        input.dataset.error = message || '';
+    }
+
+    function clearFieldError(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        input.style.borderColor = '';
+        input.style.boxShadow = '';
+        input.removeAttribute('aria-invalid');
+        delete input.dataset.error;
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('formRegistro');
         const mensaje = document.getElementById('mensajeRegistro');
 
         if (!form || !mensaje) return;
+
+        const campos = ['correo', 'primerNombre', 'primerApellido', 'CI', 'contrasena', 'conf_contrasena'];
+        campos.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('input', () => clearFieldError(id));
+            }
+        });
 
         form.addEventListener('submit', async function (event) {
             event.preventDefault();
@@ -24,38 +52,84 @@
             const contrasena = document.getElementById('contrasena').value.trim();
             const confContrasena = document.getElementById('conf_contrasena').value.trim();
 
-            if (!correo || !primerNombre || !primerApellido || !ci || !contrasena || !confContrasena) {
-                mensaje.textContent = 'Faltan datos obligatorios: correo, nombres, apellidos, CI o contraseña.';
+            campos.forEach(clearFieldError);
+
+            if (!correo) {
+                setFieldError('correo', 'El correo es obligatorio.');
+                mensaje.textContent = 'El correo es obligatorio.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            if (!primerNombre) {
+                setFieldError('primerNombre', 'El nombre es obligatorio.');
+                mensaje.textContent = 'El nombre es obligatorio.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            if (!primerApellido) {
+                setFieldError('primerApellido', 'El apellido es obligatorio.');
+                mensaje.textContent = 'El apellido es obligatorio.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            if (!ci) {
+                setFieldError('CI', 'La cédula es obligatoria.');
+                mensaje.textContent = 'La cédula es obligatoria.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            if (!contrasena) {
+                setFieldError('contrasena', 'La contraseña es obligatoria.');
+                mensaje.textContent = 'La contraseña es obligatoria.';
+                mensaje.style.color = 'red';
+                return;
+            }
+
+            if (!confContrasena) {
+                setFieldError('conf_contrasena', 'Debés confirmar la contraseña.');
+                mensaje.textContent = 'Debés confirmar la contraseña.';
                 mensaje.style.color = 'red';
                 return;
             }
 
             const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
             if (!emailValido) {
-                mensaje.textContent = 'Ingresa un correo válido.';
+                setFieldError('correo', 'Ingresá un correo electrónico válido.');
+                mensaje.textContent = 'Ingresá un correo electrónico válido.';
                 mensaje.style.color = 'red';
                 return;
             }
 
             if (primerNombre.length < 2 || primerApellido.length < 2) {
+                if (primerNombre.length < 2) setFieldError('primerNombre', 'El nombre debe tener al menos 2 caracteres.');
+                if (primerApellido.length < 2) setFieldError('primerApellido', 'El apellido debe tener al menos 2 caracteres.');
                 mensaje.textContent = 'El nombre y el apellido deben tener al menos 2 caracteres.';
                 mensaje.style.color = 'red';
                 return;
             }
 
-            if (ci.length < 8) {
-                mensaje.textContent = 'La cédula debe tener al menos 8 caracteres.';
+            const ciDigits = ci.replace(/\D+/g, '');
+            if (ciDigits.length < 8) {
+                setFieldError('CI', 'La cédula debe tener al menos 8 dígitos.');
+                mensaje.textContent = 'La cédula debe tener al menos 8 dígitos.';
                 mensaje.style.color = 'red';
                 return;
             }
 
             if (contrasena.length < 6) {
+                setFieldError('contrasena', 'La contraseña debe tener al menos 6 caracteres.');
                 mensaje.textContent = 'La contraseña debe tener al menos 6 caracteres.';
                 mensaje.style.color = 'red';
                 return;
             }
 
             if (contrasena !== confContrasena) {
+                setFieldError('contrasena', 'Las contraseñas no coinciden.');
+                setFieldError('conf_contrasena', 'Las contraseñas no coinciden.');
                 mensaje.textContent = 'Las contraseñas no coinciden.';
                 mensaje.style.color = 'red';
                 return;

@@ -7,6 +7,27 @@
     <link rel="stylesheet" href="InterfazInspector.css">
 </head>
 <body>
+    <script>
+        (function () {
+            const body = document.body;
+            if (body) body.style.visibility = 'hidden';
+
+            const redirigirLogin = () => window.location.replace('../Login/LandingPageLogin.html');
+            const apiUrl = new URL('../../API_Usuarios/public/index.php?accion=usuarioActual', window.location.href).toString();
+
+            fetch(apiUrl, { method: 'GET', credentials: 'same-origin' })
+            .then(async (response) => {
+                const data = await response.json().catch(() => ({}));
+                const rol = String(data.usuario?.rol || '').toUpperCase();
+                if (!response.ok || !data.usuario || rol !== 'INSPECTOR') {
+                    redirigirLogin();
+                    return;
+                }
+                if (body) body.style.visibility = 'visible';
+            })
+            .catch(() => redirigirLogin());
+        })();
+    </script>
     <div class="container">
         <h1>Panel del inspector municipal</h1>
         <p>Podés consultar contenedores de tu municipio, rutas, cuadrillas y establecimientos, crear incidencias y actualizar su estado. No tenés acceso a usuarios ni a la configuración del sistema.</p>
@@ -65,11 +86,22 @@
                 </div>
                 <div class="campo">
                     <label for="inc-tipo">Tipo</label>
-                    <input type="text" id="inc-tipo" required>
+                    <select id="inc-tipo" required>
+                        <option value="">Seleccioná un tipo</option>
+                        <option value="rotura">rotura</option>
+                        <option value="desborde">desborde</option>
+                        <option value="falta de recoleccion">falta de recoleccion</option>
+                        <option value="otro">otro</option>
+                    </select>
                 </div>
                 <div class="campo">
                     <label for="inc-estado">Estado</label>
-                    <input type="text" id="inc-estado" required>
+                    <select id="inc-estado" required>
+                        <option value="">Seleccioná un estado</option>
+                        <option value="abierta">abierta</option>
+                        <option value="en curso">en curso</option>
+                        <option value="resuelta">resuelta</option>
+                    </select>
                 </div>
                 <div class="campo">
                     <label for="inc-fch_apert">Fecha apertura</label>
