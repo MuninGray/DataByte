@@ -54,6 +54,10 @@
                 <button type="button" id="btnFiltrarContenedores">Filtrar</button>
                 <button type="button" class="secundario" id="btnVerTodosContenedores">Ver todos</button>
             </div>
+            <div class="toolbar">
+                <h3>Contenedores registrados</h3>
+                <button type="button" id="btnRecargarContenedores">Recargar</button>
+            </div>
             <div id="mensaje-contenedores" class="mensaje"></div>
             <table>
                 <thead>
@@ -222,7 +226,7 @@
         const API_GESTION = new URL('../../API_Gestion/public/index.php', window.location.href).toString();
         const fechaAperturaInput = document.getElementById('inc-fch_apert');
         const hoyLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-        fechaAperturaInput.max = hoyLocal;
+        fechaAperturaInput.min = hoyLocal;
         fechaAperturaInput.value = hoyLocal;
 
         let consultaUbicacionIncidencia = 0;
@@ -385,6 +389,7 @@
         }
 
         document.getElementById('btnFiltrarContenedores').addEventListener('click', aplicarFiltro);
+        document.getElementById('btnRecargarContenedores').addEventListener('click', consultarContenedores);
         document.getElementById('btnVerTodosContenedores').addEventListener('click', () => {
             document.getElementById('filtroCodigoMunicipio').value = '';
             renderContenedores(contenedoresCache);
@@ -484,7 +489,7 @@
                 const idContenedor = Number(datos.id_contdor);
                 if (!Number.isInteger(idContenedor) || idContenedor <= 0) throw new Error('Ingresá un ID de contenedor válido.');
                 if (!datos.tipo || !datos.estado || !datos.fch_apert) throw new Error('Completá tipo, estado y fecha de apertura.');
-                if (datos.fch_apert > hoyLocal) throw new Error('La fecha de apertura no puede ser futura.');
+                if (datos.fch_apert < hoyLocal) throw new Error('La fecha de apertura no puede ser anterior al día de hoy.');
                 const tieneLatitud = datos.lat !== '', tieneLongitud = datos.lng !== '';
                 if (tieneLatitud !== tieneLongitud) throw new Error('Ingresá latitud y longitud juntas.');
                 if (tieneLatitud && (!Number.isFinite(Number(datos.lat)) || Number(datos.lat) < -90 || Number(datos.lat) > 90 || !Number.isFinite(Number(datos.lng)) || Number(datos.lng) < -180 || Number(datos.lng) > 180)) {

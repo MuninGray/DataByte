@@ -73,7 +73,7 @@ class MantenimientoController {
         $fecha = $this->getInputValue($data, ["fecha"]);
         $tipo = $this->getInputValue($data, ["tipo"]);
 
-        if (in_array($estado, ["en_curso", "finalizado"], true) && $this->fechaValida($fecha) && in_array($tipo, ["pendiente", "preventivo", "correctivo", "otro"], true)) {
+        if (in_array($estado, ["en_curso", "finalizado"], true) && $this->fechaValida($fecha) && $fecha >= date('Y-m-d') && in_array($tipo, ["pendiente", "preventivo", "correctivo", "otro"], true)) {
             $this->mantenimiento->estado = $estado;
             $this->mantenimiento->fecha = $fecha;
             $this->mantenimiento->tipo = $tipo;
@@ -156,6 +156,12 @@ class MantenimientoController {
             if ($result && $result->num_rows === 0) {
                 http_response_code(404);
                 echo json_encode(["message" => "Servicio de mantenimiento no encontrado"]);
+                return;
+            }
+            $registroActual = $result ? $result->fetch_assoc() : null;
+            if ($fecha < date('Y-m-d') && $registroActual && $fecha !== $registroActual['fecha']) {
+                http_response_code(400);
+                echo json_encode(["message" => "La fecha no puede ser anterior al día de hoy."]);
                 return;
             }
 

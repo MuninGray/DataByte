@@ -33,6 +33,13 @@ class IncidenciaController {
         return "";
     }
 
+    private function fechaValidaDesdeHoy($fecha) {
+        $date = DateTime::createFromFormat('!Y-m-d', $fecha);
+        $errors = DateTime::getLastErrors();
+        return $date && (!$errors || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))
+            && $date->format('Y-m-d') === $fecha && $fecha >= date('Y-m-d');
+    }
+
     private function getDbErrorMessage($defaultMessage, $operation, $error = null) {
         $error = $error ?? ($this->db->error ?? "");
         if (empty($error)) {
@@ -74,11 +81,12 @@ class IncidenciaController {
 
         $fechaApertura = DateTime::createFromFormat('!Y-m-d', $fch_apert);
         $erroresFecha = DateTime::getLastErrors();
-        $fechaValida = $fechaApertura && (!$erroresFecha || ($erroresFecha['warning_count'] === 0 && $erroresFecha['error_count'] === 0)) && $fechaApertura->format('Y-m-d') === $fch_apert && $fch_apert <= date('Y-m-d');
+        $fechaValida = $fechaApertura && (!$erroresFecha || ($erroresFecha['warning_count'] === 0 && $erroresFecha['error_count'] === 0)) && $fechaApertura->format('Y-m-d') === $fch_apert && $fch_apert >= date('Y-m-d');
+        $fechaResolucionValida = $fch_resol === "" || $this->fechaValidaDesdeHoy($fch_resol);
         $coordenadasVacias = $lat === "" && $lng === "";
         $coordenadasValidas = $coordenadasVacias || (is_numeric($lat) && is_numeric($lng) && (float) $lat >= -90 && (float) $lat <= 90 && (float) $lng >= -180 && (float) $lng <= 180);
 
-        if ((int) $id_contdor > 0 && in_array($tipo, ["rotura", "desborde", "falta de recoleccion", "otro"], true) && in_array($estado, ["abierta", "en curso", "resuelta"], true) && $fechaValida && $coordenadasValidas) {
+        if ((int) $id_contdor > 0 && in_array($tipo, ["rotura", "desborde", "falta de recoleccion", "otro"], true) && in_array($estado, ["abierta", "en curso", "resuelta"], true) && $fechaValida && $fechaResolucionValida && $coordenadasValidas) {
             $this->incidencia->id_contdor = (int) $id_contdor;
             $this->incidencia->tipo = $tipo;
             $this->incidencia->estado = $estado;
@@ -151,6 +159,25 @@ class IncidenciaController {
             return;
         }
         $fch_resol = $estado === "resuelta" ? ($fch_resol !== "" ? $fch_resol : date("Y-m-d")) : "";
+
+        $consultaFechas = $this->db->prepare("SELECT fch_apert, fch_resol FROM `Incidencia` WHERE id_incidencia = ? AND id_contdor = ?");
+        $idIncidenciaInt = (int) $id_incidencia;
+        $idContenedorInt = (int) $id_contdor;
+        $consultaFechas->bind_param("ii", $idIncidenciaInt, $idContenedorInt);
+        $consultaFechas->execute();
+        $resultadoFechas = $consultaFechas->get_result();
+        $fechasActuales = $resultadoFechas ? $resultadoFechas->fetch_assoc() : null;
+        $consultaFechas->close();
+        $fechaAperturaValida = $this->fechaValidaDesdeHoy($fch_apert)
+            || ($fechasActuales && $fch_apert === $fechasActuales["fch_apert"]);
+        $fechaResolucionValida = $fch_resol === ""
+            || $this->fechaValidaDesdeHoy($fch_resol)
+            || ($fechasActuales && $fch_resol === $fechasActuales["fch_resol"]);
+        if (!$fechaAperturaValida || !$fechaResolucionValida) {
+            http_response_code(400);
+            echo json_encode(["message" => "Las fechas nuevas no pueden ser anteriores al día de hoy."]);
+            return;
+        }
 
         // En una edición, una coordenada faltante no debe impedir cambiar
         // otros datos de una incidencia existente. Cada valor presente sí

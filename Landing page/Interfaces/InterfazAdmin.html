@@ -156,7 +156,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>CI</th>
+                        <th>Cédula</th>
                         <th>Email</th>
                         <th>Nombre</th>
                         <th>Rol</th>
@@ -381,6 +381,11 @@
             return `<select class="select-editable" onchange="cambiarEstado(${usuario.cedula}, this.value)">${opciones}</select>`;
         }
 
+        function mostrarCedula(cedula) {
+            const digitos = String(cedula ?? '').replace(/\D/g, '');
+            return digitos ? digitos.padStart(8, '0') : '';
+        }
+
         function mostrarMensaje(texto, color = '#1f3c88') {
             mensaje.textContent = texto;
             mensaje.style.color = color;
@@ -523,7 +528,7 @@
                         : `<td><button type="button" class="danger" onclick="eliminarUsuario(${usuario.cedula})">Eliminar</button></td>`;
 
                     fila.innerHTML = `
-                        <td>${usuario.cedula || ''}</td>
+                        <td>${mostrarCedula(usuario.cedula)}</td>
                         <td>${usuario.email || ''}</td>
                         <td>${(usuario.PrNom || '') + ' ' + (usuario.PrApel || '')}</td>
                         <td>${crearSelectRol(usuario)}</td>
@@ -817,6 +822,9 @@
             const contenedor = document.getElementById(cfg.contenedorId);
             const deleteCampos = cfg.deleteCampos || cfg.campos.filter(c => c.pk).map(c => c.nombre);
             const permitirEditar = cfg.permitirEditar !== false;
+            const ahoraLocal = new Date();
+            ahoraLocal.setMinutes(ahoraLocal.getMinutes() - ahoraLocal.getTimezoneOffset());
+            const fechaMinima = ahoraLocal.toISOString().slice(0, 10);
             let cache = [];
             let promesaUbicacion = Promise.resolve();
 
@@ -860,7 +868,7 @@
                 <div class="campo">
                     <label for="${cfg.contenedorId}-${c.nombre}">${c.etiqueta}${c.opcional ? ' (opcional)' : ''}</label>
                     <input type="${c.tipo === 'numero' ? 'number' : (c.tipo === 'fecha' ? 'date' : (c.tipo === 'email' ? 'email' : 'text'))}"
-                           id="${cfg.contenedorId}-${c.nombre}" ${c.opcional ? '' : 'required'}
+                           id="${cfg.contenedorId}-${c.nombre}" ${c.tipo === 'fecha' ? `min="${fechaMinima}"` : ''} ${c.opcional ? '' : 'required'}
                            ${c.tipo === 'numero' ? atributosNumericos(c) : ''}>
                 </div>`;
             }).join('');
@@ -915,7 +923,7 @@
                 return datos;
             }
 
-            function validarCamposRequeridos(datos, exigirCoordenadasCompletas = true) {
+            function validarCamposRequeridos(datos, exigirCoordenadasCompletas = true, registroOriginal = null) {
                 const faltantes = [];
                 cfg.campos.forEach(c => {
                     if (esCampoAutogenerado(c)) {
@@ -957,6 +965,9 @@
                     }
                     if (c.tipo === 'fecha' && Number.isNaN(Date.parse(valor))) {
                         throw new Error('El campo "' + c.etiqueta + '" tiene una fecha inválida.');
+                    }
+                    if (c.tipo === 'fecha' && valor < fechaMinima && (!registroOriginal || valor !== String(registroOriginal[c.nombre] ?? ''))) {
+                        throw new Error(`El campo "${c.etiqueta}" no puede ser anterior al día de hoy.`);
                     }
                     if (c.nombre.toLowerCase().includes('matricula')) {
                         const matricula = valor.toUpperCase();
@@ -1038,7 +1049,7 @@
                     }
 
                     const tipoInput = c.tipo === 'numero' ? 'number' : (c.tipo === 'fecha' ? 'date' : (c.tipo === 'email' ? 'email' : 'text'));
-                    return `<td><input class="input-edit" type="${tipoInput}" ${c.tipo === 'numero' ? atributosNumericos(c) : ''} ${soloLectura}
+                    return `<td><input class="input-edit" type="${tipoInput}" ${c.tipo === 'numero' ? atributosNumericos(c) : ''} ${c.tipo === 'fecha' ? `min="${fechaMinima}"` : ''} ${soloLectura}
                         data-campo="${c.nombre}" value="${valorActual}"></td>`;
                 }).join('');
                 fila.innerHTML = `${celdas}<td>
@@ -1100,7 +1111,7 @@
                 try {
                     // Las incidencias antiguas pueden tener una sola coordenada;
                     // eso no debe bloquear la edición de sus otros campos.
-                    validarCamposRequeridos(datos, cfg.accion !== 'incidencias');
+                    validarCamposRequeridos(datos, cfg.accion !== 'incidencias', cache[indice]);
                     const response = await fetch(`${cfg.apiUrl}?accion=${cfg.accion}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -1401,6 +1412,7 @@
         const inputAsigFecha = document.getElementById('asigFecha');
 
         const hoy = new Date();
+        hoy.setMinutes(hoy.getMinutes() - hoy.getTimezoneOffset());
         const fechaHoyISO = hoy.toISOString().split('T')[0];
         inputAsigFecha.min = fechaHoyISO;
 
@@ -1440,6 +1452,10 @@
 
             if (!id_ruta || !matricula || !fech) {
                 mostrarMensajeAsignacion('Completá la ruta, la matrícula y la fecha.', 'red');
+                return;
+            }
+            if (fech < fechaHoyISO) {
+                mostrarMensajeAsignacion('La fecha no puede ser anterior al día de hoy.', 'red');
                 return;
             }
 

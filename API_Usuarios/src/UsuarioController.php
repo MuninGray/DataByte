@@ -522,7 +522,7 @@ class UsuarioController {
     }
 
     public function usuarioActual() {
-        if (empty($_SESSION['usuario']['cedula'])) {
+        if (!isset($_SESSION['usuario']['cedula']) || !ctype_digit((string) $_SESSION['usuario']['cedula'])) {
             http_response_code(401);
             echo json_encode(["message" => "No hay usuario autenticado"]);
             return;
@@ -536,7 +536,7 @@ class UsuarioController {
     }
 
     public function updateMiPerfil() {
-        if (empty($_SESSION['usuario']['cedula'])) {
+        if (!isset($_SESSION['usuario']['cedula']) || !ctype_digit((string) $_SESSION['usuario']['cedula'])) {
             http_response_code(401);
             echo json_encode(["message" => "La sesión expiró. Iniciá sesión nuevamente."]);
             return;
@@ -701,10 +701,29 @@ class UsuarioController {
             return;
         }
 
-        $cedulaDigits = preg_replace('/\D+/', '', $cedula);
-        if ($cedula === "" || strlen($cedulaDigits) < 8) {
+        // La columna cedula es INT: una entrada como "00000000" se almacena
+        // como 0. Se valida que sea numérica y que exista como usuario, sin
+        // volver a exigir el largo original que la base ya no conserva.
+        if ($cedula === "" || !ctype_digit($cedula)) {
             http_response_code(400);
-            echo json_encode(["message" => "La cédula del usuario es obligatoria y debe tener al menos 8 dígitos."]);
+            echo json_encode(["message" => "No se recibió una cédula válida para el usuario seleccionado."]);
+            return;
+        }
+        $cedulaNumerica = (int) $cedula;
+        $usuarioExiste = $this->db->prepare("SELECT 1 FROM `Usuario` WHERE cedula = ? LIMIT 1");
+        if (!$usuarioExiste) {
+            http_response_code(503);
+            echo json_encode(["message" => "No se pudo comprobar el usuario seleccionado."]);
+            return;
+        }
+        $usuarioExiste->bind_param("i", $cedulaNumerica);
+        $usuarioExiste->execute();
+        $resultadoUsuario = $usuarioExiste->get_result();
+        $existeUsuario = $resultadoUsuario && $resultadoUsuario->num_rows > 0;
+        $usuarioExiste->close();
+        if (!$existeUsuario) {
+            http_response_code(404);
+            echo json_encode(["message" => "El usuario seleccionado ya no existe."]);
             return;
         }
 
@@ -726,7 +745,7 @@ class UsuarioController {
             return;
         }
 
-        $this->usuario->cedula = (int) $cedula;
+        $this->usuario->cedula = $cedulaNumerica;
         $this->usuario->rol = $rolNormalizado;
         $this->usuario->codigo = $codigo;
         $this->usuario->nom_cuadrilla = $nom_cuadrilla;
