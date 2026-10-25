@@ -29,6 +29,13 @@
             .catch(() => redirigirLogin());
         })();
     </script>
+    <div class="page-language-switch" aria-label="Idioma">
+        <span class="profile-language-label">Idioma</span>
+        <div class="language-switch">
+            <button type="button" data-language="es" aria-pressed="true">Español</button>
+            <button type="button" data-language="en" aria-pressed="false">English</button>
+        </div>
+    </div>
     <div class="container">
         <h1>Panel del operario de establecimiento</h1>
         <p>Podés registrar las descargas de residuos que ingresan al establecimiento (peso y hora de recepción) y consultar la capacidad del establecimiento y la maquinaria disponible. No tenés acceso a la gestión de rutas, de usuarios ni de incidencias.</p>
@@ -375,5 +382,6 @@
         consultarMaquinaria();
     </script>
     <script src="InterfazComun.js"></script>
+    <script src="InterfazIdiomaEstablecimiento.js"></script>
 </body>
 </html>

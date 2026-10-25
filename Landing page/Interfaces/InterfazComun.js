@@ -1,5 +1,6 @@
 (function () {
     // Este archivo se comparte entre los cuatro paneles para no repetir el menú de cuenta.
+    window.databyteText = (espanol, ingles) => document.documentElement.lang === 'en' ? ingles : espanol;
     const apiUrl = new URL('../../API_Usuarios/public/index.php', window.location.href).toString();
     document.body.insertAdjacentHTML('afterbegin', `
         <header class="app-header">

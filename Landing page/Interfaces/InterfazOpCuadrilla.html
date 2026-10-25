@@ -29,6 +29,13 @@
             .catch(() => redirigirLogin());
         })();
     </script>
+    <div class="page-language-switch" aria-label="Idioma">
+        <span class="profile-language-label">Idioma</span>
+        <div class="language-switch">
+            <button type="button" data-language="es" aria-pressed="true">Español</button>
+            <button type="button" data-language="en" aria-pressed="false">English</button>
+        </div>
+    </div>
     <div class="container">
         <h1>Panel del operario de cuadrilla</h1>
         <p>Podés consultar la ruta asignada, los contenedores a recorrer y las incidencias de tu cuadrilla, actualizar el estado de una incidencia y registrar el recorrido realizado. No tenés acceso a la creación de usuarios ni a la edición de datos maestros (rutas, vehículos, contenedores, establecimientos, cuadrillas).</p>
@@ -564,5 +571,6 @@
         });
     </script>
     <script src="InterfazComun.js"></script>
+    <script src="InterfazIdiomaEstablecimiento.js"></script>
 </body>
 </html>

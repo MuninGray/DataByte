@@ -43,6 +43,13 @@
             });
         })();
     </script>
+    <div class="page-language-switch" aria-label="Idioma">
+        <span class="profile-language-label">Idioma</span>
+        <div class="language-switch">
+            <button type="button" data-language="es" aria-pressed="true">Español</button>
+            <button type="button" data-language="en" aria-pressed="false">English</button>
+        </div>
+    </div>
     <div class="container">
         <h1>Panel de administración</h1>
         <p>Desde aquí el administrador gestiona usuarios, cuadrillas, vehículos, rutas, incidencias, municipios, establecimientos, maquinaria y contenedores.</p>
@@ -559,7 +566,7 @@
                 return;
             }
 
-            if (!confirm('¿Seguro que deseas eliminar este usuario?')) return;
+            if (!confirm(window.databyteText('¿Seguro que deseas eliminar este usuario?', 'Are you sure you want to delete this user?'))) return;
             try {
                 const response = await fetch(API_URL, {
                     method: 'DELETE',
@@ -614,7 +621,7 @@
             // cedula_inspector, cedula, etc. Sin este dato, por ejemplo, no se puede
             // crear luego una cuadrilla con ese inspector (falla la FK).
             if (rolFinal === 'INSPECTOR') {
-                const codigo = prompt('Código de municipio del inspector (A, B, C, CH, D, E, F o G):', usuario.codigo || '');
+                const codigo = prompt(window.databyteText('Código de municipio del inspector (A, B, C, CH, D, E, F o G):', 'Inspector municipality code (A, B, C, CH, D, E, F, or G):'), usuario.codigo || '');
                 if (!codigo || !codigo.trim()) {
                     mostrarMensaje('Se canceló: falta el código de municipio para asignar el rol de inspector.', 'red');
                     consultarUsuarios();
@@ -622,7 +629,7 @@
                 }
                 datos.codigo = codigo.trim().toUpperCase();
             } else if (rolFinal === 'PEON' || rolFinal === 'CHOFER') {
-                const nomCuadrilla = prompt('Nombre de la cuadrilla a la que pertenece este usuario:');
+                const nomCuadrilla = prompt(window.databyteText('Nombre de la cuadrilla a la que pertenece este usuario:', 'Name of the crew this user belongs to:'));
                 if (!nomCuadrilla || !nomCuadrilla.trim()) {
                     mostrarMensaje('Se canceló: falta el nombre de la cuadrilla para asignar el rol.', 'red');
                     consultarUsuarios();
@@ -630,7 +637,7 @@
                 }
                 datos.nom_cuadrilla = nomCuadrilla.trim();
             } else if (rolFinal === 'OPERARIO_ESTABLECIMIENTO') {
-                const idEstabl = prompt('ID del establecimiento al que pertenece este operario:');
+                const idEstabl = prompt(window.databyteText('ID del establecimiento al que pertenece este operario:', 'Facility ID this operator belongs to:'));
                 if (!idEstabl || !idEstabl.trim()) {
                     mostrarMensaje('Se canceló: falta el ID de establecimiento para asignar el rol de operario.', 'red');
                     consultarUsuarios();
@@ -1128,7 +1135,7 @@
             }
 
             async function eliminar(indice) {
-                if (!confirm('¿Seguro que deseas eliminar este registro?')) return;
+                if (!confirm(window.databyteText('¿Seguro que deseas eliminar este registro?', 'Are you sure you want to delete this record?'))) return;
                 const registro = cache[indice];
                 const datos = {};
                 deleteCampos.forEach(nombre => { datos[nombre] = registro[nombre]; });
@@ -1390,7 +1397,7 @@
         window.eliminarAsignacion = async function (indice) {
             const asig = asignacionesCache[indice];
             if (!asig) return;
-            if (!confirm(`¿Eliminar la asignación de la ruta ${asig.id_ruta} al vehículo ${asig.matricula} (${asig.fech})?`)) return;
+            if (!confirm(window.databyteText(`¿Eliminar la asignación de la ruta ${asig.id_ruta} al vehículo ${asig.matricula} (${asig.fech})?`, `Delete the assignment of route ${asig.id_ruta} to vehicle ${asig.matricula} (${asig.fech})?`))) return;
 
             try {
                 const response = await fetch(`${API_RECOLECCION}?accion=eliminarAsignacion`, {
@@ -1481,5 +1488,6 @@
         consultarAsignaciones();
     </script>
     <script src="InterfazComun.js"></script>
+    <script src="InterfazIdiomaEstablecimiento.js"></script>
 </body>
 </html>
