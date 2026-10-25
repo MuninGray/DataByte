@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel | Administrador</title>
     <link rel="stylesheet" href="InterfazAdmin.css">
+    <link rel="stylesheet" href="InterfazComun.css">
 </head>
 <body>
     <script>
@@ -47,6 +48,7 @@
         <p>Desde aquí el administrador gestiona usuarios, cuadrillas, vehículos, rutas, incidencias, municipios, establecimientos, maquinaria y contenedores.</p>
 
         <div class="tabs">
+            <button type="button" class="tab-btn" data-tab="tab-dashboard">Panel de control</button>
             <button type="button" class="tab-btn" data-tab="tab-usuarios">Usuarios</button>
             <button type="button" class="tab-btn" data-tab="tab-cuadrillas">Cuadrillas</button>
             <button type="button" class="tab-btn" data-tab="tab-vehiculos">Vehículos</button>
@@ -57,7 +59,50 @@
             <button type="button" class="tab-btn" data-tab="tab-maquinaria">Maquinaria</button>
             <button type="button" class="tab-btn" data-tab="tab-mantenimientos">Servicios y mantenimientos</button>
             <button type="button" class="tab-btn" data-tab="tab-contenedores">Contenedores</button>
+            <button type="button" class="tab-btn" id="btnAbrirMapa">Mapa interactivo</button>
         </div>
+
+        <section id="tab-dashboard" class="tab-content dashboard" aria-labelledby="dashboardTitle">
+            <div class="dashboard-heading">
+                <div><span class="dashboard-kicker">RESUMEN OPERATIVO</span><h2 id="dashboardTitle">Panel de control</h2><p>Una vista rápida de los recursos y la actividad registrados.</p></div>
+                <div class="dashboard-actions"><span id="dashboardActualizado" class="dashboard-updated">Cargando datos…</span><button type="button" id="btnActualizarDashboard" class="dashboard-refresh">Actualizar</button><button type="button" id="btnMapaDashboard" class="dashboard-map-button">Abrir mapa <span aria-hidden="true">↗</span></button></div>
+            </div>
+            <div id="dashboardAviso" class="dashboard-notice" role="status" hidden></div>
+            <div class="dashboard-kpis">
+                <article class="dashboard-kpi"><span class="kpi-icon kpi-green">▤</span><span class="kpi-label">Contenedores</span><strong id="kpiContenedores">—</strong><small>registrados en el sistema</small></article>
+                <article class="dashboard-kpi"><span class="kpi-icon kpi-orange">!</span><span class="kpi-label">Incidencias abiertas</span><strong id="kpiIncidenciasAbiertas">—</strong><small id="kpiIncidenciasDetalle">incluye casos en curso</small></article>
+                <article class="dashboard-kpi"><span class="kpi-icon kpi-blue">↗</span><span class="kpi-label">Rutas</span><strong id="kpiRutas">—</strong><small>rutas configuradas</small></article>
+                <article class="dashboard-kpi"><span class="kpi-icon kpi-violet">⌂</span><span class="kpi-label">Establecimientos</span><strong id="kpiEstablecimientos">—</strong><small>centros y vertederos</small></article>
+            </div>
+            <div class="dashboard-grid">
+                <article class="dashboard-panel dashboard-incident-panel">
+                    <div class="dashboard-panel-heading"><div><span class="dashboard-kicker">SEGUIMIENTO</span><h3>Estado de incidencias</h3></div><span class="dashboard-tag" id="incidenciasTotal">— total</span></div>
+                    <div class="incident-summary"><div class="incident-ring" id="incidenciasRing"><strong id="incidenciasResueltasPct">—</strong><small>resueltas</small></div><div class="incident-legend"><p><i class="legend-open"></i><span>Abiertas <strong id="incidenciasAbiertas">—</strong></span></p><p><i class="legend-progress"></i><span>En curso <strong id="incidenciasCurso">—</strong></span></p><p><i class="legend-closed"></i><span>Resueltas <strong id="incidenciasResueltas">—</strong></span></p></div></div>
+                    <div class="dashboard-subheading">Incidencias recientes</div><div id="incidenciasRecientes" class="recent-incidents"><p class="dashboard-empty">Cargando incidencias…</p></div>
+                </article>
+                <article class="dashboard-panel dashboard-volume-panel">
+                    <div class="dashboard-panel-heading"><div><span class="dashboard-kicker">RECOLECCIÓN</span><h3>Volumen recolectado</h3></div><span class="dashboard-tag simulated-tag">Datos simulados</span></div>
+                    <div class="volume-total"><strong id="volumenTotal">—</strong><span>kg <small>estimados esta semana</small></span></div>
+                    <div id="volumenChart" class="volume-chart" role="img" aria-label="Gráfico semanal de volumen simulado"></div><div class="chart-days"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
+                    <p class="dashboard-footnote">Estimación demostrativa; el sistema no registra el peso por fecha para calcular una serie histórica real.</p>
+                </article>
+                <article class="dashboard-panel">
+                    <div class="dashboard-panel-heading"><div><span class="dashboard-kicker">ZONAS CRÍTICAS</span><h3>Más incidencias</h3></div></div>
+                    <div id="zonasCriticas" class="critical-zones"><p class="dashboard-empty">Cargando zonas…</p></div>
+                    <p class="dashboard-footnote">Agrupadas por municipio según el código de los contenedores asociados.</p>
+                </article>
+                <article class="dashboard-panel">
+                    <div class="dashboard-panel-heading"><div><span class="dashboard-kicker">CAPACIDAD</span><h3>Centros y vertederos</h3></div></div>
+                    <div id="capacidadEstablecimientos" class="capacity-list"><p class="dashboard-empty">Cargando capacidad…</p></div>
+                    <p class="dashboard-footnote">Se muestra capacidad, tipo de residuo y un escenario ilustrativo de llenado. La proyección no es un pronóstico operativo: requiere un historial de mediciones.</p>
+                </article>
+                <article class="dashboard-panel dashboard-insights-panel">
+                    <div class="dashboard-panel-heading"><div><span class="dashboard-kicker">INDICADORES</span><h3>Operación y reportes</h3></div></div>
+                    <div class="insight-cards"><div><span>Tiempo medio de resolución</span><strong id="tiempoResolucion">—</strong><small>calculado con incidencias resueltas</small></div><div><span>Frecuencia de recolección</span><strong id="frecuenciaRecoleccion">—</strong><small>requiere fechas por recolección</small></div><div><span>Registros de descarga</span><strong id="registrosDescarga">—</strong><small id="pesoDescargado">consultando datos registrados</small></div></div>
+                    <p class="dashboard-footnote">La frecuencia es una referencia estimada; las descargas actuales no guardan fecha, solo hora. La clasificación de residuos se resume en el detalle de capacidad cuando hay tipos informados.</p>
+                </article>
+            </div>
+        </section>
 
         <!-- ===================== USUARIOS ===================== -->
         <div id="tab-usuarios" class="tab-content">
@@ -228,17 +273,34 @@
         const botonesTab = document.querySelectorAll('.tab-btn');
         const contenidosTab = document.querySelectorAll('.tab-content');
 
+        let camposUbicacionActivos = null;
         function activarTab(idTab) {
             contenidosTab.forEach(div => div.hidden = (div.id !== idTab));
             botonesTab.forEach(btn => btn.classList.toggle('activo', btn.dataset.tab === idTab));
         }
 
-        botonesTab.forEach(btn => {
-            btn.addEventListener('click', () => activarTab(btn.dataset.tab));
+        function abrirMapa(modo = 'ver') {
+            const destino = new URL('../../mapa.html', window.location.href);
+            if (modo === 'seleccionar') destino.searchParams.set('modo', 'seleccionar');
+            window.open(destino.toString(), 'databyteMapa');
+        }
+        function abrirSelectorUbicacion(latId, lngId) {
+            camposUbicacionActivos = { latId, lngId };
+            abrirMapa('seleccionar');
+        }
+        window.addEventListener('message', event => {
+            if (event.origin !== window.location.origin || event.data?.type !== 'databyte:coordenadas' || !camposUbicacionActivos) return;
+            document.getElementById(camposUbicacionActivos.latId).value = event.data.lat;
+            document.getElementById(camposUbicacionActivos.lngId).value = event.data.lng;
+            camposUbicacionActivos = null;
         });
 
-        activarTab('tab-usuarios');
-        botonesTab[0].classList.add('activo');
+        botonesTab.forEach(btn => {
+            btn.addEventListener('click', () => btn.id === 'btnAbrirMapa' ? abrirMapa() : activarTab(btn.dataset.tab));
+        });
+
+        activarTab('tab-dashboard');
+        document.querySelector('.tab-btn[data-tab="tab-dashboard"]').classList.add('activo');
 
         // ============================================================
         // USUARIOS (API_Usuarios) - sin cambios respecto a la versión anterior
@@ -625,6 +687,127 @@
         const API_RECOLECCION = new URL('../../API_Recoleccion/public/index.php', window.location.href).toString();
         const API_GESTION = new URL('../../API_Gestion/public/index.php', window.location.href).toString();
 
+        // Panel ejecutivo: consulta las mismas API usadas por los módulos CRUD.
+        const volumenSemanalSimulado = [410, 520, 465, 610, 575, 690, 630];
+        const escaparHTML = valor => String(valor ?? '').replace(/[&<>"']/g, caracter => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[caracter]);
+        async function consultarRegistrosDashboard(api, accion) {
+            const respuesta = await fetch(`${api}?accion=${encodeURIComponent(accion)}`, { headers: { Accept: 'application/json' } });
+            const datos = await respuesta.json().catch(() => ({}));
+            if (!respuesta.ok) throw new Error(datos.message || `No se pudo consultar ${accion}`);
+            return Array.isArray(datos.registros) ? datos.registros : [];
+        }
+
+        function pintarVolumenSimulado() {
+            const total = volumenSemanalSimulado.reduce((suma, valor) => suma + valor, 0);
+            document.getElementById('volumenTotal').textContent = total.toLocaleString('es-UY');
+            document.getElementById('volumenChart').innerHTML = volumenSemanalSimulado.map(valor =>
+                `<span class="volume-bar" style="height:${Math.round(valor / Math.max(...volumenSemanalSimulado) * 100)}%" data-value="${valor}" aria-label="${valor} kilogramos"></span>`
+            ).join('');
+        }
+
+        function pintarIncidenciasDashboard(incidencias) {
+            const abiertas = incidencias.filter(item => String(item.estado).toLowerCase() === 'abierta').length;
+            const enCurso = incidencias.filter(item => String(item.estado).toLowerCase() === 'en curso').length;
+            const resueltas = incidencias.filter(item => String(item.estado).toLowerCase() === 'resuelta').length;
+            const total = incidencias.length;
+            const porcentaje = total ? Math.round(resueltas / total * 100) : 0;
+            document.getElementById('kpiIncidenciasAbiertas').textContent = (abiertas + enCurso).toLocaleString('es-UY');
+            document.getElementById('kpiIncidenciasDetalle').textContent = `${abiertas} abiertas · ${enCurso} en curso`;
+            document.getElementById('incidenciasTotal').textContent = `${total} total`;
+            document.getElementById('incidenciasAbiertas').textContent = abiertas;
+            document.getElementById('incidenciasCurso').textContent = enCurso;
+            document.getElementById('incidenciasResueltas').textContent = resueltas;
+            document.getElementById('incidenciasResueltasPct').textContent = `${porcentaje}%`;
+            document.getElementById('incidenciasRing').style.background = `conic-gradient(#39835a 0 ${porcentaje}%, #f1cfb8 ${porcentaje}% ${Math.min(100, porcentaje + (total ? abiertas / total * 100 : 0))}%, #dce7ef 0)`;
+            const recientes = [...incidencias].sort((a, b) => String(b.fch_apert || '').localeCompare(String(a.fch_apert || ''))).slice(0, 4);
+            document.getElementById('incidenciasRecientes').innerHTML = recientes.length ? recientes.map(item => {
+                const estado = String(item.estado || 'sin estado');
+                const clase = estado === 'resuelta' ? 'status-resuelta' : estado === 'en curso' ? 'status-en-curso' : '';
+                return `<div class="recent-row"><div><strong>Incidencia #${escaparHTML(item.id_incidencia)} · contenedor ${escaparHTML(item.id_contdor)}</strong><small>${escaparHTML(item.tipo)} · ${escaparHTML(item.fch_apert || 'sin fecha')}</small></div><span class="status-chip ${clase}">${escaparHTML(estado)}</span></div>`;
+            }).join('') : '<p class="dashboard-empty">No hay incidencias registradas.</p>';
+            const resueltasConFechas = incidencias.filter(item => item.fch_apert && item.fch_resol && String(item.estado).toLowerCase() === 'resuelta');
+            const duraciones = resueltasConFechas.map(item => (Date.parse(`${item.fch_resol}T00:00:00Z`) - Date.parse(`${item.fch_apert}T00:00:00Z`)) / 86400000).filter(dias => Number.isFinite(dias) && dias >= 0);
+            document.getElementById('tiempoResolucion').textContent = duraciones.length ? `${(duraciones.reduce((a, b) => a + b, 0) / duraciones.length).toFixed(1)} días` : 'Sin datos';
+        }
+
+        function pintarZonasCriticas(incidencias, contenedores, municipios) {
+            const contenedoresPorId = new Map(contenedores.map(item => [String(item.id_contdor), item]));
+            const nombresMunicipio = new Map(municipios.map(item => [String(item.codigo), item.nombre]));
+            const totales = new Map();
+            incidencias.forEach(incidencia => {
+                const contenedor = contenedoresPorId.get(String(incidencia.id_contdor));
+                const codigo = contenedor?.codigo;
+                if (codigo !== undefined && codigo !== null && codigo !== '') {
+                    const clave = String(codigo);
+                    totales.set(clave, (totales.get(clave) || 0) + 1);
+                }
+            });
+            const zonas = [...totales.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const maximo = Math.max(1, ...zonas.map(([, total]) => total));
+            document.getElementById('zonasCriticas').innerHTML = zonas.length ? zonas.map(([codigo, total]) =>
+                `<div class="critical-row"><div><span>${escaparHTML(nombresMunicipio.get(codigo) || `Municipio ${codigo}`)}</span><i class="critical-bar"><i style="width:${Math.round(total / maximo * 100)}%"></i></i></div><span class="critical-count">${total}</span></div>`
+            ).join('') : '<p class="dashboard-empty">Sin datos suficientes para identificar zonas críticas.</p>';
+        }
+
+        function pintarCapacidad(establecimientos) {
+            const ordenados = [...establecimientos].sort((a, b) => {
+                const usoA = Number(a.capac_max) > 0 ? Number(a.capac_actual) / Number(a.capac_max) : 0;
+                const usoB = Number(b.capac_max) > 0 ? Number(b.capac_actual) / Number(b.capac_max) : 0;
+                return usoB - usoA;
+            }).slice(0, 5);
+            document.getElementById('capacidadEstablecimientos').innerHTML = ordenados.length ? ordenados.map(item => {
+                const actual = Number(item.capac_actual) || 0, maxima = Number(item.capac_max) || 0;
+                const porcentaje = maxima > 0 ? Math.min(100, Math.round(actual / maxima * 100)) : 0;
+                const clase = porcentaje >= 80 ? 'capacity-high' : '';
+                const diasEscenario = maxima > actual && maxima > 0 ? Math.ceil((maxima - actual) / (maxima * 0.02)) : 0;
+                const proyeccion = diasEscenario ? `Escenario +2%/día: ≈${diasEscenario} días` : 'Capacidad completa o sin máximo informado';
+                return `<div class="capacity-row"><div class="capacity-main"><strong>${escaparHTML(item.nombre || `Establecimiento ${item.id_establcmto}`)}</strong><small>${escaparHTML(item.tipo || '')} · ${escaparHTML(item.tipo_res || 'residuo sin clasificar')}</small><i class="capacity-track"><i class="${clase}" style="width:${porcentaje}%"></i></i><small>${proyeccion}</small></div><span class="capacity-numbers">${actual.toLocaleString('es-UY')} / ${maxima.toLocaleString('es-UY')}<br>${porcentaje}%</span></div>`;
+            }).join('') : '<p class="dashboard-empty">No hay establecimientos registrados.</p>';
+        }
+
+        async function cargarDashboard() {
+            const boton = document.getElementById('btnActualizarDashboard');
+            const aviso = document.getElementById('dashboardAviso');
+            boton.disabled = true;
+            document.getElementById('dashboardActualizado').textContent = 'Actualizando…';
+            aviso.hidden = true;
+            pintarVolumenSimulado();
+            const consultas = [
+                ['contenedores', () => consultarRegistrosDashboard(API_GESTION, 'contenedores')],
+                ['incidencias', () => consultarRegistrosDashboard(API_RECOLECCION, 'incidencias')],
+                ['rutas', () => consultarRegistrosDashboard(API_RECOLECCION, 'rutas')],
+                ['establecimientos', () => consultarRegistrosDashboard(API_GESTION, 'establecimientos')],
+                ['municipios', () => consultarRegistrosDashboard(API_GESTION, 'municipios')],
+                ['descargas', () => consultarRegistrosDashboard(API_RECOLECCION, 'descargas')]
+            ];
+            const resultados = await Promise.all(consultas.map(async ([nombre, consultar]) => {
+                try { return [nombre, await consultar(), null]; }
+                catch (error) { return [nombre, [], error.message]; }
+            }));
+            const registros = Object.fromEntries(resultados.map(([nombre, filas]) => [nombre, filas]));
+            const errores = resultados.filter(([, , error]) => error).map(([nombre, , error]) => `${nombre}: ${error}`);
+            document.getElementById('kpiContenedores').textContent = registros.contenedores.length.toLocaleString('es-UY');
+            document.getElementById('kpiRutas').textContent = registros.rutas.length.toLocaleString('es-UY');
+            document.getElementById('kpiEstablecimientos').textContent = registros.establecimientos.length.toLocaleString('es-UY');
+            pintarIncidenciasDashboard(registros.incidencias);
+            pintarZonasCriticas(registros.incidencias, registros.contenedores, registros.municipios);
+            pintarCapacidad(registros.establecimientos);
+            const descargas = registros.descargas;
+            const peso = descargas.reduce((suma, item) => suma + (Number(item.peso) || 0), 0);
+            document.getElementById('registrosDescarga').textContent = descargas.length.toLocaleString('es-UY');
+            document.getElementById('pesoDescargado').textContent = descargas.length ? `${peso.toLocaleString('es-UY', { maximumFractionDigits: 2 })} kg registrados (sin serie temporal)` : 'sin pesos registrados';
+            document.getElementById('frecuenciaRecoleccion').textContent = 'No disponible';
+            if (errores.length) {
+                aviso.textContent = `Algunos informes no pudieron actualizarse (${errores.join(' · ')}). Los demás datos se muestran normalmente.`;
+                aviso.hidden = false;
+            }
+            document.getElementById('dashboardActualizado').textContent = `Actualizado ${new Date().toLocaleTimeString('es-UY', { hour: '2-digit', minute: '2-digit' })}`;
+            boton.disabled = false;
+        }
+        document.getElementById('btnActualizarDashboard').addEventListener('click', cargarDashboard);
+        document.getElementById('btnMapaDashboard').addEventListener('click', () => abrirMapa());
+        cargarDashboard();
+
         // cfg = {
         //   contenedorId, apiUrl, accion, campos: [{nombre, etiqueta, tipo, pk, opcional}],
         //   deleteCampos: [nombre,...]  (por defecto: los campos pk),
@@ -635,8 +818,22 @@
             const deleteCampos = cfg.deleteCampos || cfg.campos.filter(c => c.pk).map(c => c.nombre);
             const permitirEditar = cfg.permitirEditar !== false;
             let cache = [];
+            let promesaUbicacion = Promise.resolve();
+
+            function atributosNumericos(campo) {
+                const nombre = String(campo.nombre || '').toLowerCase();
+                const esLatitud = nombre === 'lat';
+                const esLongitud = nombre === 'lng';
+                const minimo = esLatitud ? -90 : (esLongitud ? -180 : (campo.min ?? 0));
+                const maximo = esLatitud ? 90 : (esLongitud ? 180 : (campo.max ?? null));
+                const paso = campo.step ?? (campo.entero === false || esLatitud || esLongitud ? 'any' : '1');
+                return `min="${minimo}" ${maximo === null ? '' : `max="${maximo}"`} step="${paso}"`;
+            }
 
             function esCampoAutogenerado(c) {
+                if (c.visibleEnAlta) {
+                    return false;
+                }
                 const nombre = String(c.nombre || '').toLowerCase();
                 return !!(c.autoIncrement || (c.pk && c.tipo === 'numero' && (nombre.includes('id_') || nombre.includes('codigo'))));
             }
@@ -662,8 +859,9 @@
                 return `
                 <div class="campo">
                     <label for="${cfg.contenedorId}-${c.nombre}">${c.etiqueta}${c.opcional ? ' (opcional)' : ''}</label>
-                    <input type="${c.tipo === 'numero' ? 'number' : (c.tipo === 'fecha' ? 'date' : 'text')}"
-                           id="${cfg.contenedorId}-${c.nombre}" ${c.opcional ? '' : 'required'}>
+                    <input type="${c.tipo === 'numero' ? 'number' : (c.tipo === 'fecha' ? 'date' : (c.tipo === 'email' ? 'email' : 'text'))}"
+                           id="${cfg.contenedorId}-${c.nombre}" ${c.opcional ? '' : 'required'}
+                           ${c.tipo === 'numero' ? atributosNumericos(c) : ''}>
                 </div>`;
             }).join('');
 
@@ -673,6 +871,8 @@
                 <div id="${cfg.contenedorId}-mensaje" class="mensaje"></div>
                 <div class="form-crud">
                     ${inputsHtml}
+                    ${cfg.selectorMapa ? `<button type="button" id="${cfg.contenedorId}-btnUbicacion">Elegir ubicación en el mapa</button>` : ''}
+                    ${cfg.autocompletarUbicacionDe ? `<div class="mensaje" id="${cfg.contenedorId}-mensajeUbicacion" role="status">Ingresá el ID del contenedor para cargar sus coordenadas.</div>` : ''}
                     <button type="button" id="${cfg.contenedorId}-btnCrear">Crear</button>
                 </div>
                 <div class="toolbar">
@@ -715,7 +915,7 @@
                 return datos;
             }
 
-            function validarCamposRequeridos(datos) {
+            function validarCamposRequeridos(datos, exigirCoordenadasCompletas = true) {
                 const faltantes = [];
                 cfg.campos.forEach(c => {
                     if (esCampoAutogenerado(c)) {
@@ -734,24 +934,45 @@
                     if (esCampoAutogenerado(c)) {
                         continue;
                     }
-                    if (!c.opcional && String(datos[c.nombre] ?? '').trim() !== '') {
-                        if (c.tipo === 'numero') {
-                            const numero = Number(datos[c.nombre]);
-                            if (!Number.isFinite(numero) || numero < 0) {
-                                throw new Error('El campo "' + c.etiqueta + '" debe ser un número válido y no negativo.');
-                            }
+                    const valor = String(datos[c.nombre] ?? '').trim();
+                    if (valor === '') continue;
+                    if (c.tipo === 'numero') {
+                        const numero = Number(valor);
+                        const nombre = String(c.nombre || '').toLowerCase();
+                        const esLatitud = nombre === 'lat';
+                        const esLongitud = nombre === 'lng';
+                        const minimo = Number(esLatitud ? -90 : (esLongitud ? -180 : (c.min ?? 0)));
+                        const debeSerEntero = c.entero !== false && !esLatitud && !esLongitud;
+                        if (!Number.isFinite(numero)) {
+                            throw new Error(`El campo "${c.etiqueta}" debe ser un número válido.`);
                         }
-                        if (c.nombre.toLowerCase().includes('fecha') && Number.isNaN(Date.parse(datos[c.nombre]))) {
-                            throw new Error('El campo "' + c.etiqueta + '" tiene una fecha inválida.');
-                        }
-                        if (c.nombre.toLowerCase().includes('matricula')) {
-                            const matricula = String(datos[c.nombre]).trim().toUpperCase();
-                            if (!/^[A-Z]{3}[0-9]{4}$/.test(matricula)) {
-                                throw new Error('La matrícula debe tener 3 letras y 4 números (ejemplo: ABC1234).');
-                            }
-                            datos[c.nombre] = matricula;
+                        if (esLatitud && (numero < -90 || numero > 90)) throw new Error('La latitud debe estar entre -90 y 90.');
+                        if (esLongitud && (numero < -180 || numero > 180)) throw new Error('La longitud debe estar entre -180 y 180.');
+                        if (numero < minimo || (debeSerEntero && !Number.isInteger(numero))) {
+                            throw new Error(`El campo "${c.etiqueta}" debe ser ${debeSerEntero ? 'un número entero' : 'un número'} válido${minimo >= 0 ? ` y mayor o igual a ${minimo}` : ''}.`);
                         }
                     }
+                    if (c.tipo === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)) {
+                        throw new Error(`El campo "${c.etiqueta}" debe tener un correo válido.`);
+                    }
+                    if (c.tipo === 'fecha' && Number.isNaN(Date.parse(valor))) {
+                        throw new Error('El campo "' + c.etiqueta + '" tiene una fecha inválida.');
+                    }
+                    if (c.nombre.toLowerCase().includes('matricula')) {
+                        const matricula = valor.toUpperCase();
+                        if (!/^[A-Z]{3}[0-9]{4}$/.test(matricula)) {
+                            throw new Error('La matrícula debe tener 3 letras y 4 números (ejemplo: ABC1234).');
+                        }
+                        datos[c.nombre] = matricula;
+                    }
+                }
+                const datosConLat = Object.prototype.hasOwnProperty.call(datos, 'lat');
+                const datosConLng = Object.prototype.hasOwnProperty.call(datos, 'lng');
+                if (exigirCoordenadasCompletas && datosConLat && datosConLng && Boolean(String(datos.lat ?? '').trim()) !== Boolean(String(datos.lng ?? '').trim())) {
+                    throw new Error('Ingresá latitud y longitud juntas, o dejá ambas vacías.');
+                }
+                if (datos.capac_actual !== undefined && datos.capac_max !== undefined && Number(datos.capac_actual) > Number(datos.capac_max)) {
+                    throw new Error('La capacidad actual no puede superar la capacidad máxima.');
                 }
             }
 
@@ -807,14 +1028,17 @@
                         const opcionVacia = c.opcional
                             ? `<option value="" ${valorActual === '' ? 'selected' : ''}>Sin especificar</option>`
                             : '';
+                        const opcionActual = (c.opciones || []).includes(valorActual)
+                            ? ''
+                            : `<option value="${valorActual}" selected>${valorActual}</option>`;
                         const opciones = (c.opciones || []).map(op =>
                             `<option value="${op}" ${valorActual === op ? 'selected' : ''}>${op}</option>`
                         ).join('');
-                        return `<td><select class="input-edit" data-campo="${c.nombre}">${opcionVacia}${opciones}</select></td>`;
+                        return `<td><select class="input-edit" data-campo="${c.nombre}">${opcionVacia}${opcionActual}${opciones}</select></td>`;
                     }
 
-                    const tipoInput = c.tipo === 'numero' ? 'number' : (c.tipo === 'fecha' ? 'date' : 'text');
-                    return `<td><input class="input-edit" type="${tipoInput}" ${soloLectura}
+                    const tipoInput = c.tipo === 'numero' ? 'number' : (c.tipo === 'fecha' ? 'date' : (c.tipo === 'email' ? 'email' : 'text'));
+                    return `<td><input class="input-edit" type="${tipoInput}" ${c.tipo === 'numero' ? atributosNumericos(c) : ''} ${soloLectura}
                         data-campo="${c.nombre}" value="${valorActual}"></td>`;
                 }).join('');
                 fila.innerHTML = `${celdas}<td>
@@ -835,8 +1059,9 @@
             }
 
             async function crear() {
-                const datos = leerInputsAlta();
                 try {
+                    if (cfg.autocompletarUbicacionDe) await promesaUbicacion;
+                    const datos = leerInputsAlta();
                     validarCamposRequeridos(datos);
 
                     if (registroDuplicado(datos)) {
@@ -873,7 +1098,9 @@
                 });
 
                 try {
-                    validarCamposRequeridos(datos);
+                    // Las incidencias antiguas pueden tener una sola coordenada;
+                    // eso no debe bloquear la edición de sus otros campos.
+                    validarCamposRequeridos(datos, cfg.accion !== 'incidencias');
                     const response = await fetch(`${cfg.apiUrl}?accion=${cfg.accion}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -912,6 +1139,46 @@
 
             document.getElementById(`${cfg.contenedorId}-btnCrear`).addEventListener('click', crear);
             document.getElementById(`${cfg.contenedorId}-btnRecargar`).addEventListener('click', consultar);
+            if (cfg.selectorMapa) {
+                document.getElementById(`${cfg.contenedorId}-btnUbicacion`).addEventListener('click', () =>
+                    abrirSelectorUbicacion(`${cfg.contenedorId}-lat`, `${cfg.contenedorId}-lng`));
+            }
+            if (cfg.autocompletarUbicacionDe) {
+                const inputIdContenedor = document.getElementById(`${cfg.contenedorId}-${cfg.autocompletarUbicacionDe}`);
+                const inputLat = document.getElementById(`${cfg.contenedorId}-lat`);
+                const inputLng = document.getElementById(`${cfg.contenedorId}-lng`);
+                const mensajeUbicacion = document.getElementById(`${cfg.contenedorId}-mensajeUbicacion`);
+                let consultaUbicacion = 0;
+                inputIdContenedor.addEventListener('change', () => {
+                    promesaUbicacion = resolverUbicacionContenedor();
+                });
+                async function resolverUbicacionContenedor() {
+                    const idContenedor = inputIdContenedor.value.trim();
+                    const consultaActual = ++consultaUbicacion;
+                    inputLat.value = '';
+                    inputLng.value = '';
+                    if (!idContenedor) {
+                        mensajeUbicacion.textContent = 'Ingresá el ID del contenedor para cargar sus coordenadas.';
+                        return;
+                    }
+                    mensajeUbicacion.textContent = 'Buscando la ubicación del contenedor…';
+                    try {
+                        const response = await fetch(`${API_GESTION}?accion=contenedores&id_contdor=${encodeURIComponent(idContenedor)}`);
+                        const data = await response.json();
+                        if (consultaActual !== consultaUbicacion) return;
+                        if (!response.ok) throw new Error(data.message || 'No se encontró el contenedor.');
+                        if (data.lat == null || data.lng == null || data.lat === '' || data.lng === '') {
+                            mensajeUbicacion.textContent = 'El contenedor existe, pero no tiene una ubicación guardada.';
+                            return;
+                        }
+                        inputLat.value = data.lat;
+                        inputLng.value = data.lng;
+                        mensajeUbicacion.textContent = 'Latitud y longitud cargadas desde el contenedor.';
+                    } catch (error) {
+                        if (consultaActual === consultaUbicacion) mensajeUbicacion.textContent = error.message;
+                    }
+                }
+            }
 
             window[`__crud_${cfg.contenedorId}`] = {
                 editar: renderFilaEdicion,
@@ -963,17 +1230,19 @@
             contenedorId: 'crud-incidencias',
             apiUrl: API_RECOLECCION,
             accion: 'incidencias',
+            selectorMapa: true,
+            autocompletarUbicacionDe: 'id_contdor',
             campos: [
                 { nombre: 'id_incidencia', etiqueta: 'ID Incidencia', tipo: 'numero', pk: true, autoIncrement: true },
-                { nombre: 'id_contdor', etiqueta: 'ID Contenedor', tipo: 'numero', pk: true, autoIncrement: true },
+                { nombre: 'id_contdor', etiqueta: 'ID Contenedor', tipo: 'numero', pk: true, visibleEnAlta: true },
                 { nombre: 'tipo', etiqueta: 'Tipo', tipo: 'seleccion',
                   opciones: ['rotura', 'desborde', 'falta de recoleccion', 'otro'] },
                 { nombre: 'estado', etiqueta: 'Estado', tipo: 'seleccion',
                   opciones: ['abierta', 'en curso', 'resuelta'] },
                 { nombre: 'fch_apert', etiqueta: 'Fecha apertura', tipo: 'fecha' },
                 { nombre: 'fch_resol', etiqueta: 'Fecha resolución', tipo: 'fecha', opcional: true },
-                { nombre: 'lat', etiqueta: 'Latitud', tipo: 'numero', opcional: true },
-                { nombre: 'lng', etiqueta: 'Longitud', tipo: 'numero', opcional: true },
+                { nombre: 'lat', etiqueta: 'Latitud', tipo: 'numero', min: -90, entero: false, opcional: true },
+                { nombre: 'lng', etiqueta: 'Longitud', tipo: 'numero', min: -180, entero: false, opcional: true },
                 { nombre: 'nom_cuadrilla', etiqueta: 'Cuadrilla asignada', opcional: true }
             ]
         });
@@ -995,6 +1264,7 @@
             contenedorId: 'crud-establecimientos',
             apiUrl: API_GESTION,
             accion: 'establecimientos',
+            selectorMapa: true,
             campos: [
                 { nombre: 'id_establcmto', etiqueta: 'ID Establecimiento', tipo: 'numero', pk: true, autoIncrement: true },
                 { nombre: 'nombre', etiqueta: 'Nombre' },
@@ -1003,11 +1273,11 @@
                 { nombre: 'esq', etiqueta: 'Esquina' },
                 { nombre: 'tipo', etiqueta: 'Tipo', tipo: 'seleccion',
                   opciones: ['vertedero', 'centro de acopio'] },
-                { nombre: 'capac_actual', etiqueta: 'Capacidad actual', tipo: 'numero' },
-                { nombre: 'capac_max', etiqueta: 'Capacidad máxima', tipo: 'numero' },
+                { nombre: 'capac_actual', etiqueta: 'Capacidad actual', tipo: 'numero', entero: false },
+                { nombre: 'capac_max', etiqueta: 'Capacidad máxima', tipo: 'numero', min: 0.01, entero: false },
                 { nombre: 'tipo_res', etiqueta: 'Tipo de residuo' },
-                { nombre: 'lat', etiqueta: 'Latitud', tipo: 'numero', opcional: true },
-                { nombre: 'lng', etiqueta: 'Longitud', tipo: 'numero', opcional: true }
+                { nombre: 'lat', etiqueta: 'Latitud', tipo: 'numero', min: -90, max: 90, entero: false, opcional: true },
+                { nombre: 'lng', etiqueta: 'Longitud', tipo: 'numero', min: -180, max: 180, entero: false, opcional: true }
             ]
         });
 
@@ -1021,8 +1291,8 @@
                 { nombre: 'nombre', etiqueta: 'Nombre' },
                 { nombre: 'en_uso', etiqueta: 'En uso', tipo: 'seleccion',
                   opciones: ['desplegado', 'en_stock'] },
-                { nombre: 'id_establcmto', etiqueta: 'ID Establecimiento', tipo: 'numero' },
-                { nombre: 'id_serv', etiqueta: 'ID Servicio', tipo: 'numero' }
+                { nombre: 'id_establcmto', etiqueta: 'ID Establecimiento', tipo: 'numero', min: 1 },
+                { nombre: 'id_serv', etiqueta: 'ID Servicio', tipo: 'numero', min: 1 }
             ]
         });
 
@@ -1034,10 +1304,10 @@
             campos: [
                 { nombre: 'id_serv', etiqueta: 'ID Servicio', tipo: 'numero', pk: true, autoIncrement: true },
                 { nombre: 'estado', etiqueta: 'Estado', tipo: 'seleccion',
-                  opciones: ['pendiente', 'en_curso', 'finalizado'] },
+                  opciones: ['en_curso', 'finalizado'] },
                 { nombre: 'fecha', etiqueta: 'Fecha', tipo: 'fecha' },
                 { nombre: 'tipo', etiqueta: 'Tipo', tipo: 'seleccion',
-                  opciones: ['preventivo', 'correctivo', 'otro'] }
+                  opciones: ['pendiente', 'preventivo', 'correctivo', 'otro'] }
             ]
         });
 
@@ -1046,6 +1316,7 @@
             contenedorId: 'crud-contenedores',
             apiUrl: API_GESTION,
             accion: 'contenedores',
+            selectorMapa: true,
             campos: [
                 { nombre: 'id_contdor', etiqueta: 'ID Contenedor', tipo: 'numero', pk: true, autoIncrement: true },
                 { nombre: 'estado_optivo', etiqueta: 'Estado operativo', tipo: 'seleccion',
@@ -1058,9 +1329,9 @@
                 { nombre: 'calle', etiqueta: 'Calle' },
                 { nombre: 'codigo', etiqueta: 'Código municipio' },
                 { nombre: 'matricula', etiqueta: 'Matrícula vehículo', opcional: true },
-                { nombre: 'id_ruta', etiqueta: 'ID Ruta', tipo: 'numero', opcional: true },
-                { nombre: 'lat', etiqueta: 'Latitud', tipo: 'numero', opcional: true },
-                { nombre: 'lng', etiqueta: 'Longitud', tipo: 'numero', opcional: true }
+                { nombre: 'id_ruta', etiqueta: 'ID Ruta', tipo: 'numero', min: 1, opcional: true },
+                { nombre: 'lat', etiqueta: 'Latitud', tipo: 'numero', min: -90, max: 90, entero: false, opcional: true },
+                { nombre: 'lng', etiqueta: 'Longitud', tipo: 'numero', min: -180, max: 180, entero: false, opcional: true }
             ]
         });
 
@@ -1193,5 +1464,6 @@
         document.getElementById('btnConsultarAsignaciones').addEventListener('click', consultarAsignaciones);
         consultarAsignaciones();
     </script>
+    <script src="InterfazComun.js"></script>
 </body>
 </html>

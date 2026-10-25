@@ -1,0 +1,64 @@
+body {
+    background: linear-gradient(180deg, #eaf1ff 0, #f4f7fc 260px, #f4f7fc 100%);
+}
+
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 500;
+    width: 100%;
+    background: rgba(255, 255, 255, .96);
+    border-bottom: 1px solid #dce5f2;
+    box-shadow: 0 3px 14px rgba(23, 48, 92, .08);
+    backdrop-filter: blur(10px);
+}
+
+.app-header-inner {
+    max-width: 1440px;
+    min-height: 72px;
+    margin: 0 auto;
+    padding: 10px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.app-brand { display: inline-flex; align-items: center; gap: 12px; color: #17366f; font-size: 20px; font-weight: 800; text-decoration: none; letter-spacing: .2px; }
+.app-brand img { width: 48px; height: 48px; object-fit: contain; }
+.profile-control { position: relative; }
+.profile-trigger { display: inline-flex; align-items: center; gap: 10px; min-height: 46px; padding: 6px 12px 6px 7px; border: 1px solid #d8e1ef; border-radius: 999px; background: #fff; color: #20385f; font-weight: 700; }
+.profile-logo { display: block; width: 38px; height: 38px; object-fit: contain; }
+.profile-menu { position: absolute; top: calc(100% + 9px); right: 0; z-index: 510; width: 230px; padding: 7px; border: 1px solid #dce5f2; border-radius: 12px; background: #fff; box-shadow: 0 12px 30px rgba(19, 42, 82, .18); }
+.profile-menu[hidden] { display: none; }
+.profile-menu button { width: 100%; padding: 11px 12px; text-align: left; color: #20385f; background: transparent; border-radius: 8px; }
+.profile-menu button:hover { background: #eef3fc; }
+.profile-menu button:last-child { color: #a52828; }
+.perfil-dialog { width: min(560px, calc(100vw - 28px)); max-width: none; max-height: 92vh; overflow-y: auto; padding: 0; border: 0; border-radius: 18px; box-shadow: 0 22px 70px rgba(15, 34, 72, .28); color: #23395b; }
+.perfil-dialog::backdrop { background: rgba(12, 27, 55, .52); backdrop-filter: blur(2px); }
+.perfil-header { padding: 20px 24px; color: #fff; background: linear-gradient(120deg, #193875, #3165bd); }
+.perfil-header h2 { margin: 0; color: inherit; }
+.perfil-form { display: grid; gap: 14px; padding: 22px 24px 24px; }
+.perfil-form .campo { display: flex; flex-direction: column; gap: 6px; }
+.perfil-form label { font-size: 13px; font-weight: 700; }
+.perfil-form input { box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid #cbd6e5; border-radius: 8px; font: inherit; }
+.perfil-form input[readonly] { background: #f1f4f8; color: #63718a; }
+.perfil-password-title { margin: 6px 0 -4px; padding-top: 10px; border-top: 1px solid #e5eaf1; font-size: 14px; }
+.perfil-message { min-height: 20px; margin: 0; font-size: 14px; font-weight: 700; }
+.perfil-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 2px; }
+.perfil-actions .cancelar { background: #68778f; }
+.container { max-width: 1440px; width: calc(100% - 48px); margin: 28px auto 44px; box-sizing: border-box; }
+h1 { margin-top: 0; font-size: clamp(26px, 3vw, 34px); }
+.tabs { background: rgba(255,255,255,.55); border-radius: 12px 12px 0 0; }
+.tab-content { animation: aparecer .16s ease-out; }
+@keyframes aparecer { from { opacity: .78; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 620px) {
+    .app-header-inner { min-height: 62px; padding: 8px 14px; }
+    .app-brand { font-size: 17px; gap: 8px; }
+    .app-brand img { width: 40px; height: 40px; }
+    .profile-trigger { gap: 7px; padding-right: 9px; }
+    .profile-trigger-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .container { width: calc(100% - 20px); margin: 14px auto 26px; padding: 16px; }
+    .perfil-form { padding: 18px; }
+}

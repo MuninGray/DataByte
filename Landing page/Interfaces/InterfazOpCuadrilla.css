@@ -101,6 +101,23 @@ th {
     display: none;
 }
 
+.mapa-interactivo {
+    display: block;
+    position: relative;
+    left: 50%;
+    width: calc(100vw - 64px);
+    max-width: 1800px;
+    height: calc(100vh - 190px);
+    min-height: 520px;
+    transform: translateX(-50%);
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.mapa-pantalla-completa { position: fixed !important; inset: 0; z-index: 10000; box-sizing: border-box; width: 100vw; height: 100vh; max-width: none; margin: 0; padding: 12px 20px; overflow: hidden; background: #fff; }
+.mapa-pantalla-completa .mapa-interactivo { position: static; left: auto; transform: none; width: 100%; max-width: none; height: calc(100vh - 82px); min-height: 0; }
+@media (max-width: 700px) { .mapa-pantalla-completa { padding: 8px; } .mapa-pantalla-completa .mapa-interactivo { height: calc(100vh - 72px); } }
+
 .form-crud {
     display: flex;
     flex-wrap: wrap;

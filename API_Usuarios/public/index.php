@@ -28,7 +28,9 @@ switch ($method) {
     case "POST":
         $accion = $_GET["accion"] ?? "";
 
-        if ($accion == "login") {
+        if ($accion === "cerrarSesion") {
+            $controller->cerrarSesion();
+        } elseif ($accion == "login") {
             $controller->login();
         } elseif ($accion == "asignarRol") {
             $controller->asignarRol();
@@ -43,7 +45,11 @@ switch ($method) {
         }
         break;
     case "PUT":
-        $controller->update();
+        if (($_GET["accion"] ?? "") === "miPerfil") {
+            $controller->updateMiPerfil();
+        } else {
+            $controller->update();
+        }
         break;
     case "DELETE":
         $controller->delete();

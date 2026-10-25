@@ -39,6 +39,19 @@ class EstablecimientoController {
         return "";
     }
 
+    private function datosEstablecimientoValidos($nombre, $calle, $nmro, $esq, $tipo, $actual, $maximo, $tipoRes, $lat, $lng) {
+        $numero = filter_var($nmro, FILTER_VALIDATE_INT);
+        $coordsVacias = $lat === "" && $lng === "";
+        $coordsValidas = $lat !== "" && $lng !== "" && is_numeric($lat) && is_numeric($lng)
+            && (float)$lat >= -90 && (float)$lat <= 90 && (float)$lng >= -180 && (float)$lng <= 180;
+        return $nombre !== "" && strlen($nombre) <= 50 && $calle !== "" && strlen($calle) <= 100
+            && $numero !== false && $numero > 0 && $esq !== "" && strlen($esq) <= 100
+            && in_array($tipo, ["vertedero", "centro de acopio"], true)
+            && is_numeric($actual) && (float)$actual >= 0 && is_numeric($maximo) && (float)$maximo > 0
+            && (float)$actual <= (float)$maximo && $tipoRes !== "" && strlen($tipoRes) <= 50
+            && ($coordsVacias || $coordsValidas);
+    }
+
     private function getDbErrorMessage($defaultMessage, $operation) {
         $error = $this->db->error ?? "";
         if (empty($error)) {
@@ -70,7 +83,6 @@ class EstablecimientoController {
     // Crear establecimiento.
     public function create() {
         $data = $this->getPayload();
-        $id_establcmto = $this->getInputValue($data, ["id_establcmto"]);
         $nombre = $this->getInputValue($data, ["nombre"]);
         $calle = $this->getInputValue($data, ["calle"]);
         $nmro = $this->getInputValue($data, ["nmro"]);
@@ -82,8 +94,7 @@ class EstablecimientoController {
         $lat = $this->getInputValue($data, ["lat", "latitude"]);
         $lng = $this->getInputValue($data, ["lng", "longitude"]);
 
-        if (!empty($id_establcmto) && !empty($nombre) && !empty($calle) && !empty($nmro) && !empty($esq) && !empty($tipo) && !empty($capac_actual) && !empty($capac_max) && !empty($tipo_res)) {
-            $this->establecimiento->id_establcmto = (int) $id_establcmto;
+        if ($this->datosEstablecimientoValidos($nombre, $calle, $nmro, $esq, $tipo, $capac_actual, $capac_max, $tipo_res, $lat, $lng)) {
             $this->establecimiento->nombre = $nombre;
             $this->establecimiento->calle = $calle;
             $this->establecimiento->nmro = $nmro;
@@ -186,7 +197,7 @@ class EstablecimientoController {
         $lat = $this->getInputValue($data, ["lat", "latitude"]);
         $lng = $this->getInputValue($data, ["lng", "longitude"]);
 
-        if (!empty($id_establcmto) && !empty($nombre) && !empty($calle) && !empty($nmro) && !empty($esq) && !empty($tipo) && !empty($capac_actual) && !empty($capac_max) && !empty($tipo_res)) {
+        if (filter_var($id_establcmto, FILTER_VALIDATE_INT) !== false && (int)$id_establcmto > 0 && $this->datosEstablecimientoValidos($nombre, $calle, $nmro, $esq, $tipo, $capac_actual, $capac_max, $tipo_res, $lat, $lng)) {
             $this->establecimiento->id_establcmto = (int) $id_establcmto;
             $this->establecimiento->nombre = $nombre;
             $this->establecimiento->calle = $calle;

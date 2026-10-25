@@ -33,8 +33,8 @@ class IncidenciaController {
         return "";
     }
 
-    private function getDbErrorMessage($defaultMessage, $operation) {
-        $error = $this->db->error ?? "";
+    private function getDbErrorMessage($defaultMessage, $operation, $error = null) {
+        $error = $error ?? ($this->db->error ?? "");
         if (empty($error)) {
             return $defaultMessage;
         }
@@ -63,7 +63,6 @@ class IncidenciaController {
 
     public function create() {
         $data = $this->getPayload();
-        $id_incidencia = $this->getInputValue($data, ["id_incidencia"]);
         $id_contdor = $this->getInputValue($data, ["id_contdor"]);
         $tipo = $this->getInputValue($data, ["tipo"]);
         $estado = $this->getInputValue($data, ["estado"]);
@@ -73,8 +72,13 @@ class IncidenciaController {
         $lat = $this->getInputValue($data, ["lat", "latitude"]);
         $lng = $this->getInputValue($data, ["lng", "longitude"]);
 
-        if (!empty($id_incidencia) && !empty($id_contdor) && !empty($tipo) && !empty($estado) && !empty($fch_apert)) {
-            $this->incidencia->id_incidencia = (int) $id_incidencia;
+        $fechaApertura = DateTime::createFromFormat('!Y-m-d', $fch_apert);
+        $erroresFecha = DateTime::getLastErrors();
+        $fechaValida = $fechaApertura && (!$erroresFecha || ($erroresFecha['warning_count'] === 0 && $erroresFecha['error_count'] === 0)) && $fechaApertura->format('Y-m-d') === $fch_apert && $fch_apert <= date('Y-m-d');
+        $coordenadasVacias = $lat === "" && $lng === "";
+        $coordenadasValidas = $coordenadasVacias || (is_numeric($lat) && is_numeric($lng) && (float) $lat >= -90 && (float) $lat <= 90 && (float) $lng >= -180 && (float) $lng <= 180);
+
+        if ((int) $id_contdor > 0 && in_array($tipo, ["rotura", "desborde", "falta de recoleccion", "otro"], true) && in_array($estado, ["abierta", "en curso", "resuelta"], true) && $fechaValida && $coordenadasValidas) {
             $this->incidencia->id_contdor = (int) $id_contdor;
             $this->incidencia->tipo = $tipo;
             $this->incidencia->estado = $estado;
@@ -140,7 +144,22 @@ class IncidenciaController {
         $lat = $this->getInputValue($data, ["lat", "latitude"]);
         $lng = $this->getInputValue($data, ["lng", "longitude"]);
 
-        if (!empty($id_incidencia) && !empty($id_contdor) && !empty($tipo) && !empty($estado) && !empty($fch_apert)) {
+        $estadosValidos = ["abierta", "en curso", "resuelta"];
+        if (!in_array($estado, $estadosValidos, true)) {
+            http_response_code(400);
+            echo json_encode(["message" => "Elegí un estado válido: abierta, en curso o resuelta."]);
+            return;
+        }
+        $fch_resol = $estado === "resuelta" ? ($fch_resol !== "" ? $fch_resol : date("Y-m-d")) : "";
+
+        // En una edición, una coordenada faltante no debe impedir cambiar
+        // otros datos de una incidencia existente. Cada valor presente sí
+        // debe respetar el rango geográfico correspondiente.
+        $latitudValida = $lat === "" || (is_numeric($lat) && (float) $lat >= -90 && (float) $lat <= 90);
+        $longitudValida = $lng === "" || (is_numeric($lng) && (float) $lng >= -180 && (float) $lng <= 180);
+        $coordenadasValidas = $latitudValida && $longitudValida;
+
+        if (!empty($id_incidencia) && !empty($id_contdor) && !empty($tipo) && !empty($estado) && !empty($fch_apert) && $coordenadasValidas) {
             $this->incidencia->id_incidencia = (int) $id_incidencia;
             $this->incidencia->id_contdor = (int) $id_contdor;
             $this->incidencia->tipo = $tipo;
@@ -155,9 +174,10 @@ class IncidenciaController {
                 http_response_code(200);
                 echo json_encode(["message" => "Incidencia actualizada exitosamente"]);
             } else {
-                $message = $this->getDbErrorMessage("Incidencia no actualizada", "actualizar");
-                http_response_code(strpos(strtolower($this->db->error ?? ''), 'duplicate') !== false ? 409 : 503);
-                echo json_encode(["message" => $message, "detail" => $this->db->error ?? ""]);
+                $error = $this->incidencia->lastError ?: ($this->db->error ?? "");
+                $message = $this->getDbErrorMessage("Incidencia no actualizada", "actualizar", $error);
+                http_response_code(strpos(strtolower($error), 'duplicate') !== false ? 409 : 503);
+                echo json_encode(["message" => $message, "detail" => $error]);
             }
         } else {
             http_response_code(400);

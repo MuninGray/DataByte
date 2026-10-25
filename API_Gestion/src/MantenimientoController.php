@@ -69,13 +69,11 @@ class MantenimientoController {
 
     public function create() {
         $data = $this->getPayload();
-        $id_serv = $this->getInputValue($data, ["id_serv"]);
         $estado = $this->getInputValue($data, ["estado"]);
         $fecha = $this->getInputValue($data, ["fecha"]);
         $tipo = $this->getInputValue($data, ["tipo"]);
 
-        if (!empty($id_serv) && !empty($estado) && !empty($fecha) && !empty($tipo)) {
-            $this->mantenimiento->id_serv = (int) $id_serv;
+        if (in_array($estado, ["en_curso", "finalizado"], true) && $this->fechaValida($fecha) && in_array($tipo, ["pendiente", "preventivo", "correctivo", "otro"], true)) {
             $this->mantenimiento->estado = $estado;
             $this->mantenimiento->fecha = $fecha;
             $this->mantenimiento->tipo = $tipo;
@@ -148,7 +146,7 @@ class MantenimientoController {
         $fecha = $this->getInputValue($data, ["fecha"]);
         $tipo = $this->getInputValue($data, ["tipo"]);
 
-        if (!empty($id_serv) && !empty($estado) && !empty($fecha) && !empty($tipo)) {
+        if (filter_var($id_serv, FILTER_VALIDATE_INT) !== false && (int)$id_serv > 0 && in_array($estado, ["en_curso", "finalizado"], true) && $this->fechaValida($fecha) && in_array($tipo, ["pendiente", "preventivo", "correctivo", "otro"], true)) {
             $this->mantenimiento->id_serv = (int) $id_serv;
             $this->mantenimiento->estado = $estado;
             $this->mantenimiento->fecha = $fecha;
@@ -173,6 +171,11 @@ class MantenimientoController {
             http_response_code(400);
             echo json_encode(["message" => "Datos incompletos"]);
         }
+    }
+
+    private function fechaValida($fecha) {
+        $date = DateTime::createFromFormat('Y-m-d', $fecha);
+        return $date && $date->format('Y-m-d') === $fecha;
     }
 
     public function delete() {

@@ -70,13 +70,12 @@ class MaquinariaController {
     // Crear maquinaria verificando que exista el establecimiento y el servicio.
     public function create() {
         $data = $this->getPayload();
-        $id_maquinaria = $this->getInputValue($data, ["id_maquinaria"]);
         $nombre = $this->getInputValue($data, ["nombre"]);
         $en_uso = $this->getInputValue($data, ["en_uso"]);
         $id_establcmto = $this->getInputValue($data, ["id_establcmto"]);
         $id_serv = $this->getInputValue($data, ["id_serv"]);
 
-        if (!empty($id_maquinaria) && !empty($nombre) && !empty($en_uso) && !empty($id_establcmto) && !empty($id_serv)) {
+        if ($nombre !== "" && $en_uso !== "" && (int) $id_establcmto > 0 && (int) $id_serv > 0) {
             $checkEst = $this->db->prepare("SELECT id_establcmto FROM `Establecimiento` WHERE id_establcmto = ?");
             $checkEst->bind_param("i", $id_establcmto);
             $checkEst->execute();
@@ -101,7 +100,6 @@ class MaquinariaController {
                 return;
             }
 
-            $this->maquinaria->id_maquinaria = (int) $id_maquinaria;
             $this->maquinaria->nombre = $nombre;
             $this->maquinaria->en_uso = $en_uso;
             $this->maquinaria->id_establcmto = (int) $id_establcmto;

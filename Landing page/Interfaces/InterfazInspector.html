@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel | Inspector municipal</title>
     <link rel="stylesheet" href="InterfazInspector.css">
+    <link rel="stylesheet" href="InterfazComun.css">
 </head>
 <body>
     <script>
@@ -38,6 +39,7 @@
             <button type="button" class="tab-btn" data-tab="tab-rutas">Rutas</button>
             <button type="button" class="tab-btn" data-tab="tab-cuadrillas">Cuadrillas</button>
             <button type="button" class="tab-btn" data-tab="tab-establecimientos">Establecimientos</button>
+            <button type="button" class="tab-btn" id="btnAbrirMapa">Mapa interactivo</button>
         </div>
 
         <!-- ===================== CONTENEDORES (solo consulta, filtrado por municipio) ===================== -->
@@ -77,12 +79,8 @@
             <div id="mensaje-crear-incidencia" class="mensaje"></div>
             <div class="form-crud">
                 <div class="campo">
-                    <label for="inc-id_incidencia">ID Incidencia</label>
-                    <input type="number" id="inc-id_incidencia" required>
-                </div>
-                <div class="campo">
                     <label for="inc-id_contdor">ID Contenedor</label>
-                    <input type="number" id="inc-id_contdor" required>
+                    <input type="number" id="inc-id_contdor" min="1" step="1" required>
                 </div>
                 <div class="campo">
                     <label for="inc-tipo">Tipo</label>
@@ -109,12 +107,14 @@
                 </div>
                 <div class="campo">
                     <label for="inc-lat">Latitud</label>
-                    <input type="number" step="any" id="inc-lat" placeholder="-34.90">
+                    <input type="number" step="any" min="-90" max="90" id="inc-lat" placeholder="-34.90">
                 </div>
                 <div class="campo">
                     <label for="inc-lng">Longitud</label>
-                    <input type="number" step="any" id="inc-lng" placeholder="-56.16">
+                    <input type="number" step="any" min="-180" max="180" id="inc-lng" placeholder="-56.16">
                 </div>
+                <button type="button" id="btnElegirUbicacionIncidencia">Elegir ubicación en el mapa</button>
+                <div id="mensaje-coordenadas-incidencia" class="mensaje" role="status">Al ingresar el ID del contenedor se cargarán sus coordenadas.</div>
                 <div class="campo">
                     <label for="inc-nom_cuadrilla">Cuadrilla (opcional)</label>
                     <input type="text" id="inc-nom_cuadrilla">
@@ -137,7 +137,6 @@
                         <th>Fecha apertura</th>
                         <th>Fecha resolución</th>
                         <th>Cuadrilla</th>
-                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tbody-incidencias"></tbody>
@@ -201,12 +200,64 @@
             botonesTab.forEach(btn => btn.classList.toggle('activo', btn.dataset.tab === idTab));
         }
 
-        botonesTab.forEach(btn => btn.addEventListener('click', () => activarTab(btn.dataset.tab)));
+        function abrirMapa(modo = 'ver') {
+            const destino = new URL('../../mapa.html', window.location.href);
+            if (modo === 'seleccionar') destino.searchParams.set('modo', 'seleccionar');
+            window.open(destino.toString(), 'databyteMapa');
+        }
+        document.getElementById('btnElegirUbicacionIncidencia').addEventListener('click', () => {
+            abrirMapa('seleccionar');
+        });
+        window.addEventListener('message', event => {
+            if (event.origin !== window.location.origin || event.data?.type !== 'databyte:coordenadas') return;
+            document.getElementById('inc-lat').value = event.data.lat;
+            document.getElementById('inc-lng').value = event.data.lng;
+        });
+
+        botonesTab.forEach(btn => btn.addEventListener('click', () => btn.id === 'btnAbrirMapa' ? abrirMapa() : activarTab(btn.dataset.tab)));
         activarTab('tab-contenedores');
         botonesTab[0].classList.add('activo');
 
         const API_RECOLECCION = new URL('../../API_Recoleccion/public/index.php', window.location.href).toString();
         const API_GESTION = new URL('../../API_Gestion/public/index.php', window.location.href).toString();
+        const fechaAperturaInput = document.getElementById('inc-fch_apert');
+        const hoyLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+        fechaAperturaInput.max = hoyLocal;
+        fechaAperturaInput.value = hoyLocal;
+
+        let consultaUbicacionIncidencia = 0;
+        let promesaUbicacionIncidencia = Promise.resolve();
+        document.getElementById('inc-id_contdor').addEventListener('change', event => {
+            promesaUbicacionIncidencia = cargarUbicacionIncidencia(event.target.value.trim());
+        });
+        async function cargarUbicacionIncidencia(idContenedor) {
+            const latitud = document.getElementById('inc-lat');
+            const longitud = document.getElementById('inc-lng');
+            const mensaje = document.getElementById('mensaje-coordenadas-incidencia');
+            const consultaActual = ++consultaUbicacionIncidencia;
+            latitud.value = '';
+            longitud.value = '';
+            if (!idContenedor) {
+                mensaje.textContent = 'Al ingresar el ID del contenedor se cargarán sus coordenadas.';
+                return;
+            }
+            mensaje.textContent = 'Buscando la ubicación del contenedor…';
+            try {
+                const response = await fetch(`${API_GESTION}?accion=contenedores&id_contdor=${encodeURIComponent(idContenedor)}`);
+                const data = await response.json();
+                if (consultaActual !== consultaUbicacionIncidencia) return;
+                if (!response.ok) throw new Error(data.message || 'No se encontró el contenedor.');
+                if (data.lat == null || data.lng == null || data.lat === '' || data.lng === '') {
+                    mensaje.textContent = 'El contenedor existe, pero no tiene una ubicación guardada.';
+                    return;
+                }
+                latitud.value = data.lat;
+                longitud.value = data.lng;
+                mensaje.textContent = 'Latitud y longitud cargadas desde el contenedor.';
+            } catch (error) {
+                if (consultaActual === consultaUbicacionIncidencia) mensaje.textContent = error.message;
+            }
+        }
 
         function mostrarEn(idDiv, texto, color = '#1f3c88') {
             const div = document.getElementById(idDiv);
@@ -345,6 +396,7 @@
         // ============================================================
         // INCIDENCIAS: crear + cambiar estado
         // ============================================================
+        const estadosIncidencia = ['abierta', 'en curso', 'resuelta'];
         let incidenciasCache = [];
         const tbodyIncidencias = document.getElementById('tbody-incidencias');
 
@@ -355,7 +407,7 @@
 
                 if (!response.ok) {
                     incidenciasCache = [];
-                    tbodyIncidencias.innerHTML = `<tr><td colspan="8">${data.message || 'Sin incidencias.'}</td></tr>`;
+                    tbodyIncidencias.innerHTML = `<tr><td colspan="7">${data.message || 'Sin incidencias.'}</td></tr>`;
                     return;
                 }
 
@@ -370,7 +422,7 @@
         function renderIncidencias() {
             tbodyIncidencias.innerHTML = '';
             if (incidenciasCache.length === 0) {
-                tbodyIncidencias.innerHTML = '<tr><td colspan="8">No hay incidencias registradas.</td></tr>';
+                tbodyIncidencias.innerHTML = '<tr><td colspan="7">No hay incidencias registradas.</td></tr>';
                 return;
             }
             incidenciasCache.forEach((inc, indice) => {
@@ -379,19 +431,18 @@
                     <td>${inc.id_incidencia}</td>
                     <td>${inc.id_contdor}</td>
                     <td>${inc.tipo}</td>
-                    <td>${inc.estado}</td>
+                    <td><select class="select-editable" aria-label="Estado de incidencia ${inc.id_incidencia}" onchange="cambiarEstadoIncidencia(${indice}, this.value)">${estadosIncidencia.map(estado => `<option value="${estado}" ${inc.estado === estado ? 'selected' : ''}>${estado}</option>`).join('')}</select></td>
                     <td>${inc.fch_apert ?? ''}</td>
                     <td>${inc.fch_resol ?? ''}</td>
-                    <td>${inc.nom_cuadrilla ?? ''}</td>
-                    <td><button type="button" onclick="cambiarEstadoIncidencia(${indice})">Cambiar estado</button></td>`;
+                    <td>${inc.nom_cuadrilla ?? ''}</td>`;
                 tbodyIncidencias.appendChild(fila);
             });
         }
 
-        window.cambiarEstadoIncidencia = async function (indice) {
+        window.cambiarEstadoIncidencia = async function (indice, nuevoEstado) {
             const inc = incidenciasCache[indice];
-            const nuevoEstado = prompt(`Nuevo estado para la incidencia ${inc.id_incidencia} (actual: "${inc.estado}"):`, inc.estado);
-            if (nuevoEstado === null || nuevoEstado.trim() === '') return;
+            if (!inc || !estadosIncidencia.includes(nuevoEstado)) return;
+            const fchResol = nuevoEstado === 'resuelta' ? (inc.fch_resol || hoyLocal) : '';
 
             try {
                 const response = await fetch(`${API_RECOLECCION}?accion=incidencias`, {
@@ -401,10 +452,12 @@
                         id_incidencia: inc.id_incidencia,
                         id_contdor: inc.id_contdor,
                         tipo: inc.tipo,
-                        estado: nuevoEstado.trim(),
+                        estado: nuevoEstado,
                         fch_apert: inc.fch_apert,
-                        fch_resol: inc.fch_resol ?? '',
-                        nom_cuadrilla: inc.nom_cuadrilla ?? ''
+                        fch_resol: fchResol,
+                        nom_cuadrilla: inc.nom_cuadrilla ?? '',
+                        lat: inc.lat ?? '',
+                        lng: inc.lng ?? ''
                     })
                 });
                 const data = await response.json();
@@ -417,27 +470,35 @@
         };
 
         document.getElementById('btnCrearIncidencia').addEventListener('click', async () => {
-            const datos = {
-                id_incidencia: document.getElementById('inc-id_incidencia').value.trim(),
-                id_contdor: document.getElementById('inc-id_contdor').value.trim(),
-                tipo: document.getElementById('inc-tipo').value.trim(),
-                estado: document.getElementById('inc-estado').value.trim(),
-                fch_apert: document.getElementById('inc-fch_apert').value.trim(),
-                lat: document.getElementById('inc-lat').value.trim(),
-                lng: document.getElementById('inc-lng').value.trim(),
-                nom_cuadrilla: document.getElementById('inc-nom_cuadrilla').value.trim()
-            };
-
             try {
+                await promesaUbicacionIncidencia;
+                const datos = {
+                    id_contdor: document.getElementById('inc-id_contdor').value.trim(),
+                    tipo: document.getElementById('inc-tipo').value.trim(),
+                    estado: document.getElementById('inc-estado').value.trim(),
+                    fch_apert: document.getElementById('inc-fch_apert').value.trim(),
+                    lat: document.getElementById('inc-lat').value.trim(),
+                    lng: document.getElementById('inc-lng').value.trim(),
+                    nom_cuadrilla: document.getElementById('inc-nom_cuadrilla').value.trim()
+                };
+                const idContenedor = Number(datos.id_contdor);
+                if (!Number.isInteger(idContenedor) || idContenedor <= 0) throw new Error('Ingresá un ID de contenedor válido.');
+                if (!datos.tipo || !datos.estado || !datos.fch_apert) throw new Error('Completá tipo, estado y fecha de apertura.');
+                if (datos.fch_apert > hoyLocal) throw new Error('La fecha de apertura no puede ser futura.');
+                const tieneLatitud = datos.lat !== '', tieneLongitud = datos.lng !== '';
+                if (tieneLatitud !== tieneLongitud) throw new Error('Ingresá latitud y longitud juntas.');
+                if (tieneLatitud && (!Number.isFinite(Number(datos.lat)) || Number(datos.lat) < -90 || Number(datos.lat) > 90 || !Number.isFinite(Number(datos.lng)) || Number(datos.lng) < -180 || Number(datos.lng) > 180)) {
+                    throw new Error('Las coordenadas están fuera de rango. Latitud: -90 a 90; longitud: -180 a 180.');
+                }
                 const response = await fetch(`${API_RECOLECCION}?accion=incidencias`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datos)
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo crear la incidencia');
+                    if (!response.ok) throw new Error(data.detail || data.message || 'No se pudo crear la incidencia');
                 mostrarEn('mensaje-crear-incidencia', data.message || 'Incidencia creada correctamente', 'green');
-                ['inc-id_incidencia', 'inc-id_contdor', 'inc-tipo', 'inc-estado', 'inc-fch_apert', 'inc-lat', 'inc-lng', 'inc-nom_cuadrilla']
+                ['inc-id_contdor', 'inc-tipo', 'inc-estado', 'inc-fch_apert', 'inc-lat', 'inc-lng', 'inc-nom_cuadrilla']
                     .forEach(id => { document.getElementById(id).value = ''; });
                 consultarIncidencias();
             } catch (error) {
@@ -448,5 +509,6 @@
         document.getElementById('btnRecargarIncidencias').addEventListener('click', consultarIncidencias);
         consultarIncidencias();
     </script>
+    <script src="InterfazComun.js"></script>
 </body>
 </html>

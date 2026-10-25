@@ -14,18 +14,18 @@ class Incidencia {
     public $nom_cuadrilla;
     public $lat;
     public $lng;
+    public $lastError = "";
 
     public function __construct($db) {
         $this->conn = $db;
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (id_incidencia, id_contdor, tipo, estado, fch_apert, fch_resol, nom_cuadrilla, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (id_contdor, tipo, estado, fch_apert, fch_resol, nom_cuadrilla, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->id_incidencia = (int) $this->id_incidencia;
         $this->id_contdor = (int) $this->id_contdor;
         $this->tipo = htmlspecialchars(strip_tags(trim($this->tipo)));
         $this->estado = htmlspecialchars(strip_tags(trim($this->estado)));
@@ -42,9 +42,10 @@ class Incidencia {
             $this->nom_cuadrilla = null;
         }
 
-        $stmt->bind_param("iissssdd", $this->id_incidencia, $this->id_contdor, $this->tipo, $this->estado, $this->fch_apert, $this->fch_resol, $this->nom_cuadrilla, $this->lat, $this->lng);
+        $stmt->bind_param("isssssdd", $this->id_contdor, $this->tipo, $this->estado, $this->fch_apert, $this->fch_resol, $this->nom_cuadrilla, $this->lat, $this->lng);
 
         if ($stmt->execute()) {
+            $this->id_incidencia = $this->conn->insert_id;
             $stmt->close();
             return true;
         }
@@ -69,9 +70,35 @@ class Incidencia {
     }
 
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET id_contdor = ?, tipo = ?, estado = ?, fch_apert = ?, fch_resol = ?, nom_cuadrilla = ?, lat = ?, lng = ? WHERE id_incidencia = ? AND id_contdor = ?";
+        $this->lastError = "";
+        $consultaTipo = $this->conn->prepare("SELECT tipo FROM `" . $this->table_name . "` WHERE id_incidencia = ? AND id_contdor = ?");
+        if (!$consultaTipo) {
+            $this->lastError = $this->conn->error;
+            return false;
+        }
+        $consultaTipo->bind_param("ii", $this->id_incidencia, $this->id_contdor);
+        if (!$consultaTipo->execute()) {
+            $this->lastError = $consultaTipo->error ?: $this->conn->error;
+            $consultaTipo->close();
+            return false;
+        }
+        $resultadoTipo = $consultaTipo->get_result();
+        $tipoActual = $resultadoTipo ? $resultadoTipo->fetch_assoc() : null;
+        $consultaTipo->close();
+        if (!$tipoActual) {
+            $this->lastError = "No se encontró la incidencia indicada.";
+            return false;
+        }
+
+        $actualizarTipo = (string) $tipoActual["tipo"] !== (string) $this->tipo;
+        $query = $actualizarTipo
+            ? "UPDATE `" . $this->table_name . "` SET id_contdor = ?, tipo = ?, estado = ?, fch_apert = ?, fch_resol = ?, nom_cuadrilla = ?, lat = ?, lng = ? WHERE id_incidencia = ? AND id_contdor = ?"
+            : "UPDATE `" . $this->table_name . "` SET id_contdor = ?, estado = ?, fch_apert = ?, fch_resol = ?, nom_cuadrilla = ?, lat = ?, lng = ? WHERE id_incidencia = ? AND id_contdor = ?";
         $stmt = $this->conn->prepare($query);
-        if (!$stmt) return false;
+        if (!$stmt) {
+            $this->lastError = $this->conn->error;
+            return false;
+        }
 
         $this->id_incidencia = (int) $this->id_incidencia;
         $this->id_contdor = (int) $this->id_contdor;
@@ -90,13 +117,19 @@ class Incidencia {
             $this->nom_cuadrilla = null;
         }
 
-        $stmt->bind_param("iissssddii", $this->id_contdor, $this->tipo, $this->estado, $this->fch_apert, $this->fch_resol, $this->nom_cuadrilla, $this->lat, $this->lng, $this->id_incidencia, $this->id_contdor);
+        if ($actualizarTipo) {
+            $stmt->bind_param("iissssddii", $this->id_contdor, $this->tipo, $this->estado, $this->fch_apert, $this->fch_resol, $this->nom_cuadrilla, $this->lat, $this->lng, $this->id_incidencia, $this->id_contdor);
+        } else {
+            $stmt->bind_param("issssddii", $this->id_contdor, $this->estado, $this->fch_apert, $this->fch_resol, $this->nom_cuadrilla, $this->lat, $this->lng, $this->id_incidencia, $this->id_contdor);
+        }
 
         if ($stmt->execute()) {
             $stmt->close();
             return true;
         }
 
+        $this->lastError = $stmt->error ?: $this->conn->error;
+        $stmt->close();
         return false;
     }
 

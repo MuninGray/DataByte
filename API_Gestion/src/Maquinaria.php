@@ -17,20 +17,20 @@ class Maquinaria {
 
     // Crear maquinaria usando prepared statement.
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (id_maquinaria, nombre, en_uso, id_establcmto, id_serv) VALUES (?, ?, ?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (nombre, en_uso, id_establcmto, id_serv) VALUES (?, ?, ?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->id_maquinaria = (int) $this->id_maquinaria;
         $this->nombre = htmlspecialchars(strip_tags(trim($this->nombre)));
         $this->en_uso = htmlspecialchars(strip_tags(trim($this->en_uso)));
         $this->id_establcmto = (int) $this->id_establcmto;
         $this->id_serv = (int) $this->id_serv;
 
-        $stmt->bind_param("issii", $this->id_maquinaria, $this->nombre, $this->en_uso, $this->id_establcmto, $this->id_serv);
+        $stmt->bind_param("ssii", $this->nombre, $this->en_uso, $this->id_establcmto, $this->id_serv);
 
         if ($stmt->execute()) {
+            $this->id_maquinaria = $this->conn->insert_id;
             $stmt->close();
             return true;
         }

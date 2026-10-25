@@ -22,26 +22,26 @@ class Establecimiento {
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (id_establcmto, nombre, calle, nmro, esq, tipo, capac_actual, capac_max, tipo_res, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (nombre, calle, nmro, esq, tipo, capac_actual, capac_max, tipo_res, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->id_establcmto = (int) $this->id_establcmto;
         $this->nombre = htmlspecialchars(strip_tags(trim($this->nombre)));
         $this->calle = htmlspecialchars(strip_tags(trim($this->calle)));
-        $this->nmro = htmlspecialchars(strip_tags(trim($this->nmro)));
+        $this->nmro = (int) $this->nmro;
         $this->esq = htmlspecialchars(strip_tags(trim($this->esq)));
         $this->tipo = htmlspecialchars(strip_tags(trim($this->tipo)));
-        $this->capac_actual = htmlspecialchars(strip_tags(trim($this->capac_actual)));
-        $this->capac_max = htmlspecialchars(strip_tags(trim($this->capac_max)));
+        $this->capac_actual = (float) $this->capac_actual;
+        $this->capac_max = (float) $this->capac_max;
         $this->tipo_res = htmlspecialchars(strip_tags(trim($this->tipo_res)));
         $this->lat = ($this->lat === null || $this->lat === "") ? null : (float) $this->lat;
         $this->lng = ($this->lng === null || $this->lng === "") ? null : (float) $this->lng;
 
-        $stmt->bind_param("issssssssdd", $this->id_establcmto, $this->nombre, $this->calle, $this->nmro, $this->esq, $this->tipo, $this->capac_actual, $this->capac_max, $this->tipo_res, $this->lat, $this->lng);
+        $stmt->bind_param("ssissddsdd", $this->nombre, $this->calle, $this->nmro, $this->esq, $this->tipo, $this->capac_actual, $this->capac_max, $this->tipo_res, $this->lat, $this->lng);
 
         if ($stmt->execute()) {
+            $this->id_establcmto = $this->conn->insert_id;
             $stmt->close();
             return true;
         }

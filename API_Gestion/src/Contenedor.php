@@ -14,6 +14,7 @@ class Contenedor {
     public $esq;
     public $codigo;
     public $matricula;
+    public $id_ruta;
     public $lat;
     public $lng;
     public $lastError = null;
@@ -23,12 +24,11 @@ class Contenedor {
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (id_contdor, estado_optivo, en_uso, tipo, calle, nmro, esq, codigo, matricula, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (estado_optivo, en_uso, tipo, calle, nmro, esq, codigo, matricula, id_ruta, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->id_contdor = (int) $this->id_contdor;
         $this->estado_optivo = htmlspecialchars(strip_tags(trim($this->estado_optivo)));
         $this->en_uso = !is_null($this->en_uso) ? htmlspecialchars(strip_tags(trim($this->en_uso))) : null;
         $this->tipo = htmlspecialchars(strip_tags(trim($this->tipo)));
@@ -40,9 +40,10 @@ class Contenedor {
         $this->lat = ($this->lat === null || $this->lat === "") ? null : (float) $this->lat;
         $this->lng = ($this->lng === null || $this->lng === "") ? null : (float) $this->lng;
 
-        $stmt->bind_param("isssissssdd", $this->id_contdor, $this->estado_optivo, $this->en_uso, $this->tipo, $this->calle, $this->nmro, $this->esq, $this->codigo, $this->matricula, $this->lat, $this->lng);
+        $stmt->bind_param("ssssisssidd", $this->estado_optivo, $this->en_uso, $this->tipo, $this->calle, $this->nmro, $this->esq, $this->codigo, $this->matricula, $this->id_ruta, $this->lat, $this->lng);
 
         if ($stmt->execute()) {
+            $this->id_contdor = $this->conn->insert_id;
             $stmt->close();
             return true;
         }
@@ -51,7 +52,10 @@ class Contenedor {
     }
 
     public function read() {
-        $query = "SELECT id_contdor, estado_optivo, en_uso, tipo, calle, nmro, esq, codigo, matricula, lat, lng FROM `" . $this->table_name . "`";
+        $query = "SELECT c.id_contdor, c.estado_optivo, c.en_uso, c.tipo, c.calle, c.nmro, c.esq, c.codigo, c.matricula,
+                         COALESCE(c.id_ruta, (SELECT r.id_ruta FROM Ruta r WHERE r.matricula = c.matricula ORDER BY r.id_ruta DESC LIMIT 1)) AS id_ruta,
+                         c.lat, c.lng
+                  FROM `" . $this->table_name . "` c";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -67,7 +71,10 @@ class Contenedor {
     }
 
     public function readOne() {
-        $query = "SELECT id_contdor, estado_optivo, en_uso, tipo, calle, nmro, esq, codigo, matricula, lat, lng FROM `" . $this->table_name . "` WHERE id_contdor = ?";
+        $query = "SELECT c.id_contdor, c.estado_optivo, c.en_uso, c.tipo, c.calle, c.nmro, c.esq, c.codigo, c.matricula,
+                         COALESCE(c.id_ruta, (SELECT r.id_ruta FROM Ruta r WHERE r.matricula = c.matricula ORDER BY r.id_ruta DESC LIMIT 1)) AS id_ruta,
+                         c.lat, c.lng
+                  FROM `" . $this->table_name . "` c WHERE c.id_contdor = ?";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -86,7 +93,7 @@ class Contenedor {
     }
 
     public function update() {
-        $query = "UPDATE `" . $this->table_name . "` SET estado_optivo = ?, en_uso = ?, tipo = ?, calle = ?, nmro = ?, esq = ?, codigo = ?, matricula = ?, lat = ?, lng = ? WHERE id_contdor = ?";
+        $query = "UPDATE `" . $this->table_name . "` SET estado_optivo = ?, en_uso = ?, tipo = ?, calle = ?, nmro = ?, esq = ?, codigo = ?, matricula = ?, id_ruta = ?, lat = ?, lng = ? WHERE id_contdor = ?";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
@@ -102,7 +109,7 @@ class Contenedor {
         $this->lat = ($this->lat === null || $this->lat === "") ? null : (float) $this->lat;
         $this->lng = ($this->lng === null || $this->lng === "") ? null : (float) $this->lng;
 
-        $stmt->bind_param("ssssisssddi", $this->estado_optivo, $this->en_uso, $this->tipo, $this->calle, $this->nmro, $this->esq, $this->codigo, $this->matricula, $this->lat, $this->lng, $this->id_contdor);
+        $stmt->bind_param("ssssisssiddi", $this->estado_optivo, $this->en_uso, $this->tipo, $this->calle, $this->nmro, $this->esq, $this->codigo, $this->matricula, $this->id_ruta, $this->lat, $this->lng, $this->id_contdor);
 
         if ($stmt->execute()) {
             $stmt->close();

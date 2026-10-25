@@ -70,7 +70,6 @@ class ContenedorController {
     // Crear contenedor verificando que exista el municipio.
     public function create() {
         $data = $this->getPayload();
-        $id_contdor = $this->getInputValue($data, ["id_contdor"]);
         $estado_optivo = $this->getInputValue($data, ["estado_optivo"]);
         $en_uso = $this->getInputValue($data, ["en_uso"]);
         $tipo = $this->getInputValue($data, ["tipo"]);
@@ -79,10 +78,15 @@ class ContenedorController {
         $esq = $this->getInputValue($data, ["esq"]);
         $codigo = $this->getInputValue($data, ["codigo"]);
         $matricula = $this->getInputValue($data, ["matricula"]);
+        $id_ruta = $this->getInputValue($data, ["id_ruta"]);
         $lat = $this->getInputValue($data, ["lat", "latitude"]);
         $lng = $this->getInputValue($data, ["lng", "longitude"]);
+        $rutaValida = $id_ruta === "" || (is_numeric($id_ruta) && (int) $id_ruta > 0 && (float) $id_ruta === (float) (int) $id_ruta);
+        $coordenadasVacias = $lat === "" && $lng === "";
+        $coordenadasValidas = $coordenadasVacias || ($lat !== "" && $lng !== "" && is_numeric($lat) && is_numeric($lng)
+            && (float) $lat >= -90 && (float) $lat <= 90 && (float) $lng >= -180 && (float) $lng <= 180);
 
-        if (!empty($id_contdor) && !empty($estado_optivo) && !empty($tipo) && !empty($calle) && !empty($nmro) && !empty($codigo)) {
+        if ($estado_optivo !== "" && $tipo !== "" && $calle !== "" && $nmro !== "" && is_numeric($nmro) && $codigo !== "" && $coordenadasValidas && $rutaValida) {
             $check = $this->db->prepare("SELECT codigo FROM `Municipio` WHERE codigo = ?");
             $check->bind_param("s", $codigo);
             $check->execute();
@@ -95,7 +99,6 @@ class ContenedorController {
                 return;
             }
 
-            $this->contenedor->id_contdor = (int) $id_contdor;
             $this->contenedor->estado_optivo = $estado_optivo;
             $this->contenedor->en_uso = $en_uso !== "" ? $en_uso : null;
             $this->contenedor->tipo = $tipo;
@@ -104,6 +107,7 @@ class ContenedorController {
             $this->contenedor->esq = $esq !== "" ? $esq : null;
             $this->contenedor->codigo = $codigo;
             $this->contenedor->matricula = $matricula !== "" ? $matricula : null;
+            $this->contenedor->id_ruta = $id_ruta !== "" ? (int) $id_ruta : null;
             $this->contenedor->lat = $lat !== "" ? floatval($lat) : null;
             $this->contenedor->lng = $lng !== "" ? floatval($lng) : null;
 
@@ -145,6 +149,7 @@ class ContenedorController {
                     "esq" => $row["esq"],
                     "codigo" => $row["codigo"],
                     "matricula" => $row["matricula"],
+                    "id_ruta" => $row["id_ruta"],
                     "lat" => $row["lat"],
                     "lng" => $row["lng"]
                 ]);
@@ -172,6 +177,7 @@ class ContenedorController {
                     "esq" => $row["esq"],
                     "codigo" => $row["codigo"],
                     "matricula" => $row["matricula"],
+                    "id_ruta" => $row["id_ruta"],
                     "lat" => $row["lat"],
                     "lng" => $row["lng"]
                 ];
@@ -198,10 +204,15 @@ class ContenedorController {
         $esq = $this->getInputValue($data, ["esq"]);
         $codigo = $this->getInputValue($data, ["codigo"]);
         $matricula = $this->getInputValue($data, ["matricula"]);
+        $id_ruta = $this->getInputValue($data, ["id_ruta"]);
         $lat = $this->getInputValue($data, ["lat", "latitude"]);
         $lng = $this->getInputValue($data, ["lng", "longitude"]);
+        $rutaValida = $id_ruta === "" || (is_numeric($id_ruta) && (int) $id_ruta > 0 && (float) $id_ruta === (float) (int) $id_ruta);
+        $coordenadasVacias = $lat === "" && $lng === "";
+        $coordenadasValidas = $coordenadasVacias || ($lat !== "" && $lng !== "" && is_numeric($lat) && is_numeric($lng)
+            && (float) $lat >= -90 && (float) $lat <= 90 && (float) $lng >= -180 && (float) $lng <= 180);
 
-        if (!empty($id_contdor) && !empty($estado_optivo) && !empty($tipo) && !empty($calle) && !empty($nmro) && !empty($codigo)) {
+        if (!empty($id_contdor) && !empty($estado_optivo) && !empty($tipo) && !empty($calle) && !empty($nmro) && !empty($codigo) && $coordenadasValidas && $rutaValida) {
             $check = $this->db->prepare("SELECT codigo FROM `Municipio` WHERE codigo = ?");
             $check->bind_param("s", $codigo);
             $check->execute();
@@ -223,6 +234,7 @@ class ContenedorController {
             $this->contenedor->esq = $esq !== "" ? $esq : null;
             $this->contenedor->codigo = $codigo;
             $this->contenedor->matricula = $matricula !== "" ? $matricula : null;
+            $this->contenedor->id_ruta = $id_ruta !== "" ? (int) $id_ruta : null;
             $this->contenedor->lat = $lat !== "" ? floatval($lat) : null;
             $this->contenedor->lng = $lng !== "" ? floatval($lng) : null;
 

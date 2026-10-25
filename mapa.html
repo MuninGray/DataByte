@@ -1,320 +1,188 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mapa DataByte</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-      body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #f3f6fb;
-      }
-      #map {
-        height: 68vh;
-        width: 100%;
-      }
-      .panel {
-        background: #fff;
-        border-bottom: 1px solid #dfe7f0;
-        padding: 12px 16px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        align-items: end;
-      }
-      .form-wrap {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        min-width: 180px;
-      }
-      label {
-        font-size: 12px;
-        color: #485b67;
-      }
-      input, select, button {
-        padding: 8px 10px;
-        border: 1px solid #cfd9e3;
-        border-radius: 6px;
-        font-size: 14px;
-      }
-      button {
-        background: #1d4ed8;
-        color: white;
-        border: none;
-        cursor: pointer;
-      }
-      .legend {
-        margin-left: auto;
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        color: #495d6d;
-        font-size: 13px;
-      }
-      .dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        display: inline-block;
-      }
-      .green { background: #2e7d32; }
-      .blue { background: #1565c0; }
-      .red { background: #c62828; }
-    </style>
-  </head>
-  <body>
-    <div class="panel">
-      <div class="form-wrap">
-        <label>Formulario</label>
-        <select id="tipoEntidad">
-          <option value="contenedor">Contenedor</option>
-          <option value="establecimiento">Establecimiento</option>
-          <option value="incidencia">Incidencia</option>
-        </select>
-      </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa interactivo | DataByte</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; min-height: 100%; }
+    body { margin: 0; overflow: hidden; font: 14px Arial, sans-serif; color: #23395b; background: #f7f9fc; }
+    .toolbar { min-height: 58px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 12px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+    .toolbar label { display: inline-flex; align-items: center; gap: 6px; }
+    button { padding: 8px 12px; border: 0; border-radius: 7px; background: #1f3c88; color: white; cursor: pointer; }
+    #estado { color: #52647a; }
+    #map { display: block; height: calc(100vh - 66px); min-height: 420px; width: 100%; }
+    .leyenda { margin-left: auto; display: flex; flex-wrap: wrap; gap: 12px; }
+    .punto { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 5px; }
+    .contenedor { background: #2e7d32; } .incidencia { background: #c62828; }
+    .establecimiento { background: #7b1fa2; }
+    .ruta { width: 18px; height: 3px; border-radius: 0; background: #1565c0; vertical-align: middle; }
+    @media (max-width: 600px) { .toolbar { min-height: 0; gap: 9px; padding: 10px; } #map { height: calc(100vh - 112px); min-height: 320px; } .leyenda { margin-left: 0; } }
+  </style>
+</head>
+<body>
+  <div class="toolbar" aria-label="Controles del mapa">
+    <strong id="ayudaSeleccion" hidden>Hacé clic en el mapa para elegir la ubicación.</strong>
+    <label><input type="checkbox" id="verContenedores" checked> Contenedores</label>
+    <label><input type="checkbox" id="verIncidencias" checked> Incidencias</label>
+    <label><input type="checkbox" id="verEstablecimientos" checked> Establecimientos</label>
+    <label><input type="checkbox" id="verRutas" checked> Rutas</label>
+    <button type="button" id="recargar">Actualizar mapa</button>
+    <span id="estado" role="status">Cargando datos…</span>
+    <div class="leyenda" aria-label="Referencias"><span><i class="punto contenedor"></i>Contenedor</span><span><i class="punto incidencia"></i>Incidencia</span><span><i class="punto establecimiento"></i>Establecimiento</span><span><i class="punto ruta"></i>Ruta</span></div>
+  </div>
+  <div id="map" aria-label="Mapa de contenedores, incidencias y rutas"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([-34.90, -56.16], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+    const contenedoresLayer = L.layerGroup().addTo(map);
+    const incidenciasLayer = L.layerGroup().addTo(map);
+    const establecimientosLayer = L.layerGroup().addTo(map);
+    const rutasLayer = L.layerGroup().addTo(map);
+    const modoSeleccion = new URLSearchParams(window.location.search).get('modo') === 'seleccionar';
+    if (modoSeleccion) {
+      document.getElementById('ayudaSeleccion').hidden = false;
+      document.getElementById('ayudaSeleccion').textContent = 'Hacé clic en el mapa para elegir la ubicación.';
+      document.getElementById('recargar').hidden = true;
+    }
+    const API_GESTION = new URL('API_Gestion/public/index.php', document.baseURI).toString();
+    const API_RECOLECCION = new URL('API_Recoleccion/public/index.php', document.baseURI).toString();
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 
-      <div class="form-wrap">
-        <label>ID</label>
-        <input id="idCampo" type="number" placeholder="ID" />
-      </div>
+    async function consultar(url) {
+      const response = await fetch(url, { headers: { Accept: 'application/json' } });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'No se pudieron cargar los datos');
+      return data.registros || [];
+    }
 
-      <div class="form-wrap">
-        <label>Latitud</label>
-        <input id="latCampo" type="number" step="any" placeholder="-34.90" />
-      </div>
+    function coordenada(item) {
+      const lat = Number(item.lat), lng = Number(item.lng);
+      return Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0) ? [lat, lng] : null;
+    }
 
-      <div class="form-wrap">
-        <label>Longitud</label>
-        <input id="lngCampo" type="number" step="any" placeholder="-56.16" />
-      </div>
-
-      <div class="form-wrap">
-        <label>Tipo / Estado</label>
-        <input id="tipoCampo" type="text" placeholder="tipo o estado" />
-      </div>
-
-      <div class="form-wrap">
-        <label>Calle</label>
-        <input id="calleCampo" type="text" placeholder="calle" />
-      </div>
-
-      <div class="form-wrap">
-        <label>Número</label>
-        <input id="numeroCampo" type="number" placeholder="123" />
-      </div>
-
-      <div class="form-wrap">
-        <label>Nombre</label>
-        <input id="nombreCampo" type="text" placeholder="nombre" />
-      </div>
-
-      <button id="btnAgregar">Agregar</button>
-
-      <div class="legend">
-        <span class="legend-item"><span class="dot green"></span>Contenedor</span>
-        <span class="legend-item"><span class="dot blue"></span>Establecimiento</span>
-        <span class="legend-item"><span class="dot red"></span>Incidencia</span>
-      </div>
-    </div>
-
-    <div id="map"></div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-      const map = L.map('map').setView([-34.90, -56.16], 12);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
-
-      const greenIcon = new L.Icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34]
-      });
-
-      const blueIcon = new L.Icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34]
-      });
-
-      const redIcon = new L.Icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34]
-      });
-
-      async function fetchJson(url) {
-        const response = await fetch(url, { headers: { Accept: 'application/json' } });
-        if (!response.ok) {
-          throw new Error('Error al consultar la API');
-        }
-        const data = await response.json();
-        return data.registros || [];
-      }
-
-      function agregarMarcador(lat, lng, icon, popupHtml) {
-        L.marker([lat, lng], { icon }).addTo(map).bindPopup(popupHtml);
-      }
-
-      function dibujarContenedores() {
-        fetchJson('http://localhost/DataByte/API_Gestion/public/index.php?accion=contenedores')
-          .then((items) => {
-            items.forEach((item) => {
-              if (item.lat && item.lng) {
-                agregarMarcador(item.lat, item.lng, greenIcon, `
-                  <strong>Contenedor</strong><br>
-                  ID: ${item.id_contdor}<br>
-                  Estado: ${item.estado_optivo}<br>
-                  Calle: ${item.calle} ${item.nmro}<br>
-                  Tipo: ${item.tipo}
-                `);
-              }
-            });
-          })
-          .catch((error) => console.error('Contenedores:', error));
-      }
-
-      function dibujarEstablecimientos() {
-        fetchJson('http://localhost/DataByte/API_Gestion/public/index.php?accion=establecimientos')
-          .then((items) => {
-            items.forEach((item) => {
-              if (item.lat && item.lng) {
-                agregarMarcador(item.lat, item.lng, blueIcon, `
-                  <strong>Establecimiento</strong><br>
-                  ${item.nombre}<br>
-                  ${item.calle} ${item.nmro}<br>
-                  Tipo: ${item.tipo}
-                `);
-              }
-            });
-          })
-          .catch((error) => console.error('Establecimientos:', error));
-      }
-
-      function dibujarIncidencias() {
-        fetchJson('http://localhost/DataByte/API_Recoleccion/public/index.php?accion=incidencias')
-          .then((items) => {
-            items.forEach((item) => {
-              if (item.lat && item.lng) {
-                agregarMarcador(item.lat, item.lng, redIcon, `
-                  <strong>Incidencia</strong><br>
-                  ID: ${item.id_incidencia}<br>
-                  Contenedor: ${item.id_contdor}<br>
-                  Tipo: ${item.tipo}<br>
-                  Estado: ${item.estado}
-                `);
-              }
-            });
-          })
-          .catch((error) => console.error('Incidencias:', error));
-      }
-
-      async function agregarRegistro() {
-        const entidad = document.getElementById('tipoEntidad').value;
-        const id = document.getElementById('idCampo').value;
-        const lat = document.getElementById('latCampo').value;
-        const lng = document.getElementById('lngCampo').value;
-        const tipo = document.getElementById('tipoCampo').value;
-        const calle = document.getElementById('calleCampo').value;
-        const numero = document.getElementById('numeroCampo').value;
-        const nombre = document.getElementById('nombreCampo').value;
-
-        if (!lat || !lng) {
-          alert('Debes completar latitud y longitud.');
-          return;
-        }
-
-        let payload = {};
-        let url = '';
-
-        if (entidad === 'contenedor') {
-          url = 'http://localhost/DataByte/API_Gestion/public/index.php?accion=contenedores';
-          payload = {
-            id_contdor: id,
-            estado_optivo: tipo || 'funcional',
-            tipo: tipo || 'general',
-            calle: calle || 'Calle sin nombre',
-            nmro: numero || 0,
-            codigo: 'MVD',
-            lat,
-            lng
-          };
-        }
-
-        if (entidad === 'establecimiento') {
-          url = 'http://localhost/DataByte/API_Gestion/public/index.php?accion=establecimientos';
-          payload = {
-            id_establcmto: id,
-            nombre: nombre || 'Establecimiento',
-            calle: calle || 'Calle sin nombre',
-            nmro: numero || 0,
-            esq: 'Sin esquina',
-            tipo: tipo || 'centro de acopio',
-            capac_actual: 0,
-            capac_max: 100,
-            tipo_res: 'domiciliario',
-            lat,
-            lng
-          };
-        }
-
-        if (entidad === 'incidencia') {
-          url = 'http://localhost/DataByte/API_Recoleccion/public/index.php?accion=incidencias';
-          payload = {
-            id_incidencia: id,
-            id_contdor: id || 1,
-            tipo: tipo || 'otro',
-            estado: 'abierta',
-            fch_apert: new Date().toISOString().slice(0, 10),
-            lat,
-            lng
-          };
-        }
-
-        try {
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          const text = await response.text();
-          let result = null;
-          try { result = JSON.parse(text); } catch (e) { result = { message: text }; }
-
-          if (!response.ok) {
-            throw new Error(result.detail || result.message || 'No se pudo crear el registro');
+    async function cargarMapa() {
+      const estado = document.getElementById('estado');
+      estado.textContent = 'Cargando datos…';
+      contenedoresLayer.clearLayers(); incidenciasLayer.clearLayers(); establecimientosLayer.clearLayers(); rutasLayer.clearLayers();
+      const errores = [];
+      const consultarSinInterrumpir = async (url, nombre) => {
+        try { return await consultar(url); }
+        catch (error) { errores.push(`${nombre}: ${error.message}`); return []; }
+      };
+      try {
+        const [contenedores, incidencias, establecimientos, rutas] = await Promise.all([
+          consultarSinInterrumpir(`${API_GESTION}?accion=contenedores`, 'Contenedores'),
+          consultarSinInterrumpir(`${API_RECOLECCION}?accion=incidencias`, 'Incidencias'),
+          consultarSinInterrumpir(`${API_GESTION}?accion=establecimientos`, 'Establecimientos'),
+          consultarSinInterrumpir(`${API_RECOLECCION}?accion=rutas`, 'Rutas')
+        ]);
+        let contenedoresConUbicacion = 0, incidenciasConUbicacion = 0, establecimientosConUbicacion = 0, rutasEnMapa = 0;
+        const puntosVisibles = [];
+        contenedores.forEach(item => {
+          const punto = coordenada(item); if (!punto) return;
+          contenedoresConUbicacion++;
+          puntosVisibles.push(punto);
+          L.circleMarker(punto, { radius: 8, color: '#1b5e20', fillColor: '#43a047', fillOpacity: .9, weight: 2 })
+            .bindPopup(`<strong>Contenedor ${escapeHtml(item.id_contdor)}</strong><br>${escapeHtml(item.tipo)} · ${escapeHtml(item.estado_optivo)}<br>${escapeHtml(item.calle)} ${escapeHtml(item.nmro)}`)
+            .addTo(contenedoresLayer);
+        });
+        incidencias.forEach(item => {
+          const punto = coordenada(item); if (!punto) return;
+          incidenciasConUbicacion++;
+          puntosVisibles.push(punto);
+          L.circleMarker(punto, { radius: 8, color: '#8e0000', fillColor: '#e53935', fillOpacity: .9, weight: 2 })
+            .bindPopup(`<strong>Incidencia ${escapeHtml(item.id_incidencia)}</strong><br>Contenedor: ${escapeHtml(item.id_contdor)}<br>${escapeHtml(item.tipo)} · ${escapeHtml(item.estado)}`)
+            .addTo(incidenciasLayer);
+        });
+        establecimientos.forEach(item => {
+          const punto = coordenada(item); if (!punto) return;
+          establecimientosConUbicacion++;
+          puntosVisibles.push(punto);
+          L.circleMarker(punto, { radius: 9, color: '#4a148c', fillColor: '#9c27b0', fillOpacity: .92, weight: 2 })
+            .bindPopup(`<strong>Establecimiento ${escapeHtml(item.nombre)}</strong><br>${escapeHtml(item.tipo)}<br>${escapeHtml(item.calle)} ${escapeHtml(item.nmro)}`)
+            .addTo(establecimientosLayer);
+        });
+        const ubicacionesPorMatricula = new Map();
+        const ubicacionesPorRuta = new Map();
+        contenedores.forEach(item => {
+          const punto = coordenada(item), matricula = String(item.matricula || '').trim().toUpperCase();
+          if (!punto) return;
+          const parada = { punto, id: item.id_contdor };
+          if (matricula) {
+            if (!ubicacionesPorMatricula.has(matricula)) ubicacionesPorMatricula.set(matricula, []);
+            ubicacionesPorMatricula.get(matricula).push(parada);
           }
-
-          alert(result.message || 'Registro creado correctamente');
-          map.eachLayer((layer) => {
-            if (layer instanceof L.Marker) {
-              layer.remove();
-            }
-          });
-          dibujarContenedores();
-          dibujarEstablecimientos();
-          dibujarIncidencias();
-        } catch (error) {
-          alert(error.message);
-        }
+          if (item.id_ruta !== null && item.id_ruta !== undefined && item.id_ruta !== '') {
+            const idRuta = String(item.id_ruta);
+            if (!ubicacionesPorRuta.has(idRuta)) ubicacionesPorRuta.set(idRuta, []);
+            ubicacionesPorRuta.get(idRuta).push(parada);
+          }
+        });
+        rutas.forEach(ruta => {
+          const matricula = String(ruta.matricula || '').trim().toUpperCase();
+          const paradasRuta = ubicacionesPorRuta.get(String(ruta.id_ruta)) || [];
+          const paradasVehiculo = ubicacionesPorMatricula.get(matricula) || [];
+          const paradas = [...new Map((paradasRuta.length ? paradasRuta : paradasVehiculo).map(parada => [String(parada.id), parada])).values()]
+            .sort((a, b) => Number(a.id) - Number(b.id));
+          if (paradas.length === 0) return;
+          rutasEnMapa++;
+          const popup = `<strong>Ruta ${escapeHtml(ruta.id_ruta)}: ${escapeHtml(ruta.nom)}</strong><br>Vehículo: ${escapeHtml(ruta.matricula)}<br>Contenedores asociados: ${paradas.map(p => escapeHtml(p.id)).join(', ')}`;
+          if (paradas.length > 1) {
+            L.polyline(paradas.map(parada => parada.punto), { color: '#1565c0', weight: 4, opacity: .75 })
+              .bindPopup(popup)
+              .addTo(rutasLayer);
+          } else {
+            L.circleMarker(paradas[0].punto, { radius: 10, color: '#0d47a1', fillColor: '#42a5f5', fillOpacity: .95, weight: 3 })
+              .bindPopup(`${popup}<br>Esta ruta tiene una parada ubicable; agregá otra para ver el recorrido.`)
+              .addTo(rutasLayer);
+          }
+        });
+        if (puntosVisibles.length) map.fitBounds(L.latLngBounds(puntosVisibles), { padding: [24, 24], maxZoom: 15 });
+        estado.textContent = `${contenedoresConUbicacion} contenedores · ${incidenciasConUbicacion} incidencias · ${establecimientosConUbicacion} establecimientos · ${rutasEnMapa} rutas con recorrido ubicable${errores.length ? ` · Aviso: ${errores.join('; ')}` : ''}`;
+      } catch (error) {
+        estado.textContent = `No se pudo actualizar el mapa: ${error.message}`;
       }
+    }
 
-      document.getElementById('btnAgregar').addEventListener('click', agregarRegistro);
-
-      dibujarContenedores();
-      dibujarEstablecimientos();
-      dibujarIncidencias();
-    </script>
-  </body>
+    [['verContenedores', contenedoresLayer], ['verIncidencias', incidenciasLayer], ['verEstablecimientos', establecimientosLayer], ['verRutas', rutasLayer]].forEach(([id, layer]) => {
+      document.getElementById(id).addEventListener('change', event => event.target.checked ? map.addLayer(layer) : map.removeLayer(layer));
+    });
+    document.getElementById('recargar').addEventListener('click', cargarMapa);
+    if (modoSeleccion) {
+      let marcadorSeleccion;
+      map.on('click', event => {
+        const { lat, lng } = event.latlng;
+        if (marcadorSeleccion) map.removeLayer(marcadorSeleccion);
+        marcadorSeleccion = L.circleMarker([lat, lng], { radius: 9, color: '#111827', fillColor: '#facc15', fillOpacity: 1, weight: 3 }).addTo(map);
+        document.getElementById('ayudaSeleccion').textContent = `Ubicación elegida: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        const receptor = window.opener || window.parent;
+        receptor.postMessage({ type: 'databyte:coordenadas', lat: lat.toFixed(6), lng: lng.toFixed(6) }, window.location.origin);
+        if (window.opener) window.close();
+      });
+    }
+    window.addEventListener('resize', () => map.invalidateSize());
+    const ajustarAltoMapa = () => {
+      const altoBarra = document.querySelector('.toolbar').getBoundingClientRect().height;
+      document.getElementById('map').style.height = `${Math.max(280, window.innerHeight - altoBarra)}px`;
+      map.invalidateSize(true);
+    };
+    ajustarAltoMapa();
+    if ('ResizeObserver' in window) new ResizeObserver(ajustarAltoMapa).observe(document.querySelector('.toolbar'));
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) requestAnimationFrame(() => map.invalidateSize(true));
+      }).observe(document.getElementById('map'));
+    }
+    window.addEventListener('message', event => {
+      if (event.data === 'databyte:map-visible' || event.data === 'databyte:picker-visible') {
+        requestAnimationFrame(() => map.invalidateSize(true));
+      }
+    });
+    cargarMapa();
+  </script>
+</body>
 </html>

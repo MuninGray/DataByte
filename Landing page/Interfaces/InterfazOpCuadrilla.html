@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel | Operario de cuadrilla</title>
     <link rel="stylesheet" href="InterfazOpCuadrilla.css">
+    <link rel="stylesheet" href="InterfazComun.css">
 </head>
 <body>
     <script>
@@ -37,6 +38,7 @@
             <button type="button" class="tab-btn" data-tab="tab-contenedores">Contenedores a recorrer</button>
             <button type="button" class="tab-btn" data-tab="tab-incidencias">Incidencias de mi cuadrilla</button>
             <button type="button" class="tab-btn" data-tab="tab-recorrido">Registrar recorrido</button>
+            <button type="button" class="tab-btn" id="btnAbrirMapa">Mapa interactivo</button>
         </div>
 
         <!-- ===================== RUTA ASIGNADA (solo consulta) ===================== -->
@@ -140,11 +142,11 @@
             <div class="form-crud">
                 <div class="campo">
                     <label for="rec-matricula">Matrícula</label>
-                    <input type="text" id="rec-matricula" required>
+                    <input type="text" id="rec-matricula" pattern="[A-Za-z]{3}[0-9]{4}" maxlength="7" title="Formato: 3 letras y 4 números, por ejemplo SBC1234" required>
                 </div>
                 <div class="campo">
                     <label for="rec-id_establcmto">ID Establecimiento</label>
-                    <input type="number" id="rec-id_establcmto" required>
+                    <input type="number" id="rec-id_establcmto" min="1" step="1" required>
                 </div>
                 <div class="campo">
                     <label for="rec-hora">Hora</label>
@@ -152,7 +154,7 @@
                 </div>
                 <div class="campo">
                     <label for="rec-peso">Peso (kg)</label>
-                    <input type="number" step="0.01" id="rec-peso" required>
+                    <input type="number" step="0.01" min="0.01" id="rec-peso" required>
                 </div>
                 <button type="button" id="btnRegistrarRecorrido">Registrar recorrido</button>
             </div>
@@ -181,7 +183,10 @@
             botonesTab.forEach(btn => btn.classList.toggle('activo', btn.dataset.tab === idTab));
         }
 
-        botonesTab.forEach(btn => btn.addEventListener('click', () => activarTab(btn.dataset.tab)));
+        function abrirMapa() {
+            window.open(new URL('../../mapa.html', window.location.href).toString(), 'databyteMapa');
+        }
+        botonesTab.forEach(btn => btn.addEventListener('click', () => btn.id === 'btnAbrirMapa' ? abrirMapa() : activarTab(btn.dataset.tab)));
         activarTab('tab-ruta');
         botonesTab[0].classList.add('activo');
 
@@ -475,7 +480,9 @@
                         estado: nuevoEstado,
                         fch_apert: inc.fch_apert,
                         fch_resol: fchResol,
-                        nom_cuadrilla: inc.nom_cuadrilla ?? ''
+                        nom_cuadrilla: inc.nom_cuadrilla ?? '',
+                        lat: inc.lat ?? '',
+                        lng: inc.lng ?? ''
                     })
                 });
                 const data = await response.json();
@@ -535,6 +542,11 @@
             };
 
             try {
+                if (!/^[A-Z]{3}[0-9]{4}$/.test(datos.matricula.toUpperCase())) throw new Error('La matrícula debe tener 3 letras y 4 números (ejemplo: SBC1234).');
+                if (!Number.isInteger(Number(datos.id_establcmto)) || Number(datos.id_establcmto) <= 0) throw new Error('Ingresá un ID de establecimiento entero y mayor a cero.');
+                if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(datos.hora)) throw new Error('Ingresá una hora válida.');
+                if (!Number.isFinite(Number(datos.peso)) || Number(datos.peso) <= 0) throw new Error('El peso debe ser mayor a cero.');
+                datos.matricula = datos.matricula.toUpperCase();
                 const response = await fetch(`${API_RECOLECCION}?accion=descargas`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -551,5 +563,6 @@
             }
         });
     </script>
+    <script src="InterfazComun.js"></script>
 </body>
 </html>

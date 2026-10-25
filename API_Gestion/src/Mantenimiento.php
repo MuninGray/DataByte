@@ -15,18 +15,18 @@ class Mantenimiento {
     }
 
     public function create() {
-        $query = "INSERT INTO `" . $this->table_name . "` (id_serv, estado, fecha, tipo) VALUES (?, ?, ?, ?)";
+        $query = "INSERT INTO `" . $this->table_name . "` (estado, fecha, tipo) VALUES (?, ?, ?)";
         $stmt = $this->conn->prepare($query);
         if (!$stmt) return false;
 
-        $this->id_serv = (int) $this->id_serv;
         $this->estado = htmlspecialchars(strip_tags(trim($this->estado)));
         $this->fecha = htmlspecialchars(strip_tags(trim($this->fecha)));
         $this->tipo = htmlspecialchars(strip_tags(trim($this->tipo)));
 
-        $stmt->bind_param("isss", $this->id_serv, $this->estado, $this->fecha, $this->tipo);
+        $stmt->bind_param("sss", $this->estado, $this->fecha, $this->tipo);
 
         if ($stmt->execute()) {
+            $this->id_serv = $this->conn->insert_id;
             $stmt->close();
             return true;
         }

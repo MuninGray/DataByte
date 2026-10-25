@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel | Operario de establecimiento</title>
     <link rel="stylesheet" href="InterfazOpEstablecimiento.css">
+    <link rel="stylesheet" href="InterfazComun.css">
 </head>
 <body>
     <script>
@@ -46,11 +47,11 @@
             <div class="form-crud">
                 <div class="campo">
                     <label for="desc-matricula">Matrícula del vehículo</label>
-                    <input type="text" id="desc-matricula" required>
+                    <input type="text" id="desc-matricula" pattern="[A-Za-z]{3}[0-9]{4}" maxlength="7" title="Formato: 3 letras y 4 números, por ejemplo SBC1234" required>
                 </div>
                 <div class="campo">
                     <label for="desc-id_establcmto">ID Establecimiento</label>
-                    <input type="number" id="desc-id_establcmto" required>
+                    <input type="number" id="desc-id_establcmto" min="1" step="1" required>
                 </div>
                 <div class="campo">
                     <label for="desc-hora">Hora de recepción</label>
@@ -58,7 +59,7 @@
                 </div>
                 <div class="campo">
                     <label for="desc-peso">Peso recibido (kg)</label>
-                    <input type="number" step="0.01" id="desc-peso" required>
+                    <input type="number" step="0.01" min="0.01" id="desc-peso" required>
                 </div>
                 <button type="button" id="btnRegistrarDescarga">Registrar descarga</button>
             </div>
@@ -222,6 +223,11 @@
             };
 
             try {
+                if (!/^[A-Z]{3}[0-9]{4}$/.test(datos.matricula.toUpperCase())) throw new Error('La matrícula debe tener 3 letras y 4 números (ejemplo: SBC1234).');
+                if (!Number.isInteger(Number(datos.id_establcmto)) || Number(datos.id_establcmto) <= 0) throw new Error('Ingresá un ID de establecimiento entero y mayor a cero.');
+                if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(datos.hora)) throw new Error('Ingresá una hora válida.');
+                if (!Number.isFinite(Number(datos.peso)) || Number(datos.peso) <= 0) throw new Error('El peso debe ser mayor a cero.');
+                datos.matricula = datos.matricula.toUpperCase();
                 const response = await fetch(`${API_RECOLECCION}?accion=descargas`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -368,5 +374,6 @@
 
         consultarMaquinaria();
     </script>
+    <script src="InterfazComun.js"></script>
 </body>
 </html>

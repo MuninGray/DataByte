@@ -535,6 +535,98 @@ class UsuarioController {
         ]);
     }
 
+    public function updateMiPerfil() {
+        if (empty($_SESSION['usuario']['cedula'])) {
+            http_response_code(401);
+            echo json_encode(["message" => "La sesión expiró. Iniciá sesión nuevamente."]);
+            return;
+        }
+
+        $data = $this->getPayload();
+        $cedula = (int) $_SESSION['usuario']['cedula'];
+        $email = $this->getInputValue($data, ["email"]);
+        $nombre = $this->getInputValue($data, ["PrNom"]);
+        $apellido = $this->getInputValue($data, ["PrApel"]);
+        $passActual = $this->getInputValue($data, ["contrasena_actual"]);
+        $passNueva = $this->getInputValue($data, ["contrasena_nueva"]);
+        $passConfirmacion = $this->getInputValue($data, ["confirmar_contrasena"]);
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 50 || $nombre === "" || $apellido === "" || strlen($nombre) > 50 || strlen($apellido) > 50) {
+            http_response_code(400);
+            echo json_encode(["message" => "Ingresá un correo válido, nombre y apellido de hasta 50 caracteres."]);
+            return;
+        }
+
+        $cambiarContrasena = $passActual !== "" || $passNueva !== "" || $passConfirmacion !== "";
+        if ($cambiarContrasena && ($passActual === "" || strlen($passNueva) < 8 || strlen($passNueva) > 72 || $passNueva !== $passConfirmacion)) {
+            http_response_code(400);
+            echo json_encode(["message" => "Para cambiar la contraseña ingresá la actual y una nueva de 8 a 72 caracteres, repetida correctamente."]);
+            return;
+        }
+
+        if ($cambiarContrasena) {
+            $check = $this->db->prepare("SELECT pass FROM `Usuario` WHERE cedula = ?");
+            if (!$check) {
+                http_response_code(503);
+                echo json_encode(["message" => "No se pudo verificar la contraseña actual."]);
+                return;
+            }
+            $check->bind_param("i", $cedula);
+            $check->execute();
+            $result = $check->get_result();
+            $cuenta = $result ? $result->fetch_assoc() : null;
+            $check->close();
+            if (!$cuenta || !password_verify($passActual, $cuenta["pass"])) {
+                http_response_code(403);
+                echo json_encode(["message" => "La contraseña actual no es correcta."]);
+                return;
+            }
+
+            $passHash = password_hash($passNueva, PASSWORD_DEFAULT);
+            $stmt = $this->db->prepare("UPDATE `Usuario` SET email = ?, PrNom = ?, PrApel = ?, pass = ? WHERE cedula = ?");
+            if (!$stmt) {
+                http_response_code(503);
+                echo json_encode(["message" => "No se pudieron guardar los cambios."]);
+                return;
+            }
+            $stmt->bind_param("ssssi", $email, $nombre, $apellido, $passHash, $cedula);
+        } else {
+            $stmt = $this->db->prepare("UPDATE `Usuario` SET email = ?, PrNom = ?, PrApel = ? WHERE cedula = ?");
+            if (!$stmt) {
+                http_response_code(503);
+                echo json_encode(["message" => "No se pudieron guardar los cambios."]);
+                return;
+            }
+            $stmt->bind_param("sssi", $email, $nombre, $apellido, $cedula);
+        }
+
+        if (!$stmt->execute()) {
+            $duplicate = stripos($stmt->error, "duplicate") !== false;
+            $stmt->close();
+            http_response_code($duplicate ? 409 : 503);
+            echo json_encode(["message" => $duplicate ? "Ese correo ya está asociado a otra cuenta." : "No se pudieron guardar los cambios."]);
+            return;
+        }
+        $stmt->close();
+
+        $_SESSION['usuario']['email'] = $email;
+        $_SESSION['usuario']['PrNom'] = $nombre;
+        $_SESSION['usuario']['PrApel'] = $apellido;
+        http_response_code(200);
+        echo json_encode(["message" => "Tus datos se actualizaron correctamente.", "usuario" => $_SESSION['usuario']]);
+    }
+
+    public function cerrarSesion() {
+        $_SESSION = [];
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), "", time() - 42000, $params["path"], $params["domain"], $params["secure"], $params["httponly"]);
+        }
+        session_destroy();
+        http_response_code(200);
+        echo json_encode(["message" => "Sesión cerrada"]);
+    }
+
     public function login() {
         $data = $this->getPayload();
         $cedula = $this->getInputValue($data, ["CI", "ci", "cedula"]);
