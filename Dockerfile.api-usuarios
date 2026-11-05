@@ -1,0 +1,11 @@
+FROM php:8.3-apache
+
+RUN docker-php-ext-install mysqli \
+    && mkdir -p /var/lib/php/sessions \
+    && chmod 1733 /var/lib/php/sessions
+
+COPY docker/apache/api-site.conf /etc/apache2/sites-available/000-default.conf
+COPY docker/php/sessions.ini /usr/local/etc/php/conf.d/99-databyte-sessions.ini
+COPY API_Usuarios/ /var/www/html/
+
+EXPOSE 80

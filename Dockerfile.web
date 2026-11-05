@@ -1,0 +1,19 @@
+FROM php:8.3-apache
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/* \
+    && a2enmod proxy proxy_http rewrite ssl headers
+
+COPY docker/apache/web-site.conf /etc/apache2/sites-available/000-default.conf
+COPY docker/apache/web-entrypoint.sh /usr/local/bin/databyte-web-entrypoint
+
+RUN chmod 0755 /usr/local/bin/databyte-web-entrypoint
+
+COPY ["Landing page/", "/var/www/html/Landing page/"]
+COPY ["assets/", "/var/www/html/assets/"]
+COPY ["mapa.html", "/var/www/html/mapa.html"]
+
+EXPOSE 80 443
+
+ENTRYPOINT ["/usr/local/bin/databyte-web-entrypoint"]

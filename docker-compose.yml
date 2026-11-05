@@ -1,0 +1,79 @@
+services:
+  databyte-web:
+    container_name: databyte-web
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./certs:/etc/apache2/certs:Z
+    depends_on:
+      - api-usuarios
+      - api-gestion
+      - api-recoleccion
+    networks:
+      - databyte-internal
+    restart: unless-stopped
+
+  api-usuarios:
+    container_name: api-usuarios
+    build:
+      context: .
+      dockerfile: Dockerfile.api-usuarios
+    environment:
+      DB_HOST: ${DB_HOST:-192.168.1.51}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-DataByte}
+      DB_USER: ${DB_USER:?Define DB_USER en .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      DATA_BYTE_ADMIN_SECRET: ${DATA_BYTE_ADMIN_SECRET:?Define DATA_BYTE_ADMIN_SECRET en .env}
+    expose:
+      - "80"
+    volumes:
+      - usuarios-sessions:/var/lib/php/sessions
+    networks:
+      - databyte-internal
+    restart: unless-stopped
+
+  api-gestion:
+    container_name: api-gestion
+    build:
+      context: .
+      dockerfile: Dockerfile.api-gestion
+    environment:
+      DB_HOST: ${DB_HOST:-192.168.1.51}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-DataByte}
+      DB_USER: ${DB_USER:?Define DB_USER en .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+    expose:
+      - "80"
+    networks:
+      - databyte-internal
+    restart: unless-stopped
+
+  api-recoleccion:
+    container_name: api-recoleccion
+    build:
+      context: .
+      dockerfile: Dockerfile.api-recoleccion
+    environment:
+      DB_HOST: ${DB_HOST:-192.168.1.51}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-DataByte}
+      DB_USER: ${DB_USER:?Define DB_USER en .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+    expose:
+      - "80"
+    networks:
+      - databyte-internal
+    restart: unless-stopped
+
+networks:
+  databyte-internal:
+    driver: bridge
+
+volumes:
+  usuarios-sessions:
