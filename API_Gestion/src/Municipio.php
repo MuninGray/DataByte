@@ -6,6 +6,7 @@ class Municipio {
     private $table_name = "Municipio";
 
     public $codigo;
+    public $nombre;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -19,8 +20,8 @@ class Municipio {
         if (!$stmt) return false;
 
         $this->codigo = htmlspecialchars(strip_tags(trim($this->codigo)));
-        $nombre = "Municipio " . $this->codigo;
-        $stmt->bind_param("ss", $this->codigo, $nombre);
+        $this->nombre = htmlspecialchars(strip_tags(trim($this->nombre)));
+        $stmt->bind_param("ss", $this->codigo, $this->nombre);
 
         if ($stmt->execute()) {
             $stmt->close();
@@ -32,7 +33,7 @@ class Municipio {
 
     // Leer todos los municipios usando prepared statement.
     public function read() {
-        $query = "SELECT codigo FROM `" . $this->table_name . "`";
+        $query = "SELECT codigo, nombre FROM `" . $this->table_name . "`";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;
@@ -49,7 +50,7 @@ class Municipio {
 
     // Obtener un municipio por codigo usando prepared statement.
     public function readOne() {
-        $query = "SELECT codigo FROM `" . $this->table_name . "` WHERE codigo = ?";
+        $query = "SELECT codigo, nombre FROM `" . $this->table_name . "` WHERE codigo = ?";
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) return false;

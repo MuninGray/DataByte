@@ -71,9 +71,11 @@ class MunicipioController {
     public function create() {
         $data = $this->getPayload();
         $codigo = $this->getInputValue($data, ["codigo"]);
+        $nombre = $this->getInputValue($data, ["nombre"]);
 
-        if (!empty($codigo)) {
+        if (!empty($codigo) && !empty($nombre)) {
             $this->municipio->codigo = $codigo;
+            $this->municipio->nombre = $nombre;
 
             if ($this->municipio->create()) {
                 http_response_code(201);
@@ -101,7 +103,8 @@ class MunicipioController {
                 $row = $result->fetch_assoc();
                 http_response_code(200);
                 echo json_encode([
-                    "codigo" => $row["codigo"]
+                    "codigo" => $row["codigo"],
+                    "nombre" => $row["nombre"]
                 ]);
             } else {
                 http_response_code(404);
@@ -118,7 +121,8 @@ class MunicipioController {
 
             while ($row = $result->fetch_assoc()) {
                 $municipio_item = [
-                    "codigo" => $row["codigo"]
+                    "codigo" => $row["codigo"],
+                    "nombre" => $row["nombre"]
                 ];
                 array_push($municipios_arr["registros"], $municipio_item);
             }
