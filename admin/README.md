@@ -1,7 +1,15 @@
-# Panel administrativo — adaptación ESI 2026
+# Menú administrativo original adaptado a ESI (VM única)
 
-- `admin_menu.sh` es una adaptación **limitada** para una sola VM. Se ejecuta en el host Linux, dentro del repositorio, con `bash admin/admin_menu.sh`.
-- Incluye **consultas** de usuarios, red, firewall, logs y MySQL, acciones confirmadas de Compose y respaldo `.tar.gz`.
-- Los originales se conservan en `original/` **solo para auditoría**. **No ejecutar sus instaladores** ni los scripts de backup original: están destinados a tres servidores, SSH y rutas específicas, y no han sido probados en la VM nueva.
-- La gestión completa de usuarios y la modificación de firewall del menú antiguo **no se han portado**. Las consultas pueden requerir permisos apropiados. El menú no reemplaza la administración formal del sistema.
-- No se ha ejecutado una prueba integral de Docker/MySQL ni una restauración real: validar antes de la instalación evaluada.
+Ejecución desde la raíz de DataByte:
+
+```bash
+sudo bash admin/admin_menu.sh
+```
+
+Se mantienen las 7 categorías del menú del paquete original. Los módulos originales de **usuarios/grupos** y **firewall** se conservan con sus opciones y validaciones. Deben probarse **solo con cuentas/puertos de prueba**; cambiar servicios, firewall o usuarios puede interrumpir el acceso al sistema.
+
+Cambios imprescindibles: los accesos SSH a `192.168.1.50/51/52` se sustituyeron por el propio host Linux, `docker compose` y el servicio `db` de MySQL. No se instalan servicios `mysqld` ni backup externos. Se utiliza el respaldo SQL `.tar.gz` ya probado. Se incluyen alternativas de respaldo de archivos de la aplicación (completo e incremental) con GNU tar; **no equivalen a respaldo incremental de MySQL**, que requiere planificar binlogs/recuperación. Los incrementales de aplicación requieren primero generar una base incremental y conservar todos los incrementos en orden.
+
+El apartado de restauración es **informativo**: no ejecuta cambios destructivos sobre el volumen MySQL ni sobre la aplicación activa. Los scripts originales de restauración se conservan en `admin/original` como documentación, no para ejecutarlos directamente en la arquitectura de una VM.
+
+Este paquete solo sustituye `admin/admin_menu.sh`, agrega `admin/modulos/` y actualiza `admin/README.md`; no cambia el frontend, las APIs, el SQL, `docker-compose.yml`, ni los contenedores de DataByte. Requiere prueba funcional en Rocky Linux antes de usar las opciones que modifican el sistema.
