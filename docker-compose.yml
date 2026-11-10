@@ -1,79 +1,97 @@
+name: databyte-esi
 services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configurar MYSQL_ROOT_PASSWORD en .env}
+      MYSQL_DATABASE: DataByte
+      MYSQL_USER: ${DB_USER:?Configurar DB_USER en .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Configurar DB_PASSWORD en .env}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./dump/DataByte-1-1.sql:/docker-entrypoint-initdb.d/01-databyte.sql:ro
+    networks: [databyte-internal]
+    healthcheck:
+      test: ['CMD-SHELL', 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysqladmin ping -h 127.0.0.1 -uroot --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
   databyte-web:
-    container_name: databyte-web
     build:
       context: .
-      dockerfile: Dockerfile.web
+      dockerfile: Dockerfile.web.esi
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./certs:/etc/apache2/certs:Z
+      - "${WEB_PORT:-8080}:80"
     depends_on:
-      - api-usuarios
-      - api-gestion
-      - api-recoleccion
-    networks:
-      - databyte-internal
+      api-usuarios: {condition: service_started}
+      api-gestion: {condition: service_started}
+      api-recoleccion: {condition: service_started}
+    networks: [databyte-internal]
     restart: unless-stopped
 
   api-usuarios:
-    container_name: api-usuarios
     build:
       context: .
       dockerfile: Dockerfile.api-usuarios
-    environment:
-      DB_HOST: ${DB_HOST:-192.168.1.51}
-      DB_PORT: ${DB_PORT:-3306}
-      DB_NAME: ${DB_NAME:-DataByte}
-      DB_USER: ${DB_USER:?Define DB_USER en .env}
-      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
-      DATA_BYTE_ADMIN_SECRET: ${DATA_BYTE_ADMIN_SECRET:?Define DATA_BYTE_ADMIN_SECRET en .env}
-    expose:
-      - "80"
+    environment: &db_env
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: DataByte
+      DB_USER: ${DB_USER:?Configurar DB_USER en .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Configurar DB_PASSWORD en .env}
+      DATA_BYTE_ADMIN_SECRET: ${DATA_BYTE_ADMIN_SECRET:?Configurar DATA_BYTE_ADMIN_SECRET en .env}
+    expose: ["80"]
     volumes:
       - usuarios-sessions:/var/lib/php/sessions
-    networks:
-      - databyte-internal
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [databyte-internal]
     restart: unless-stopped
 
   api-gestion:
-    container_name: api-gestion
     build:
       context: .
       dockerfile: Dockerfile.api-gestion
-    environment:
-      DB_HOST: ${DB_HOST:-192.168.1.51}
-      DB_PORT: ${DB_PORT:-3306}
-      DB_NAME: ${DB_NAME:-DataByte}
-      DB_USER: ${DB_USER:?Define DB_USER en .env}
-      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
-    expose:
-      - "80"
-    networks:
-      - databyte-internal
+    environment: *db_env
+    expose: ["80"]
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [databyte-internal]
     restart: unless-stopped
 
   api-recoleccion:
-    container_name: api-recoleccion
     build:
       context: .
       dockerfile: Dockerfile.api-recoleccion
-    environment:
-      DB_HOST: ${DB_HOST:-192.168.1.51}
-      DB_PORT: ${DB_PORT:-3306}
-      DB_NAME: ${DB_NAME:-DataByte}
-      DB_USER: ${DB_USER:?Define DB_USER en .env}
-      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
-    expose:
-      - "80"
-    networks:
-      - databyte-internal
+    environment: *db_env
+    expose: ["80"]
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [databyte-internal]
     restart: unless-stopped
+
+  backup:
+    image: mysql:8.0
+    profiles: [backup]
+    environment:
+      DB_HOST: db
+      DB_NAME: DataByte
+      DB_USER: root
+      MYSQL_PWD: ${MYSQL_ROOT_PASSWORD:?Configurar MYSQL_ROOT_PASSWORD en .env}
+    volumes:
+      - ./docker/backup/backup.sh:/usr/local/bin/backup.sh:ro
+      - ./respaldos:/respaldos
+    entrypoint: ["bash", "/usr/local/bin/backup.sh"]
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [databyte-internal]
 
 networks:
   databyte-internal:
     driver: bridge
-
 volumes:
+  mysql-data:
   usuarios-sessions:

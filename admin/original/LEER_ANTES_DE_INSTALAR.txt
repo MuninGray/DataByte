@@ -1,0 +1,19 @@
+DATABYTE - PAQUETE DE REVISION (NO INSTALADO)
+
+Incluye web/, db/, backup/, install/ y config/.
+Correcciones respecto al tar de auditoria:
+- Se agrego config/hosts.conf.example, requerido por install_web.sh.
+- Se ajusto la clave SSH de Backup a /home/lore/.ssh/id_ed25519_backup.
+- Se conservan las exclusiones verificadas de .env y certs/server.key.
+
+IMPORTANTE:
+- Este paquete es candidato para revisar y aprobar, NO esta instalado.
+- No usar install_*.sh sin autorizacion y comprobacion del destino.
+- La configuracion instalada debe revisarse en cada VM.
+- La programacion cron aun no esta instalada.
+- MySQL incremental: captura e integridad probadas, restauracion real NO validada.
+- La restauracion web no incluye .env ni server.key: requieren respaldo protegido aparte.
+- La retencion automatica solo se previsualiza por defecto.
+- El menu Web para backup ejecuta 'all', segun dia de semana; en una instalacion
+  nueva entre lunes y sabado es necesario crear primero un FULL.
+- El primer uso interactivo de sudo en DB puede solicitar contrasena.

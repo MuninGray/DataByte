@@ -1,0 +1,13 @@
+# Configuración del servidor DataByte-backup. No guardar contraseñas aquí.
+WEB_IP="192.168.1.50"
+DB_IP="192.168.1.51"
+SSH_USER="lore"
+SSH_KEY="/home/lore/.ssh/id_ed25519_backup"
+APP_DIR="/home/lore/DataByte"
+APP_SNAPSHOT_REMOTE="/home/lore/.cache/databyte-app.snar"
+DB_NAME="DataByte"
+MYSQL_LOGIN_PATH="databyte-backup"
+BACKUP_ROOT="/var/backups/databyte"
+RETENTION_DAILY_DAYS=7
+RETENTION_WEEKLY_DAYS=30
+RETENTION_MONTHLY_DAYS=365

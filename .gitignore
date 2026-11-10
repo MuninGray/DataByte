@@ -6,3 +6,10 @@ secrets/
 *.key
 *.pem
 *.log
+
+respaldos/*.tar.gz
+
+# Salidas / secretos de administracion
+admin/**/*.log
+admin/**/*.conf
+!admin/**/*.example

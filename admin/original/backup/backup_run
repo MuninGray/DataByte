@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+[[ -r "$HERE/common.sh" ]] || HERE="/usr/local/lib/databyte-backup"
+[[ -r "$HERE/common.sh" ]] || { echo "Módulos no encontrados: $HERE" >&2; exit 3; }
+# Una única ejecución para cron y para acciones manuales.
+source "$HERE/common.sh"
+LOCK="${DATABYTE_BACKUP_LOCK:-$BACKUP_ROOT/logs/databyte-backup-run.lock}"
+exec 9>"$LOCK"
+flock -n 9 || { echo "Otro respaldo DataByte está ejecutándose" >&2; exit 75; }
+MODE="${1:-all}"
+case "$MODE" in
+  db-full) "$HERE/db_full.sh" ;;
+  db-inc) "$HERE/db_incremental.sh" ;;
+  app-full) "$HERE/app_full.sh" ;;
+  app-inc) "$HERE/app_incremental.sh" ;;
+  config-full) "$HERE/config_full.sh" ;;
+  scripts-full) "$HERE/scripts_full.sh" ;;
+  verify) "$HERE/verify_backups.sh" ;;
+  cleanup-preview) "$HERE/cleanup_backups.sh" --preview ;;
+  restore-app-verify) shift; "$HERE/restore_app.sh" --verify-only "$@" ;;
+  restore-db-verify) shift; "$HERE/restore_db.sh" --verify-only "$@" ;;
+  all)
+    if [[ "$(date +%u)" == 7 ]]; then
+      "$HERE/db_full.sh"
+      "$HERE/app_full.sh"
+      "$HERE/config_full.sh"
+    else
+      "$HERE/db_incremental.sh"
+      "$HERE/app_incremental.sh"
+    fi
+    "$HERE/verify_backups.sh"
+    # Retención se simula: nunca borrar una cadena sin validación de dependencias.
+    "$HERE/cleanup_backups.sh" --preview
+    ;;
+  *) echo "Uso: $0 {all|db-full|db-inc|app-full|app-inc|config-full|scripts-full|verify|cleanup-preview|restore-app-verify FULL [INC...]|restore-db-verify FULL [INC...]}" >&2; exit 2 ;;
+esac

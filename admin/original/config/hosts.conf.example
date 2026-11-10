@@ -1,0 +1,7 @@
+# Configuracion del panel administrativo en la VM Web.
+DB_IP="192.168.1.51"
+BACKUP_IP="192.168.1.52"
+SSH_USER="lore"
+SSH_KEY="/home/lore/.ssh/id_ed25519_databyte_admin"
+DB_NAME="DataByte"
+BACKUP_ROOT="/var/backups/databyte"
